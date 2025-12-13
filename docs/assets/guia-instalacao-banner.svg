@@ -26,8 +26,4 @@
     CLIQUE AQUI
   </text>
 
-  <!-- Small hint -->
-  <text x="600" y="178" text-anchor="middle" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial" font-size="18" font-weight="600" fill="#94a3b8">
-    Comece por aqui para rodar o projeto localmente (setup rápido)
-  </text>
 </svg>

@@ -4,7 +4,7 @@ import { useNavigate } from '@/lib/navigation';
 import { toast } from 'sonner';
 import { campaignService, contactService, templateService } from '../services';
 import { settingsService } from '../services/settingsService';
-import { Template, TestContact } from '../types';
+import { ContactStatus, Template, TestContact } from '../types';
 import { useAccountLimits } from './useAccountLimits';
 import { CampaignValidation } from '../lib/meta-limits';
 import { countTemplateVariables } from '../lib/template-validator';
@@ -41,6 +41,10 @@ export const useCampaignWizardController = () => {
   const [isPrechecking, setIsPrechecking] = useState(false);
   const lastAutoPrecheckKeyRef = useRef<string>('');
 
+  // Test contact: garante um contactId real (necessário para campaign_contacts e workflow)
+  const [resolvedTestContactId, setResolvedTestContactId] = useState<string | null>(null);
+  const [isEnsuringTestContact, setIsEnsuringTestContact] = useState(false);
+
   // Account Limits Hook
   const { validate, limits, isLoading: limitsLoading, tierName } = useAccountLimits();
 
@@ -71,6 +75,50 @@ export const useCampaignWizardController = () => {
 
   // Prefer DB data, fallback to settings (legacy/local)
   const testContact = testContactQuery.data || settingsQuery.data?.testContact;
+
+  // Quando a fonte é "Contato de Teste", criamos (ou atualizamos) um contato no banco por telefone
+  // para obter um contactId real. Isso evita:
+  // - pré-check ignorando por MISSING_CONTACT_ID
+  // - criação de campanha quebrando por campaign_contacts exigir contact_id
+  useEffect(() => {
+    let cancelled = false;
+
+    const ensure = async () => {
+      if (recipientSource !== 'test' || !testContact?.phone) {
+        setResolvedTestContactId(null);
+        setIsEnsuringTestContact(false);
+        return;
+      }
+
+      setIsEnsuringTestContact(true);
+      try {
+        const saved = await contactService.add({
+          name: testContact.name || 'Contato de Teste',
+          phone: testContact.phone,
+          email: null,
+          status: ContactStatus.OPT_IN,
+          tags: [],
+          custom_fields: {},
+        } as any);
+
+        if (!cancelled) {
+          setResolvedTestContactId(saved?.id || null);
+        }
+      } catch (e: any) {
+        if (!cancelled) {
+          setResolvedTestContactId(null);
+          toast.error(e?.message || 'Não foi possível preparar o contato de teste para envio');
+        }
+      } finally {
+        if (!cancelled) setIsEnsuringTestContact(false);
+      }
+    };
+
+    ensure();
+    return () => {
+      cancelled = true;
+    };
+  }, [recipientSource, testContact?.phone, testContact?.name]);
 
   // Initialize name
   useEffect(() => {
@@ -185,10 +233,12 @@ export const useCampaignWizardController = () => {
   // Get contacts for sending - test contact or selected contacts (includes email and custom_fields for variable resolution)
   const contactsForSending = recipientSource === 'test' && testContact
     ? (() => {
-      const testId = (testContact as any).id as string | undefined;
+      const testId = resolvedTestContactId;
+      if (!testId) return [];
       return [
         {
-          ...(testId ? { id: testId, contactId: testId } : {}),
+          id: testId,
+          contactId: testId,
           name: testContact.name || testContact.phone,
           phone: testContact.phone,
           email: (testContact as any).email || '',
@@ -361,6 +411,14 @@ export const useCampaignWizardController = () => {
       if (!options?.silent) toast.error('Selecione um template antes de validar');
       return;
     }
+
+    // Em modo teste, pode existir um pequeno delay até termos o contactId resolvido.
+    // Evita UX confusa de "Selecione pelo menos um contato".
+    if (recipientSource === 'test' && testContact && !resolvedTestContactId) {
+      if (!options?.silent) toast.message('Preparando contato de teste…');
+      return;
+    }
+
     if (!contactsForSending || contactsForSending.length === 0) {
       if (!options?.silent) toast.error('Selecione pelo menos um contato');
       return;
@@ -436,6 +494,11 @@ export const useCampaignWizardController = () => {
 
   // INTELLIGENT VALIDATION - Prevents users from sending campaigns that exceed limits
   const handleSend = async (scheduleTime?: string) => {
+    if (recipientSource === 'test' && testContact && !resolvedTestContactId) {
+      toast.message('Preparando contato de teste…');
+      return;
+    }
+
     // Validate that all required template variables are filled
     if (templateVariableCount > 0) {
       // Check if we have enough keys filled? 
@@ -540,6 +603,7 @@ export const useCampaignWizardController = () => {
 
     // Test Contact
     testContact,
+    isEnsuringTestContact,
 
     // Template Variables (for {{2}}, {{3}}, etc.)
     templateVariables,

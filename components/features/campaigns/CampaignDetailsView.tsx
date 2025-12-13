@@ -519,6 +519,7 @@ export const CampaignDetailsView: React.FC<CampaignDetailsViewProps> = ({
           setQuickEditFocus(null);
         }}
         focus={quickEditFocus}
+        mode={quickEditFocus ? 'focused' : 'full'}
         title="Corrigir contato"
       />
 

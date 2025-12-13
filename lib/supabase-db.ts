@@ -302,6 +302,7 @@ export const contactDb = {
             id: data.id,
             name: data.name,
             phone: data.phone,
+            email: data.email,
             status: (data.status as ContactStatus) || ContactStatus.OPT_IN,
             tags: data.tags || [],
             lastActive: data.updated_at

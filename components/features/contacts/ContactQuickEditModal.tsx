@@ -74,6 +74,7 @@ interface ContactQuickEditModalProps {
   focus?: FocusTarget;
   title?: string;
   onSaved?: () => void;
+  mode?: 'full' | 'focused';
 }
 
 export const ContactQuickEditModal: React.FC<ContactQuickEditModalProps> = ({
@@ -83,6 +84,7 @@ export const ContactQuickEditModal: React.FC<ContactQuickEditModalProps> = ({
   focus = null,
   title = 'Editar contato',
   onSaved,
+  mode = 'full',
 }) => {
   const queryClient = useQueryClient();
   const emailRef = useRef<HTMLInputElement | null>(null);
@@ -105,6 +107,13 @@ export const ContactQuickEditModal: React.FC<ContactQuickEditModalProps> = ({
   });
 
   const customFields = (customFieldsQuery.data || []) as CustomFieldDefinition[];
+
+  // Quando em modo "focused" e temos um foco explícito,
+  // mostramos apenas o Nome + o campo que precisa de correção.
+  const isFocusedMode = mode === 'focused' && !!focus;
+  const shouldShowEmail = !isFocusedMode || focus?.type === 'email';
+  const shouldShowFocusedCustomField = isFocusedMode && focus?.type === 'custom_field';
+  const shouldShowAllCustomFields = !isFocusedMode;
 
   const [form, setForm] = useState<{ name: string; email: string; custom_fields: Record<string, any> }>({
     name: '',
@@ -227,19 +236,21 @@ export const ContactQuickEditModal: React.FC<ContactQuickEditModalProps> = ({
               />
             </div>
 
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Email</label>
-              <input
-                ref={emailRef}
-                type="email"
-                className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-primary-500 outline-none transition-colors"
-                value={form.email}
-                onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="email@exemplo.com"
-              />
-            </div>
+            {shouldShowEmail && (
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Email</label>
+                <input
+                  ref={emailRef}
+                  type="email"
+                  className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-primary-500 outline-none transition-colors"
+                  value={form.email}
+                  onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+            )}
 
-            {focus?.type === 'custom_field' && (
+            {shouldShowFocusedCustomField && (
               <div>
                 <label className="block text-sm text-gray-400 mb-1">{focusLabel}</label>
                 <input
@@ -257,50 +268,52 @@ export const ContactQuickEditModal: React.FC<ContactQuickEditModalProps> = ({
               </div>
             )}
 
-            <details className="pt-2 border-t border-white/10">
-              <summary className="cursor-pointer text-sm text-gray-400">Campos personalizados</summary>
-              <div className="mt-3 space-y-3">
-                {customFields.length === 0 ? (
-                  <p className="text-xs text-gray-600">Nenhum campo personalizado cadastrado.</p>
-                ) : (
-                  customFields.map(field => (
-                    <div key={field.id}>
-                      <label className="block text-xs text-gray-500 mb-1">{field.label}</label>
-                      {field.type === 'select' && field.options && field.options.length > 0 ? (
-                        <select
-                          className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:border-primary-500 outline-none transition-colors"
-                          value={String(form.custom_fields?.[field.key] ?? '')}
-                          onChange={(e) =>
-                            setForm(prev => ({
-                              ...prev,
-                              custom_fields: { ...(prev.custom_fields || {}), [field.key]: e.target.value },
-                            }))
-                          }
-                        >
-                          <option value="">Selecionar...</option>
-                          {field.options.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <input
-                          type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
-                          className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:border-primary-500 outline-none transition-colors"
-                          value={String(form.custom_fields?.[field.key] ?? '')}
-                          onChange={(e) =>
-                            setForm(prev => ({
-                              ...prev,
-                              custom_fields: { ...(prev.custom_fields || {}), [field.key]: e.target.value },
-                            }))
-                          }
-                          placeholder={field.type === 'date' ? '' : `Digite ${field.label}...`}
-                        />
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </details>
+            {shouldShowAllCustomFields && (
+              <details className="pt-2 border-t border-white/10">
+                <summary className="cursor-pointer text-sm text-gray-400">Campos personalizados</summary>
+                <div className="mt-3 space-y-3">
+                  {customFields.length === 0 ? (
+                    <p className="text-xs text-gray-600">Nenhum campo personalizado cadastrado.</p>
+                  ) : (
+                    customFields.map(field => (
+                      <div key={field.id}>
+                        <label className="block text-xs text-gray-500 mb-1">{field.label}</label>
+                        {field.type === 'select' && field.options && field.options.length > 0 ? (
+                          <select
+                            className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:border-primary-500 outline-none transition-colors"
+                            value={String(form.custom_fields?.[field.key] ?? '')}
+                            onChange={(e) =>
+                              setForm(prev => ({
+                                ...prev,
+                                custom_fields: { ...(prev.custom_fields || {}), [field.key]: e.target.value },
+                              }))
+                            }
+                          >
+                            <option value="">Selecionar...</option>
+                            {field.options.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+                            className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:border-primary-500 outline-none transition-colors"
+                            value={String(form.custom_fields?.[field.key] ?? '')}
+                            onChange={(e) =>
+                              setForm(prev => ({
+                                ...prev,
+                                custom_fields: { ...(prev.custom_fields || {}), [field.key]: e.target.value },
+                              }))
+                            }
+                            placeholder={field.type === 'date' ? '' : `Digite ${field.label}...`}
+                          />
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </details>
+            )}
 
             <div className="pt-4 flex gap-3">
               <button

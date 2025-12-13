@@ -1866,6 +1866,7 @@ export const CampaignWizardView: React.FC<CampaignWizardViewProps> = ({
                     setQuickEditFocusSafe(null);
                   }}
                   focus={quickEditFocus}
+                  mode={quickEditFocus ? 'focused' : 'full'}
                   title={batchFixQueue.length > 0
                     ? `Corrigir contato (${Math.min(batchFixIndex + 1, batchFixQueue.length)} de ${batchFixQueue.length})`
                     : 'Corrigir contato'}

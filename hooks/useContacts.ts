@@ -9,6 +9,28 @@ import { getSupabaseBrowser } from '../lib/supabase';
 
 const ITEMS_PER_PAGE = 10;
 
+const deriveTagsFromContacts = (contacts: Contact[]) => {
+  const allTags = contacts.flatMap((c) => c.tags || []);
+  return [...new Set(allTags)].sort((a, b) => a.localeCompare(b));
+};
+
+const normalizeEmailForUpdate = (email?: string | null) => {
+  const trimmed = (email ?? '').trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const sanitizeCustomFieldsForUpdate = (fields?: Record<string, any>) => {
+  if (!fields) return fields;
+  const out: Record<string, any> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (value === undefined) continue;
+    if (value === null) continue;
+    if (typeof value === 'string' && value.trim() === '') continue;
+    out[key] = value;
+  }
+  return out;
+};
+
 export const useContactsController = () => {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
@@ -62,11 +84,10 @@ export const useContactsController = () => {
     staleTime: 60 * 1000
   });
 
-  const tagsQuery = useQuery({
-    queryKey: ['contactTags'],
-    queryFn: contactService.getTags,
-    staleTime: 60 * 1000
-  });
+  const tags = useMemo(() => {
+    const list = contactsQuery.data?.list || [];
+    return deriveTagsFromContacts(list);
+  }, [contactsQuery.data?.list]);
 
   const customFieldsQuery = useQuery({
     queryKey: ['customFields'],
@@ -88,7 +109,6 @@ export const useContactsController = () => {
           // Invalidate queries when any change happens
           queryClient.invalidateQueries({ queryKey: ['contacts'] });
           queryClient.invalidateQueries({ queryKey: ['contactStats'] });
-          queryClient.invalidateQueries({ queryKey: ['contactTags'] });
         }
       )
       .subscribe();
@@ -102,44 +122,129 @@ export const useContactsController = () => {
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
     queryClient.invalidateQueries({ queryKey: ['contactStats'] });
-    queryClient.invalidateQueries({ queryKey: ['contactTags'] });
   };
 
   const addMutation = useMutation({
     mutationFn: contactService.add,
-    onSuccess: () => {
-      invalidateAll();
+    onMutate: async (newContact) => {
+      await queryClient.cancelQueries({ queryKey: ['contacts'] });
+      const previous = queryClient.getQueryData<Contact[]>(['contacts']);
+
+      const tempId = `temp-${Date.now()}`;
+      const optimistic: Contact = {
+        id: tempId,
+        name: newContact.name,
+        phone: newContact.phone,
+        email: newContact.email ?? null,
+        status: newContact.status,
+        tags: newContact.tags || [],
+        lastActive: 'Agora mesmo',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        custom_fields: newContact.custom_fields || {},
+      };
+
+      queryClient.setQueryData<Contact[]>(['contacts'], (current) => {
+        if (!current) return current;
+        return [optimistic, ...current];
+      });
+
+      return { previous, tempId };
+    },
+    onSuccess: (created, _vars, context) => {
+      // Reconciliar o tempId com o contato real
+      if (context?.tempId) {
+        queryClient.setQueryData<Contact[]>(['contacts'], (current) => {
+          if (!current) return current;
+          return current.map((c) => (c.id === context.tempId ? created : c));
+        });
+      }
+
+      // Stats dependem do backend, mas já invalidamos para consistência.
+      queryClient.invalidateQueries({ queryKey: ['contactStats'] });
+
       setIsAddModalOpen(false);
       toast.success('Contato adicionado com sucesso!');
     },
-    onError: (error) => toast.error(error.message || 'Erro ao adicionar contato')
+    onError: (error: any, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(['contacts'], context.previous);
+      toast.error(error.message || 'Erro ao adicionar contato');
+    }
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<Omit<Contact, 'id'>> }) =>
       contactService.update(id, data),
-    onSuccess: () => {
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['contacts'] });
+      const previous = queryClient.getQueryData<Contact[]>(['contacts']);
+
+      queryClient.setQueryData<Contact[]>(['contacts'], (current) => {
+        if (!current) return current;
+        return current.map((c) => (c.id === id ? ({ ...c, ...data } as Contact) : c));
+      });
+
+      return { previous };
+    },
+    onSuccess: (updated) => {
+      // Se o backend devolveu o contato completo, aplica no cache.
+      if (updated) {
+        queryClient.setQueryData<Contact[]>(['contacts'], (current) => {
+          if (!current) return current;
+          return current.map((c) => (c.id === updated.id ? updated : c));
+        });
+      }
+
       invalidateAll();
       setIsEditModalOpen(false);
       setEditingContact(null);
       toast.success('Contato atualizado com sucesso!');
     },
-    onError: (error) => toast.error(error.message || 'Erro ao atualizar contato')
+    onError: (error: any, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(['contacts'], context.previous);
+      toast.error(error.message || 'Erro ao atualizar contato');
+    }
   });
 
   const deleteMutation = useMutation({
     mutationFn: contactService.delete,
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['contacts'] });
+      const previous = queryClient.getQueryData<Contact[]>(['contacts']);
+
+      queryClient.setQueryData<Contact[]>(['contacts'], (current) => {
+        if (!current) return current;
+        return current.filter((c) => c.id !== id);
+      });
+
+      return { previous };
+    },
     onSuccess: () => {
       invalidateAll();
       setIsDeleteModalOpen(false);
       setDeleteTarget(null);
       toast.success('Contato excluído com sucesso!');
     },
-    onError: (error) => toast.error(error.message || 'Erro ao excluir contato')
+    onError: (error: any, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(['contacts'], context.previous);
+      toast.error(error.message || 'Erro ao excluir contato');
+    }
   });
 
   const deleteManyMutation = useMutation({
     mutationFn: contactService.deleteMany,
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: ['contacts'] });
+      const previous = queryClient.getQueryData<Contact[]>(['contacts']);
+      const idsSet = new Set(ids);
+
+      queryClient.setQueryData<Contact[]>(['contacts'], (current) => {
+        if (!current) return current;
+        return current.filter((c) => !idsSet.has(c.id));
+      });
+
+      return { previous };
+    },
     onSuccess: (count) => {
       invalidateAll();
       setSelectedIds(new Set());
@@ -147,7 +252,10 @@ export const useContactsController = () => {
       setDeleteTarget(null);
       toast.success(`${count} contatos excluídos com sucesso!`);
     },
-    onError: (error) => toast.error(error.message || 'Erro ao excluir contatos')
+    onError: (error: any, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(['contacts'], context.previous);
+      toast.error(error.message || 'Erro ao excluir contatos');
+    }
   });
 
   const importMutation = useMutation({
@@ -291,10 +399,11 @@ export const useContactsController = () => {
       data: {
         name: data.name,
         phone: data.phone,
-        email: data.email || undefined,
+        // Para “apagar” email, precisamos enviar null (undefined não altera no banco)
+        email: normalizeEmailForUpdate(data.email),
         status: data.status,
         tags: data.tags.split(',').map(t => t.trim()).filter(t => t),
-        custom_fields: data.custom_fields
+        custom_fields: sanitizeCustomFieldsForUpdate(data.custom_fields)
       }
     });
   };
@@ -330,7 +439,7 @@ export const useContactsController = () => {
     contacts: paginatedContacts,
     allFilteredContacts: filteredContacts,
     stats: statsQuery.data || { total: 0, optIn: 0, optOut: 0 },
-    tags: tagsQuery.data || [],
+    tags,
     customFields: customFieldsQuery.data || [],
     isLoading: contactsQuery.isLoading || statsQuery.isLoading || customFieldsQuery.isLoading,
 

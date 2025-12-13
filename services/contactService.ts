@@ -29,7 +29,7 @@ export interface ImportResult {
  */
 export const contactService = {
   getAll: async (): Promise<Contact[]> => {
-    const response = await fetch('/api/contacts');
+    const response = await fetch('/api/contacts', { cache: 'no-store' });
     if (!response.ok) {
       throw new Error('Falha ao buscar contatos');
     }
@@ -37,7 +37,7 @@ export const contactService = {
   },
 
   getById: async (id: string): Promise<Contact | undefined> => {
-    const response = await fetch(`/api/contacts/${id}`);
+    const response = await fetch(`/api/contacts/${id}`, { cache: 'no-store' });
     if (!response.ok) {
       if (response.status === 404) return undefined;
       return undefined;
@@ -46,7 +46,7 @@ export const contactService = {
   },
 
   getStats: async (): Promise<ContactStats> => {
-    const response = await fetch('/api/contacts/stats');
+    const response = await fetch('/api/contacts/stats', { cache: 'no-store' });
     if (!response.ok) {
       return { total: 0, optIn: 0, optOut: 0 };
     }

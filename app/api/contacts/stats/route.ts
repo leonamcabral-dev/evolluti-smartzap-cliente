@@ -10,7 +10,9 @@ export async function GET() {
     const stats = await contactDb.getStats()
     return NextResponse.json(stats, {
       headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60'
+        'Cache-Control': 'private, no-store, no-cache, must-revalidate, max-age=0',
+        Pragma: 'no-cache',
+        Expires: '0'
       }
     })
   } catch (error) {

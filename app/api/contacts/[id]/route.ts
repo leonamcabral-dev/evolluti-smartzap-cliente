@@ -21,7 +21,13 @@ export async function GET(request: Request, { params }: Params) {
       )
     }
 
-    return NextResponse.json(contact)
+    return NextResponse.json(contact, {
+      headers: {
+        'Cache-Control': 'private, no-store, no-cache, must-revalidate, max-age=0',
+        Pragma: 'no-cache',
+        Expires: '0'
+      }
+    })
   } catch (error) {
     console.error('Failed to fetch contact:', error)
     return NextResponse.json(

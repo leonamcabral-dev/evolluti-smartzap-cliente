@@ -1,8 +1,12 @@
 type CustomFieldLabelByKey = Record<string, string>;
 
-export type ContactFixFocus =
+export type ContactFixTarget =
   | { type: 'email' }
-  | { type: 'custom_field'; key: string }
+  | { type: 'custom_field'; key: string };
+
+export type ContactFixFocus =
+  | ContactFixTarget
+  | { type: 'multi'; targets: ContactFixTarget[] }
   | null;
 
 export type HumanizedReason = {
@@ -11,7 +15,7 @@ export type HumanizedReason = {
   focus?: ContactFixFocus;
 };
 
-const SYSTEM_TOKEN_LABELS: Record<string, { label: string; focus: ContactFixFocus }> = {
+const SYSTEM_TOKEN_LABELS: Record<string, { label: string; focus: ContactFixTarget | null }> = {
   nome: { label: 'Nome', focus: null },
   telefone: { label: 'Telefone', focus: null },
   email: { label: 'Email', focus: { type: 'email' } },
@@ -33,7 +37,7 @@ function normalizeWhere(where: string): string {
 export function humanizeVarSource(
   raw: string,
   customFieldLabelByKey?: CustomFieldLabelByKey
-): { label: string; focus?: ContactFixFocus } {
+): { label: string; focus?: ContactFixTarget | null } {
   const token = extractSingleToken(raw);
   if (!token) {
     if (!raw || raw === '<vazio>') {
@@ -52,6 +56,25 @@ export function humanizeVarSource(
   };
 }
 
+function dedupeTargets(targets: ContactFixTarget[]): ContactFixTarget[] {
+  const seen = new Set<string>();
+  const out: ContactFixTarget[] = [];
+  for (const t of targets) {
+    const id = t.type === 'email' ? 'email' : `custom_field:${t.key}`;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(t);
+  }
+  return out;
+}
+
+function focusFromTargets(targets: ContactFixTarget[]): ContactFixFocus {
+  const uniq = dedupeTargets(targets);
+  if (uniq.length === 0) return null;
+  if (uniq.length === 1) return uniq[0];
+  return { type: 'multi', targets: uniq };
+}
+
 export function humanizePrecheckReason(
   reason: string,
   options?: { customFieldLabelByKey?: CustomFieldLabelByKey }
@@ -64,7 +87,10 @@ export function humanizePrecheckReason(
     const tail = text.split('Variáveis obrigatórias sem valor:')[1] || '';
     const parts = tail.split(',').map(s => s.trim()).filter(Boolean);
 
-    // Tenta achar o primeiro raw="{{...}}" para inferir qual dado está faltando.
+    // Coleta alvos de correção (pode haver mais de um campo faltando).
+    const targets: ContactFixTarget[] = [];
+
+    // Tenta achar o primeiro raw="{{...}}" para montar o título/detalhe.
     let firstRaw: string | null = null;
     let firstWhere: string | null = null;
     let firstKey: string | null = null;
@@ -77,6 +103,8 @@ export function humanizePrecheckReason(
         firstButtonIndex = Number(btn[1]);
         firstKey = btn[2];
         firstRaw = btn[3];
+        const inf = humanizeVarSource(firstRaw || '<vazio>', options?.customFieldLabelByKey);
+        if (inf.focus) targets.push(inf.focus);
         break;
       }
       const hb = p.match(/^(header|body):(\w+) \(raw="([\s\S]*?)"\)$/);
@@ -84,7 +112,26 @@ export function humanizePrecheckReason(
         firstWhere = hb[1];
         firstKey = hb[2];
         firstRaw = hb[3];
+        const inf = humanizeVarSource(firstRaw || '<vazio>', options?.customFieldLabelByKey);
+        if (inf.focus) targets.push(inf.focus);
         break;
+      }
+    }
+
+    // Também tenta inferir todos os alvos (mesmo que o primeiro não tenha sido inferível).
+    for (const p of parts) {
+      const btn = p.match(/^button:(\d+):(\w+) \(raw="([\s\S]*?)"\)$/);
+      if (btn) {
+        const raw = btn[3];
+        const inf = humanizeVarSource(raw || '<vazio>', options?.customFieldLabelByKey);
+        if (inf.focus) targets.push(inf.focus);
+        continue;
+      }
+      const hb = p.match(/^(header|body):(\w+) \(raw="([\s\S]*?)"\)$/);
+      if (hb) {
+        const raw = hb[3];
+        const inf = humanizeVarSource(raw || '<vazio>', options?.customFieldLabelByKey);
+        if (inf.focus) targets.push(inf.focus);
       }
     }
 
@@ -105,7 +152,7 @@ export function humanizePrecheckReason(
     return {
       title,
       details,
-      focus: inferred.focus || null,
+      focus: focusFromTargets(targets) || inferred.focus || null,
     };
   }
 

@@ -133,7 +133,7 @@ export const useCampaignDetailsController = () => {
   const metricsQuery = useQuery<any | null>({
     queryKey: ['campaignMetrics', id],
     queryFn: () => campaignService.getMetrics(id!),
-    enabled: !!id,
+    enabled: !!id && !id.startsWith('temp_'),
     staleTime: 5000,
     refetchInterval: pollingInterval,
   })
@@ -142,7 +142,7 @@ export const useCampaignDetailsController = () => {
   const messagesQuery = useQuery<CampaignMessagesResponse>({
     queryKey: ['campaignMessages', id, filterStatus],
     queryFn: () => campaignService.getMessages(id!, { status: filterStatus || undefined }),
-    enabled: !!id,
+    enabled: !!id && !id.startsWith('temp_'),
     staleTime: 5000,
     // Backup polling only while connected and active
     refetchInterval: pollingInterval,

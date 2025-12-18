@@ -361,10 +361,11 @@ export const CampaignDetailsView: React.FC<CampaignDetailsViewProps> = ({
   });
 
   const sentCountForUi = uiCounters.sent;
-  const deliveredCountForUi = uiCounters.delivered;
   const deliveredTotalForUi = uiCounters.deliveredTotal;
   const readCountForUi = uiCounters.read;
   const failedCountForUi = uiCounters.failed;
+  // "Entregues" (não lidas) = status atual delivered
+  const deliveredOnlyCountForUi = uiCounters.delivered;
   // Performance sent-only "ao vivo" (melhora UX durante SENDING)
   // - Usamos first_dispatch_at / last_sent_at quando disponíveis.
   // - Se last_sent_at ainda não existe, estimamos usando Date.now() e mostramos isso no subtexto.
@@ -563,9 +564,9 @@ export const CampaignDetailsView: React.FC<CampaignDetailsViewProps> = ({
         />
         <DetailCard
           title="Entregues"
-          value={Number(deliveredCountForUi || 0).toLocaleString()}
+          value={Number(deliveredTotalForUi || 0).toLocaleString()}
           subvalue={(deliveredTotalForUi || 0) > 0
-            ? `${(((Number(deliveredTotalForUi || 0)) / (campaign.recipients ?? 1)) * 100).toFixed(1)}% taxa de entrega`
+            ? `${(((Number(deliveredTotalForUi || 0)) / (campaign.recipients ?? 1)) * 100).toFixed(1)}% taxa de entrega${deliveredOnlyCountForUi > 0 ? ` • ${Number(deliveredOnlyCountForUi).toLocaleString()} não lidas` : ''}`
             : (hasLiveStats ? 'Aguardando webhook' : 'Aguardando webhook')}
           icon={CheckCircle2}
           color="#10b981"

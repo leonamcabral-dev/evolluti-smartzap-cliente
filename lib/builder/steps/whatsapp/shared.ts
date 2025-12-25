@@ -52,6 +52,12 @@ export async function sendWhatsAppPayload(
   credentials: WhatsAppCredentials,
   payload: unknown
 ): Promise<{ ok: true; data: unknown } | { ok: false; error: string; data?: unknown }> {
+  console.log("[WhatsApp] Payload preview:", {
+    to: (payload as { to?: string })?.to,
+    type: (payload as { type?: string })?.type,
+    messaging_product: (payload as { messaging_product?: string })?.messaging_product,
+    payload,
+  });
   const response = await fetchWithTimeout(
     `https://graph.facebook.com/v24.0/${credentials.phoneNumberId}/messages`,
     {

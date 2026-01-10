@@ -44,6 +44,8 @@ export const useTemplatesController = () => {
     header?: string | null;
     footer?: string | null;
     buttons?: Array<{ type: string; text: string; url?: string }>;
+    headerMediaPreviewUrl?: string | null;
+    headerMediaPreviewExpiresAt?: string | null;
     qualityScore?: string | null;
     rejectedReason?: string | null;
   } | null>(null);

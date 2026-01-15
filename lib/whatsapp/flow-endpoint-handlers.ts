@@ -279,9 +279,15 @@ export async function handleFlowAction(
   const { action, screen, data } = request
 
   console.log('[flow-handler] Processing:', { action, screen, data })
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/1294d6ce-76f2-430d-96ab-3ae4d7527327',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'flow-monitor',hypothesisId:'H3',location:'lib/whatsapp/flow-endpoint-handlers.ts:handleFlowAction',message:'Handler called',data:{action,screen:screen??null,hasData:Boolean(data),dataKeys:data?Object.keys(data):[]},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion agent log
 
   // Notificacao de erro do client: apenas reconhecer o payload
   if (data && typeof data === 'object' && 'error' in data) {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/1294d6ce-76f2-430d-96ab-3ae4d7527327',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'flow-monitor',hypothesisId:'H4',location:'lib/whatsapp/flow-endpoint-handlers.ts:errorNotification',message:'Error notification received - acknowledging',data:{errorKey:(data as Record<string,unknown>).error},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion agent log
     return {
       data: {
         acknowledged: true,
@@ -289,19 +295,29 @@ export async function handleFlowAction(
     }
   }
 
+  let result: Record<string, unknown>
   switch (action) {
     case 'INIT':
-      return handleInit()
+      result = await handleInit()
+      break
 
     case 'data_exchange':
-      return handleDataExchange(screen || '', data || {})
+      result = await handleDataExchange(screen || '', data || {})
+      break
 
     case 'BACK':
-      return handleBack(screen || '', data || {})
+      result = await handleBack(screen || '', data || {})
+      break
 
     default:
-      return createErrorResponse(`Acao desconhecida: ${action}`)
+      result = createErrorResponse(`Acao desconhecida: ${action}`)
   }
+
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/1294d6ce-76f2-430d-96ab-3ae4d7527327',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'flow-monitor',hypothesisId:'H3',location:'lib/whatsapp/flow-endpoint-handlers.ts:handleFlowAction-result',message:'Handler result',data:{action,resultScreen:(result as Record<string,unknown>).screen??null,hasResultData:Boolean((result as Record<string,unknown>).data)},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion agent log
+
+  return result
 }
 
 /**

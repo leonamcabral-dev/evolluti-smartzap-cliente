@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -258,13 +259,17 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
           )
         }
         debugInfo.publicKeyConfigured = true
+        const normalizedLocalKey = publicKey.trim().replace(/\r\n/g, '\n')
+        debugInfo.publicKeyHashLocal = crypto.createHash('sha256').update(normalizedLocalKey).digest('hex').slice(0, 12)
 
         const existingKey = await metaGetEncryptionPublicKey({
           accessToken: credentials.accessToken,
           phoneNumberId: credentials.phoneNumberId,
         })
-        const normalizedLocalKey = publicKey.trim().replace(/\r\n/g, '\n')
         const normalizedMetaKey = existingKey.publicKey ? existingKey.publicKey.trim().replace(/\r\n/g, '\n') : null
+        debugInfo.publicKeyHashMeta = normalizedMetaKey
+          ? crypto.createHash('sha256').update(normalizedMetaKey).digest('hex').slice(0, 12)
+          : null
         const needsRegistration = !normalizedMetaKey || normalizedMetaKey !== normalizedLocalKey
         debugInfo.publicKeyMatchesMeta = !needsRegistration
         debugInfo.publicKeySignatureStatus = existingKey.signatureStatus ?? null
@@ -272,14 +277,28 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
         fetch('http://127.0.0.1:7243/ingest/1294d6ce-76f2-430d-96ab-3ae4d7527327',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H9',location:'app/api/flows/[id]/meta/publish/route.ts:214',message:'flow public key registration check',data:{flowId:id,hasExistingKey:Boolean(existingKey.publicKey),needsRegistration},timestamp:Date.now()})}).catch(()=>{});
         // #endregion agent log
         if (needsRegistration) {
+          debugInfo.publicKeyRegistrationAttempted = true
           await metaSetEncryptionPublicKey({
             accessToken: credentials.accessToken,
             phoneNumberId: credentials.phoneNumberId,
             publicKey,
           })
+          debugInfo.publicKeyRegistrationAttempted = true
+          debugInfo.publicKeyRegistrationSuccess = true
           // #region agent log
           fetch('http://127.0.0.1:7243/ingest/1294d6ce-76f2-430d-96ab-3ae4d7527327',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H9',location:'app/api/flows/[id]/meta/publish/route.ts:229',message:'flow public key registered',data:{flowId:id},timestamp:Date.now()})}).catch(()=>{});
           // #endregion agent log
+
+          const refreshedKey = await metaGetEncryptionPublicKey({
+            accessToken: credentials.accessToken,
+            phoneNumberId: credentials.phoneNumberId,
+          })
+          const normalizedRefreshed = refreshedKey.publicKey ? refreshedKey.publicKey.trim().replace(/\r\n/g, '\n') : null
+          debugInfo.publicKeyHashMetaAfter = normalizedRefreshed
+            ? crypto.createHash('sha256').update(normalizedRefreshed).digest('hex').slice(0, 12)
+            : null
+          debugInfo.publicKeySignatureStatusAfter = refreshedKey.signatureStatus ?? null
+          debugInfo.publicKeyMatchesMetaAfter = normalizedRefreshed === normalizedLocalKey
         }
       }
 

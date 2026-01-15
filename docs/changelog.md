@@ -62,6 +62,9 @@
 - **🏷️ Retry automático em nome não único**
   - `app/api/flows/[id]/meta/publish/route.ts` tenta um nome alternativo quando a Meta retorna erro 4016019
 
+- **🔍 Debug avançado de chave pública**
+  - `app/api/flows/[id]/meta/publish/route.ts` agora expõe hash da chave local/meta e status de assinatura
+
 ## 25/12/2025 - Debug (Run/Trace para campanhas)
 
 - **🔎 Timeline estruturada por `trace_id` (sem caçar logs)**

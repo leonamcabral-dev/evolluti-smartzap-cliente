@@ -5,34 +5,49 @@ import { ExternalLink } from 'lucide-react';
 
 export function WizardStepChecklist() {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <div className="text-sm font-semibold text-white">Checklist de 60s</div>
-      <div className="mt-1 text-xs text-gray-400">
-        Em 3 passos voce libera o Google Calendar.
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-semibold text-white">Vamos comecar!</h2>
+        <p className="mt-2 text-gray-400">
+          Em 3 passos voce conecta o Google Calendar e habilita agendamentos automaticos.
+        </p>
       </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        {[
-          { title: 'Ative a API', desc: 'Habilite Google Calendar API.' },
-          { title: 'Crie OAuth', desc: 'Cliente web com redirect.' },
-          { title: 'Cole as URLs', desc: 'Redirect + Webhook.' },
-        ].map((item) => (
-          <div key={item.title} className="rounded-xl border border-white/10 bg-black/30 p-3">
-            <div className="text-xs font-semibold text-white">{item.title}</div>
-            <div className="mt-1 text-[11px] text-gray-400">{item.desc}</div>
+
+      <div className="space-y-3">
+        <div className="flex gap-4 p-4 rounded-lg bg-white/5 border border-white/10">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-medium text-sm flex-shrink-0">1</div>
+          <div>
+            <div className="font-medium text-white">Credenciais OAuth</div>
+            <div className="text-sm text-gray-400">Crie um projeto no Google Cloud e obtenha Client ID e Secret.</div>
           </div>
-        ))}
+        </div>
+
+        <div className="flex gap-4 p-4 rounded-lg bg-white/5 border border-white/10">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-medium text-sm flex-shrink-0">2</div>
+          <div>
+            <div className="font-medium text-white">Conectar conta</div>
+            <div className="text-sm text-gray-400">Autorize o SmartZap a acessar seu Google Calendar.</div>
+          </div>
+        </div>
+
+        <div className="flex gap-4 p-4 rounded-lg bg-white/5 border border-white/10">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-medium text-sm flex-shrink-0">3</div>
+          <div>
+            <div className="font-medium text-white">Escolher calendario</div>
+            <div className="text-sm text-gray-400">Selecione qual calendario usar para os agendamentos.</div>
+          </div>
+        </div>
       </div>
-      <div className="mt-4">
-        <a
-          href="https://console.cloud.google.com/apis/credentials"
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-500/90 px-4 text-xs font-semibold text-white hover:bg-emerald-500"
-        >
-          <ExternalLink size={14} />
-          Abrir Console
-        </a>
-      </div>
+
+      <a
+        href="https://console.cloud.google.com/apis/credentials"
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300"
+      >
+        <ExternalLink size={16} />
+        Abrir Google Cloud Console
+      </a>
     </div>
   );
 }

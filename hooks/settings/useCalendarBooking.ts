@@ -505,7 +505,7 @@ export function useCalendarBooking({
     setCalendarDraft((prev) => ({ ...prev, ...patch }));
   };
 
-  const updateWorkingHours = (day: string, patch: Partial<{ enabled: boolean; start: string; end: string }>) => {
+  const updateWorkingHours = (day: string, patch: Partial<{ enabled: boolean; start: string; end: string; slots: Array<{ start: string; end: string }> }>) => {
     setCalendarDraft((prev) => ({
       ...prev,
       workingHours: prev.workingHours.map((entry) =>

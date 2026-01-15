@@ -1,9 +1,8 @@
 'use client';
 
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import type { CalendarWizardModalProps } from './types';
-import { WizardSidebar } from './WizardSidebar';
 import { WizardStepChecklist } from './WizardStepChecklist';
 import { WizardStepCredentials } from './WizardStepCredentials';
 import { WizardStepConnect } from './WizardStepConnect';
@@ -16,22 +15,14 @@ export function CalendarWizardModal({
   calendarWizardError,
   calendarWizardCanContinue,
   calendarTestLoading,
-
-  // Step errors
   calendarCredsError,
   calendarAuthError,
   calendarListError,
-
-  // Sidebar props
   calendarCredsStatus,
   calendarAuthStatus,
   handleCalendarWizardStepClick,
-
-  // Navigation
   handleCalendarWizardBack,
   handleCalendarWizardNext,
-
-  // Step 1 props
   calendarCredsLoading,
   calendarCredsSaving,
   calendarClientIdDraft,
@@ -51,14 +42,10 @@ export function CalendarWizardModal({
   handleSaveCalendarCreds,
   handleRemoveCalendarCreds,
   handleCopyCalendarValue,
-
-  // Step 2 props
   calendarConnectLoading,
   handleConnectCalendar,
   handleDisconnectCalendar,
   fetchCalendarAuthStatus,
-
-  // Step 3 props
   calendarList,
   calendarListLoading,
   calendarSelectionId,
@@ -78,129 +65,160 @@ export function CalendarWizardModal({
     || (calendarWizardStep === 2 && calendarAuthError)
     || (calendarWizardStep === 3 && calendarListError);
 
+  const steps = [
+    { id: 0, label: 'Inicio', done: true },
+    { id: 1, label: 'Credenciais', done: !!calendarCredsStatus?.isConfigured },
+    { id: 2, label: 'Conectar', done: !!calendarAuthStatus?.connected },
+    { id: 3, label: 'Calendario', done: !!calendarAuthStatus?.calendar?.calendarId },
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 bg-zinc-950 text-white">
-      <div className="flex h-full flex-col lg:flex-row">
-        <WizardSidebar
-          calendarWizardStep={calendarWizardStep}
-          calendarCredsStatus={calendarCredsStatus}
-          calendarAuthStatus={calendarAuthStatus}
-          handleCalendarWizardStepClick={handleCalendarWizardStepClick}
-        />
-
-        <main className="flex-1 overflow-y-auto p-6 lg:p-10">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="text-xl font-semibold text-white">Conectar Google Calendar</div>
-              <div className="mt-1 text-sm text-gray-400">
-                Voce so faz isso uma vez. Depois o agendamento roda sozinho.
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsCalendarWizardOpen(false)}
-                className="h-9 px-4 rounded-lg border border-white/10 bg-white/5 text-xs text-white hover:bg-white/10 transition-colors"
-              >
-                Salvar e sair
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsCalendarWizardOpen(false)}
-                className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10 transition-colors"
-              >
-                <X size={16} />
-              </button>
-            </div>
+    <div className="fixed inset-0 z-50 bg-zinc-950 overflow-y-auto p-6">
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-lg font-semibold text-white">Conectar Google Calendar</h1>
+            <p className="text-sm text-gray-500">Passo {calendarWizardStep + 1} de 4</p>
           </div>
+          <button
+            type="button"
+            onClick={() => setIsCalendarWizardOpen(false)}
+            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
 
-          <div className="mt-6 max-w-3xl space-y-5">
-            {currentError && (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-100">
-                {currentError}
-              </div>
-            )}
+        {/* Progress bar */}
+        <div className="mb-8">
+          <div className="flex gap-2">
+            {steps.map((step) => {
+              const isActive = calendarWizardStep === step.id;
+              const isClickable = step.id === 0 || step.id === 1 
+                || (step.id === 2 && calendarCredsStatus?.isConfigured)
+                || (step.id === 3 && calendarAuthStatus?.connected);
 
-            {calendarWizardStep === 0 && <WizardStepChecklist />}
-
-            {calendarWizardStep === 1 && (
-              <WizardStepCredentials
-                calendarCredsStatus={calendarCredsStatus}
-                calendarAuthStatus={calendarAuthStatus}
-                calendarCredsLoading={calendarCredsLoading}
-                calendarCredsSaving={calendarCredsSaving}
-                calendarClientIdDraft={calendarClientIdDraft}
-                calendarClientSecretDraft={calendarClientSecretDraft}
-                calendarBaseUrl={calendarBaseUrl}
-                calendarBaseUrlDraft={calendarBaseUrlDraft}
-                calendarBaseUrlEditing={calendarBaseUrlEditing}
-                calendarRedirectUrl={calendarRedirectUrl}
-                calendarClientIdValid={calendarClientIdValid}
-                calendarClientSecretValid={calendarClientSecretValid}
-                calendarCredsFormValid={calendarCredsFormValid}
-                calendarCredsSourceLabel={calendarCredsSourceLabel}
-                setCalendarClientIdDraft={setCalendarClientIdDraft}
-                setCalendarClientSecretDraft={setCalendarClientSecretDraft}
-                setCalendarBaseUrlDraft={setCalendarBaseUrlDraft}
-                setCalendarBaseUrlEditing={setCalendarBaseUrlEditing}
-                handleSaveCalendarCreds={handleSaveCalendarCreds}
-                handleRemoveCalendarCreds={handleRemoveCalendarCreds}
-                handleCopyCalendarValue={handleCopyCalendarValue}
-              />
-            )}
-
-            {calendarWizardStep === 2 && (
-              <WizardStepConnect
-                calendarCredsStatus={calendarCredsStatus}
-                calendarAuthStatus={calendarAuthStatus}
-                calendarConnectLoading={calendarConnectLoading}
-                handleConnectCalendar={handleConnectCalendar}
-                handleDisconnectCalendar={handleDisconnectCalendar}
-                fetchCalendarAuthStatus={fetchCalendarAuthStatus}
-              />
-            )}
-
-            {calendarWizardStep === 3 && (
-              <WizardStepCalendarSelection
-                calendarCredsStatus={calendarCredsStatus}
-                calendarAuthStatus={calendarAuthStatus}
-                calendarList={calendarList}
-                calendarListLoading={calendarListLoading}
-                calendarListError={calendarListError}
-                calendarSelectionId={calendarSelectionId}
-                calendarSelectionSaving={calendarSelectionSaving}
-                calendarListQuery={calendarListQuery}
-                filteredCalendarList={filteredCalendarList}
-                selectedCalendarTimeZone={selectedCalendarTimeZone}
-                setCalendarSelectionId={setCalendarSelectionId}
-                setCalendarListQuery={setCalendarListQuery}
-                fetchCalendarList={fetchCalendarList}
-                handleSaveCalendarSelection={handleSaveCalendarSelection}
-              />
-            )}
-
-            {/* Wizard Navigation */}
-            <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={handleCalendarWizardBack}
-                className="h-9 px-4 rounded-lg border border-white/10 bg-white/5 text-xs text-white hover:bg-white/10 transition-colors"
-              >
-                Voltar
-              </button>
-              <button
-                type="button"
-                onClick={handleCalendarWizardNext}
-                disabled={!calendarWizardCanContinue || calendarTestLoading}
-                className="h-9 px-4 rounded-lg bg-emerald-500/90 text-white text-xs font-medium hover:bg-emerald-500 transition-colors disabled:opacity-40"
-              >
-                {calendarWizardStep === 3
-                  ? (calendarTestLoading ? 'Testando...' : 'Concluir e testar')
-                  : 'Continuar'}
-              </button>
-            </div>
+              return (
+                <button
+                  key={step.id}
+                  type="button"
+                  onClick={() => isClickable && handleCalendarWizardStepClick(step.id)}
+                  disabled={!isClickable}
+                  className={`flex-1 h-2 rounded-full transition-colors ${
+                    isActive
+                      ? 'bg-emerald-500'
+                      : step.done
+                        ? 'bg-emerald-500/50'
+                        : 'bg-white/10'
+                  } ${isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed'}`}
+                  title={step.label}
+                />
+              );
+            })}
           </div>
-        </main>
+          <div className="flex justify-between mt-2">
+            {steps.map((step) => {
+              const isActive = calendarWizardStep === step.id;
+              return (
+                <span 
+                  key={step.id} 
+                  className={`text-xs ${isActive ? 'text-emerald-400 font-medium' : 'text-gray-500'}`}
+                >
+                  {step.done && !isActive && <Check size={12} className="inline mr-1" />}
+                  {step.label}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Error */}
+        {currentError && (
+          <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            {currentError}
+          </div>
+        )}
+
+        {/* Content */}
+        {calendarWizardStep === 0 && <WizardStepChecklist />}
+
+        {calendarWizardStep === 1 && (
+          <WizardStepCredentials
+            calendarCredsStatus={calendarCredsStatus}
+            calendarAuthStatus={calendarAuthStatus}
+            calendarCredsLoading={calendarCredsLoading}
+            calendarCredsSaving={calendarCredsSaving}
+            calendarClientIdDraft={calendarClientIdDraft}
+            calendarClientSecretDraft={calendarClientSecretDraft}
+            calendarBaseUrl={calendarBaseUrl}
+            calendarBaseUrlDraft={calendarBaseUrlDraft}
+            calendarBaseUrlEditing={calendarBaseUrlEditing}
+            calendarRedirectUrl={calendarRedirectUrl}
+            calendarClientIdValid={calendarClientIdValid}
+            calendarClientSecretValid={calendarClientSecretValid}
+            calendarCredsFormValid={calendarCredsFormValid}
+            calendarCredsSourceLabel={calendarCredsSourceLabel}
+            setCalendarClientIdDraft={setCalendarClientIdDraft}
+            setCalendarClientSecretDraft={setCalendarClientSecretDraft}
+            setCalendarBaseUrlDraft={setCalendarBaseUrlDraft}
+            setCalendarBaseUrlEditing={setCalendarBaseUrlEditing}
+            handleSaveCalendarCreds={handleSaveCalendarCreds}
+            handleRemoveCalendarCreds={handleRemoveCalendarCreds}
+            handleCopyCalendarValue={handleCopyCalendarValue}
+          />
+        )}
+
+        {calendarWizardStep === 2 && (
+          <WizardStepConnect
+            calendarCredsStatus={calendarCredsStatus}
+            calendarAuthStatus={calendarAuthStatus}
+            calendarConnectLoading={calendarConnectLoading}
+            handleConnectCalendar={handleConnectCalendar}
+            handleDisconnectCalendar={handleDisconnectCalendar}
+            fetchCalendarAuthStatus={fetchCalendarAuthStatus}
+          />
+        )}
+
+        {calendarWizardStep === 3 && (
+          <WizardStepCalendarSelection
+            calendarCredsStatus={calendarCredsStatus}
+            calendarAuthStatus={calendarAuthStatus}
+            calendarList={calendarList}
+            calendarListLoading={calendarListLoading}
+            calendarListError={calendarListError}
+            calendarSelectionId={calendarSelectionId}
+            calendarSelectionSaving={calendarSelectionSaving}
+            calendarListQuery={calendarListQuery}
+            filteredCalendarList={filteredCalendarList}
+            selectedCalendarTimeZone={selectedCalendarTimeZone}
+            setCalendarSelectionId={setCalendarSelectionId}
+            setCalendarListQuery={setCalendarListQuery}
+            fetchCalendarList={fetchCalendarList}
+            handleSaveCalendarSelection={handleSaveCalendarSelection}
+          />
+        )}
+
+        {/* Navigation */}
+        <div className="flex justify-between mt-8 pt-6 border-t border-white/10">
+          <button
+            type="button"
+            onClick={handleCalendarWizardBack}
+            className="h-10 px-5 rounded-lg border border-white/10 text-sm text-white hover:bg-white/5 transition-colors"
+          >
+            {calendarWizardStep === 0 ? 'Fechar' : 'Voltar'}
+          </button>
+          <button
+            type="button"
+            onClick={handleCalendarWizardNext}
+            disabled={!calendarWizardCanContinue || calendarTestLoading}
+            className="h-10 px-6 rounded-lg bg-emerald-500 text-sm font-medium text-white hover:bg-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {calendarWizardStep === 3
+              ? (calendarTestLoading ? 'Testando...' : 'Concluir')
+              : 'Continuar'}
+          </button>
+        </div>
       </div>
     </div>
   );

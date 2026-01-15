@@ -8,6 +8,7 @@ import {
   MAX_ADVANCE_OPTIONS,
 } from '../../../../hooks/settings/useCalendarBooking';
 import type { BookingConfigSectionProps } from './types';
+import type { TimeSlot } from '../../../../types';
 
 export function BookingConfigSection({
   calendarBookingLoading,
@@ -208,45 +209,107 @@ export function BookingConfigSection({
 
         {/* Horários dos dias habilitados */}
         <div className="space-y-3">
-          {enabledDays.map((day) => (
-            <div
-              key={day.day}
-              className="flex items-center gap-4 rounded-xl border border-white/10 bg-zinc-900/40 px-4 py-3"
-            >
-              <span className="text-sm text-white w-24 font-medium">
-                {CALENDAR_WEEK_LABELS[day.day] || day.day}
-              </span>
-              
-              <div className="flex items-center gap-2 flex-1">
-                <input
-                  type="time"
-                  value={day.start}
-                  disabled={!isEditingCalendarBooking}
-                  onChange={(e) => updateWorkingHours(day.day, { start: e.target.value })}
-                  className="px-3 py-2 bg-zinc-900/60 border border-white/10 rounded-lg text-sm text-white font-mono disabled:opacity-50"
-                />
-                <span className="text-gray-500 text-sm">ate</span>
-                <input
-                  type="time"
-                  value={day.end}
-                  disabled={!isEditingCalendarBooking}
-                  onChange={(e) => updateWorkingHours(day.day, { end: e.target.value })}
-                  className="px-3 py-2 bg-zinc-900/60 border border-white/10 rounded-lg text-sm text-white font-mono disabled:opacity-50"
-                />
+          {enabledDays.map((day) => {
+            // Usa slots se existir, senão usa start/end como slot único
+            const slots: TimeSlot[] = day.slots && day.slots.length > 0 
+              ? day.slots 
+              : [{ start: day.start, end: day.end }];
+            
+            return (
+              <div
+                key={day.day}
+                className="rounded-xl border border-white/10 bg-zinc-900/40 px-4 py-3"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-white font-medium">
+                    {CALENDAR_WEEK_LABELS[day.day] || day.day}
+                  </span>
+                  {isEditingCalendarBooking && (
+                    <button
+                      type="button"
+                      onClick={() => updateWorkingHours(day.day, { enabled: false })}
+                      className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                      title="Desabilitar dia"
+                    >
+                      <Minus size={14} />
+                    </button>
+                  )}
+                </div>
+                
+                {/* Lista de períodos */}
+                <div className="space-y-2">
+                  {slots.map((slot, slotIndex) => (
+                    <div key={slotIndex} className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={slot.start}
+                        disabled={!isEditingCalendarBooking}
+                        onChange={(e) => {
+                          const newSlots = [...slots];
+                          newSlots[slotIndex] = { ...slot, start: e.target.value };
+                          if (newSlots.length === 1) {
+                            updateWorkingHours(day.day, { start: e.target.value, slots: newSlots });
+                          } else {
+                            updateWorkingHours(day.day, { slots: newSlots });
+                          }
+                        }}
+                        className="px-3 py-2 bg-zinc-900/60 border border-white/10 rounded-lg text-sm text-white font-mono disabled:opacity-50"
+                      />
+                      <span className="text-gray-500 text-sm">ate</span>
+                      <input
+                        type="time"
+                        value={slot.end}
+                        disabled={!isEditingCalendarBooking}
+                        onChange={(e) => {
+                          const newSlots = [...slots];
+                          newSlots[slotIndex] = { ...slot, end: e.target.value };
+                          if (newSlots.length === 1) {
+                            updateWorkingHours(day.day, { end: e.target.value, slots: newSlots });
+                          } else {
+                            updateWorkingHours(day.day, { slots: newSlots });
+                          }
+                        }}
+                        className="px-3 py-2 bg-zinc-900/60 border border-white/10 rounded-lg text-sm text-white font-mono disabled:opacity-50"
+                      />
+                      
+                      {isEditingCalendarBooking && slots.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newSlots = slots.filter((_, i) => i !== slotIndex);
+                            updateWorkingHours(day.day, { 
+                              start: newSlots[0]?.start || '09:00',
+                              end: newSlots[0]?.end || '18:00',
+                              slots: newSlots 
+                            });
+                          }}
+                          className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                          title="Remover periodo"
+                        >
+                          <Minus size={14} />
+                        </button>
+                      )}
+                      
+                      {isEditingCalendarBooking && slotIndex === slots.length - 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const lastSlot = slots[slots.length - 1];
+                            const newSlots = [...slots, { start: '14:00', end: '18:00' }];
+                            updateWorkingHours(day.day, { slots: newSlots });
+                          }}
+                          className="p-1 text-gray-500 hover:text-emerald-400 transition-colors"
+                          title="Adicionar periodo (ex: apos almoco)"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-
-              {isEditingCalendarBooking && (
-                <button
-                  type="button"
-                  onClick={() => updateWorkingHours(day.day, { enabled: false })}
-                  className="p-2 text-gray-500 hover:text-red-400 transition-colors"
-                  title="Desabilitar dia"
-                >
-                  <Minus size={16} />
-                </button>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {enabledDays.length === 0 && (

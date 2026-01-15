@@ -7,11 +7,17 @@ const CONFIG_KEY = 'calendar_booking_config'
 
 type Weekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
+interface TimeSlot {
+  start: string
+  end: string
+}
+
 interface WorkingHoursDay {
   day: Weekday
   enabled: boolean
   start: string
   end: string
+  slots?: TimeSlot[]
 }
 
 export interface CalendarBookingConfig {
@@ -19,6 +25,9 @@ export interface CalendarBookingConfig {
   slotDurationMinutes: number
   slotBufferMinutes: number
   workingHours: WorkingHoursDay[]
+  minAdvanceHours?: number
+  maxAdvanceDays?: number
+  allowSimultaneous?: boolean
 }
 
 const DEFAULT_CONFIG: CalendarBookingConfig = {
@@ -34,6 +43,9 @@ const DEFAULT_CONFIG: CalendarBookingConfig = {
     { day: 'sat', enabled: false, start: '09:00', end: '13:00' },
     { day: 'sun', enabled: false, start: '09:00', end: '13:00' },
   ],
+  minAdvanceHours: 4,
+  maxAdvanceDays: 14,
+  allowSimultaneous: false,
 }
 
 function normalizeTime(value: unknown, fallback: string): string {
@@ -44,6 +56,21 @@ function normalizeTime(value: unknown, fallback: string): string {
   if (Number.isNaN(hh) || Number.isNaN(mm)) return fallback
   if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return fallback
   return trimmed
+}
+
+function normalizeSlots(slots: unknown): TimeSlot[] | undefined {
+  if (!Array.isArray(slots) || slots.length === 0) return undefined
+  const normalized: TimeSlot[] = []
+  for (const slot of slots) {
+    if (!slot || typeof slot !== 'object') continue
+    const s = slot as TimeSlot
+    const start = normalizeTime(s.start, '')
+    const end = normalizeTime(s.end, '')
+    if (start && end) {
+      normalized.push({ start, end })
+    }
+  }
+  return normalized.length > 0 ? normalized : undefined
 }
 
 function normalizeConfig(input?: Partial<CalendarBookingConfig>): CalendarBookingConfig {
@@ -59,11 +86,13 @@ function normalizeConfig(input?: Partial<CalendarBookingConfig>): CalendarBookin
   const workingHours = DEFAULT_CONFIG.workingHours.map((defaultDay) => {
     const raw = byDay.get(defaultDay.day)
     if (!raw) return defaultDay
+    const slots = normalizeSlots(raw.slots)
     return {
       day: defaultDay.day,
       enabled: boolFromUnknown(raw.enabled, defaultDay.enabled),
       start: normalizeTime(raw.start, defaultDay.start),
       end: normalizeTime(raw.end, defaultDay.end),
+      ...(slots ? { slots } : {}),
     }
   })
 
@@ -72,6 +101,9 @@ function normalizeConfig(input?: Partial<CalendarBookingConfig>): CalendarBookin
     slotDurationMinutes: clampInt(input?.slotDurationMinutes, 5, 240, DEFAULT_CONFIG.slotDurationMinutes),
     slotBufferMinutes: clampInt(input?.slotBufferMinutes, 0, 120, DEFAULT_CONFIG.slotBufferMinutes),
     workingHours,
+    minAdvanceHours: clampInt(input?.minAdvanceHours, 0, 168, DEFAULT_CONFIG.minAdvanceHours!),
+    maxAdvanceDays: clampInt(input?.maxAdvanceDays, 1, 90, DEFAULT_CONFIG.maxAdvanceDays!),
+    allowSimultaneous: boolFromUnknown(input?.allowSimultaneous, DEFAULT_CONFIG.allowSimultaneous!),
   }
 }
 

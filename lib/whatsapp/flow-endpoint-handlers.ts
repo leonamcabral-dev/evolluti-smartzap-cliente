@@ -80,8 +80,14 @@ async function getCalendarBookingConfig(): Promise<CalendarBookingConfig> {
   if (!raw) return DEFAULT_CONFIG
   try {
     const parsed = JSON.parse(raw)
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/1294d6ce-76f2-430d-96ab-3ae4d7527327',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'flow-endpoint-handlers.ts:84',message:'calendar_booking_config parsed',data:{hasMaxAdvanceDays:parsed?.maxAdvanceDays !== undefined,rawMaxAdvanceDays:parsed?.maxAdvanceDays,hasMinAdvanceHours:parsed?.minAdvanceHours !== undefined,rawMinAdvanceHours:parsed?.minAdvanceHours},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+    // #endregion agent log
     return { ...DEFAULT_CONFIG, ...parsed }
   } catch {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/1294d6ce-76f2-430d-96ab-3ae4d7527327',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'flow-endpoint-handlers.ts:88',message:'calendar_booking_config parse failed',data:{rawLength:raw?.length ?? 0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
+    // #endregion agent log
     return DEFAULT_CONFIG
   }
 }
@@ -141,6 +147,10 @@ async function getAvailableDates(daysToShow: number = 14): Promise<Array<{ id: s
   let dayOffset = 0
   const maxAttempts = Math.max(60, maxAdvanceDays * 2)
 
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/1294d6ce-76f2-430d-96ab-3ae4d7527327',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'flow-endpoint-handlers.ts:145',message:'getAvailableDates start',data:{daysToShow,timezone:timeZone,maxAdvanceDays,effectiveDaysToShow,todayStr,maxAttempts},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
+  // #endregion agent log
+
   while (dates.length < effectiveDaysToShow && dayOffset < maxAttempts && dayOffset <= maxAdvanceDays) {
     // Cria data em UTC para evitar problemas de timezone
     const utcDate = new Date(Date.UTC(year, month - 1, day + dayOffset, 12, 0, 0))
@@ -167,6 +177,9 @@ async function getAvailableDates(daysToShow: number = 14): Promise<Array<{ id: s
     dayOffset++
   }
 
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/1294d6ce-76f2-430d-96ab-3ae4d7527327',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'flow-endpoint-handlers.ts:171',message:'getAvailableDates result',data:{datesCount:dates.length,firstDate:dates[0]?.id,lastDate:dates[dates.length-1]?.id,dayOffsetFinal:dayOffset,maxAdvanceDays,effectiveDaysToShow},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H4'})}).catch(()=>{});
+  // #endregion agent log
   console.log('[getAvailableDates] Result:', dates.length, 'dates')
   return dates
 }
@@ -225,42 +238,50 @@ async function getAvailableSlots(
     return []
   }
 
-  const workStart = parseTimeToMinutes(workingDay.start)
-  const workEnd = parseTimeToMinutes(workingDay.end)
+  // Suporta múltiplos períodos por dia (ex: 9h-12h e 14h-18h)
+  // Se não tiver slots definidos, usa start/end como período único
+  const workPeriods = workingDay.slots && workingDay.slots.length > 0
+    ? workingDay.slots
+    : [{ start: workingDay.start, end: workingDay.end }]
 
-  // Gera slots
+  // Gera slots para cada período de trabalho
   const slots: Array<{ id: string; title: string }> = []
-  let currentMinutes = workStart
 
-  while (currentMinutes + slotDuration <= workEnd) {
-    const hours = Math.floor(currentMinutes / 60)
-    const mins = currentMinutes % 60
-    const timeStr = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`
+  for (const period of workPeriods) {
+    const workStart = parseTimeToMinutes(period.start)
+    const workEnd = parseTimeToMinutes(period.end)
+    let currentMinutes = workStart
 
-    const slotStart = fromZonedTime(`${dateStr}T${timeStr}:00`, timeZone)
-    const slotEnd = new Date(slotStart.getTime() + slotDuration * 60 * 1000)
+    while (currentMinutes + slotDuration <= workEnd) {
+      const hours = Math.floor(currentMinutes / 60)
+      const mins = currentMinutes % 60
+      const timeStr = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`
 
-    // Verifica se slot está no passado ou dentro do período mínimo de antecedência
-    if (slotStart.getTime() <= minAllowedTime.getTime()) {
+      const slotStart = fromZonedTime(`${dateStr}T${timeStr}:00`, timeZone)
+      const slotEnd = new Date(slotStart.getTime() + slotDuration * 60 * 1000)
+
+      // Verifica se slot está no passado ou dentro do período mínimo de antecedência
+      if (slotStart.getTime() <= minAllowedTime.getTime()) {
+        currentMinutes += slotDuration
+        continue
+      }
+
+      // Verifica colisao com eventos ocupados
+      const slotStartMs = slotStart.getTime()
+      const slotEndMs = slotEnd.getTime()
+      const hasConflict = busy.some(
+        (b) => slotStartMs < b.endMs && slotEndMs > b.startMs
+      )
+
+      if (!hasConflict) {
+        slots.push({
+          id: slotStart.toISOString(),
+          title: timeStr,
+        })
+      }
+
       currentMinutes += slotDuration
-      continue
     }
-
-    // Verifica colisao com eventos ocupados
-    const slotStartMs = slotStart.getTime()
-    const slotEndMs = slotEnd.getTime()
-    const hasConflict = busy.some(
-      (b) => slotStartMs < b.endMs && slotEndMs > b.startMs
-    )
-
-    if (!hasConflict) {
-      slots.push({
-        id: slotStart.toISOString(),
-        title: timeStr,
-      })
-    }
-
-    currentMinutes += slotDuration
   }
 
   return slots

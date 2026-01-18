@@ -46,14 +46,14 @@ export const CACHE = {
   campaigns: 15 * 1000,
   /** Stale time for contacts data (30s) */
   contacts: 30 * 1000,
-  /** Stale time for templates (rarely change) */
-  templates: 60 * 1000,
+  /** Stale time for templates (10 min - rarely change) */
+  templates: 10 * 60 * 1000,
   /** Stale time for account limits (1 hour) */
   accountLimits: 60 * 60 * 1000,
   /** Stale time for stats (1 minute) */
   stats: 60 * 1000,
-  /** Stale time for custom fields (1 minute) */
-  customFields: 60 * 1000,
+  /** Stale time for custom fields (10 min - rarely change) */
+  customFields: 10 * 60 * 1000,
 } as const
 
 // ============================================================================

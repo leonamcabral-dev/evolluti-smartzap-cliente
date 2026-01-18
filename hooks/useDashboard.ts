@@ -13,8 +13,8 @@ export const useDashboardController = (initialData?: { stats: any, recentCampaig
     initialData: initialData?.stats,
     placeholderData: (previous) => previous,
     refetchInterval: POLLING_INTERVAL,
-    staleTime: 0,
-    gcTime: 60000,
+    staleTime: 20_000, // 20 seconds - avoids refetch when switching tabs
+    gcTime: 5 * 60 * 1000, // 5 minutes - keep data longer in cache
     refetchOnMount: true,
     refetchOnWindowFocus: false,
     // Realtime configuration

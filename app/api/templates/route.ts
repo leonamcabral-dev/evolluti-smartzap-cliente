@@ -5,8 +5,9 @@ import { canonicalTemplateCategory } from '@/lib/template-category'
 import { createHash } from 'crypto'
 import { fetchWithTimeout, safeJson } from '@/lib/server-http'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// Cache GET requests for 5 minutes - templates rarely change
+// POST/PUT/DELETE remain dynamic by default
+export const revalidate = 300
 
 interface MetaTemplateComponent {
   type: 'HEADER' | 'BODY' | 'FOOTER' | 'BUTTONS'

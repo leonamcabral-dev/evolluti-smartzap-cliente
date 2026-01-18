@@ -99,109 +99,120 @@ interface ContactTableRowProps {
   onDelete: (id: string) => void;
 }
 
-const ContactTableRow: React.FC<ContactTableRowProps> = ({
-  contact,
-  isSelected,
-  showSuppressionDetails,
-  onToggleSelect,
-  onEdit,
-  onDelete
-}) => {
-  const displayName = contact.name || contact.phone;
+// Memoized row component - prevents re-render when other rows change
+const ContactTableRow = React.memo(
+  function ContactTableRow({
+    contact,
+    isSelected,
+    showSuppressionDetails,
+    onToggleSelect,
+    onEdit,
+    onDelete
+  }: ContactTableRowProps) {
+    const displayName = contact.name || contact.phone;
 
-  return (
-    <tr className="hover:bg-white/5 transition-all duration-200 group hover:shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
-      <td className="px-6 py-5">
-        <input
-          type="checkbox"
-          className="rounded border-white/10 bg-zinc-800 checked:bg-primary-500"
-          checked={isSelected}
-          onChange={() => onToggleSelect(contact.id)}
-          aria-label={`Selecionar ${displayName}`}
-        />
-      </td>
-      <td className="px-6 py-5">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-full bg-linear-to-br from-zinc-700 to-zinc-900 border border-white/10 text-white flex items-center justify-center font-bold text-xs shadow-inner"
-            aria-hidden="true"
-          >
-            {getContactInitials(displayName)}
-          </div>
-          <div>
-            <p className="font-medium text-white group-hover:text-primary-400 transition-colors">
-              {displayName}
-            </p>
-            <p className="text-xs text-gray-500 font-mono">{contact.phone}</p>
-          </div>
-        </div>
-      </td>
-      <td className="px-6 py-5">
-        <div className="flex gap-1.5 flex-wrap">
-          {contact.tags.map((tag, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium bg-zinc-800 text-gray-300 border border-white/5"
+    return (
+      <tr className="hover:bg-white/5 transition-all duration-200 group hover:shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
+        <td className="px-6 py-5">
+          <input
+            type="checkbox"
+            className="rounded border-white/10 bg-zinc-800 checked:bg-primary-500"
+            checked={isSelected}
+            onChange={() => onToggleSelect(contact.id)}
+            aria-label={`Selecionar ${displayName}`}
+          />
+        </td>
+        <td className="px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-full bg-linear-to-br from-zinc-700 to-zinc-900 border border-white/10 text-white flex items-center justify-center font-bold text-xs shadow-inner"
+              aria-hidden="true"
             >
-              <Tag size={10} className="mr-1.5 opacity-50" aria-hidden="true" /> {tag}
-            </span>
-          ))}
-        </div>
-      </td>
-      <td className="px-6 py-5">
-        <ContactStatusBadge status={contact.status} />
-      </td>
-      {showSuppressionDetails && (
-        <td className="px-6 py-5 text-xs text-gray-400">
-          <div className="text-sm text-white">{contact.suppressionReason || '—'}</div>
-          <div className="text-[10px] text-gray-500">
-            {contact.suppressionSource ? `Fonte: ${contact.suppressionSource}` : 'Fonte: —'}
+              {getContactInitials(displayName)}
+            </div>
+            <div>
+              <p className="font-medium text-white group-hover:text-primary-400 transition-colors">
+                {displayName}
+              </p>
+              <p className="text-xs text-gray-500 font-mono">{contact.phone}</p>
+            </div>
           </div>
         </td>
-      )}
-      <td className="px-6 py-5 text-gray-500 text-xs">
-        {contact.createdAt ? new Date(contact.createdAt).toLocaleDateString('pt-BR') : '-'}
-      </td>
-      <td className="px-6 py-5 text-gray-500 text-xs">
-        {contact.updatedAt
-          ? calculateRelativeTime(contact.updatedAt)
-          : (contact.createdAt ? calculateRelativeTime(contact.createdAt) : '-')}
-      </td>
-      <td className="px-6 py-5 text-right">
-        <div className="flex items-center justify-end gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => onEdit(contact)}
-                className="text-gray-500 hover:text-primary-400 p-1.5 rounded-lg hover:bg-primary-500/10 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2"
-                aria-label={`Editar contato ${displayName}`}
+        <td className="px-6 py-5">
+          <div className="flex gap-1.5 flex-wrap">
+            {contact.tags.map((tag, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium bg-zinc-800 text-gray-300 border border-white/5"
               >
-                <Edit2 size={16} aria-hidden="true" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Editar contato</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => onDelete(contact.id)}
-                className="text-gray-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-500/10 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500 focus-visible:outline-offset-2"
-                aria-label={`Excluir contato ${displayName}`}
-              >
-                <Trash2 size={16} aria-hidden="true" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Excluir contato</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </td>
-    </tr>
-  );
-};
+                <Tag size={10} className="mr-1.5 opacity-50" aria-hidden="true" /> {tag}
+              </span>
+            ))}
+          </div>
+        </td>
+        <td className="px-6 py-5">
+          <ContactStatusBadge status={contact.status} />
+        </td>
+        {showSuppressionDetails && (
+          <td className="px-6 py-5 text-xs text-gray-400">
+            <div className="text-sm text-white">{contact.suppressionReason || '—'}</div>
+            <div className="text-[10px] text-gray-500">
+              {contact.suppressionSource ? `Fonte: ${contact.suppressionSource}` : 'Fonte: —'}
+            </div>
+          </td>
+        )}
+        <td className="px-6 py-5 text-gray-500 text-xs">
+          {contact.createdAt ? new Date(contact.createdAt).toLocaleDateString('pt-BR') : '-'}
+        </td>
+        <td className="px-6 py-5 text-gray-500 text-xs">
+          {contact.updatedAt
+            ? calculateRelativeTime(contact.updatedAt)
+            : (contact.createdAt ? calculateRelativeTime(contact.createdAt) : '-')}
+        </td>
+        <td className="px-6 py-5 text-right">
+          <div className="flex items-center justify-end gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => onEdit(contact)}
+                  className="text-gray-500 hover:text-primary-400 p-1.5 rounded-lg hover:bg-primary-500/10 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2"
+                  aria-label={`Editar contato ${displayName}`}
+                >
+                  <Edit2 size={16} aria-hidden="true" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Editar contato</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => onDelete(contact.id)}
+                  className="text-gray-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-500/10 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500 focus-visible:outline-offset-2"
+                  aria-label={`Excluir contato ${displayName}`}
+                >
+                  <Trash2 size={16} aria-hidden="true" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Excluir contato</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </td>
+      </tr>
+    );
+  },
+  // Custom comparison: re-render only when relevant props change
+  (prev, next) => (
+    prev.contact.id === next.contact.id &&
+    prev.contact.updatedAt === next.contact.updatedAt &&
+    prev.contact.status === next.contact.status &&
+    prev.isSelected === next.isSelected &&
+    prev.showSuppressionDetails === next.showSuppressionDetails
+  )
+);
 
 interface ContactStatusBadgeProps {
   status: ContactStatus;

@@ -8,7 +8,7 @@
  * Part of the Realtime infrastructure (T006).
  */
 
-import { useEffect, useState, useCallback, useRef, type ReactNode } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo, type ReactNode } from 'react'
 import { RealtimeContext, type RealtimeContextValue } from '@/hooks/useRealtime'
 import { createRealtimeChannel, activateChannel, removeChannel } from '@/lib/supabase-realtime'
 import type { ChannelStatus } from '@/types'
@@ -110,13 +110,11 @@ export function RealtimeProvider({ children }: RealtimeProviderProps) {
         }
     }, [connect])
 
-    // Context value
-    const value: RealtimeContextValue = {
-        isConnected,
-        status,
-        error,
-        reconnect,
-    }
+    // Context value - memoized to prevent unnecessary re-renders in consumers
+    const value = useMemo<RealtimeContextValue>(
+        () => ({ isConnected, status, error, reconnect }),
+        [isConnected, status, error, reconnect]
+    )
 
     return (
         <RealtimeContext.Provider value={value}>

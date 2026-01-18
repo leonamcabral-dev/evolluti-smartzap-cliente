@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { RefreshCw, AlertTriangle, ArrowLeft, Activity, TrendingUp, Timer, Hash } from 'lucide-react'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from '@/components/ui/lazy-charts'
 import { PrefetchLink } from '@/components/ui/PrefetchLink'
 import { Page, PageActions, PageDescription, PageHeader, PageTitle } from '@/components/ui/page'
 import type { SettingsPerformanceResponse } from '@/services/performanceService'

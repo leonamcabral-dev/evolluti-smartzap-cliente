@@ -4,7 +4,7 @@ import React from 'react';
 import { PrefetchLink } from '@/components/ui/PrefetchLink';
 import { Page, PageActions, PageDescription, PageHeader, PageTitle } from '@/components/ui/page';
 import { Send, TrendingUp, AlertCircle, CheckCircle2, MoreHorizontal, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from '@/components/ui/lazy-charts';
 import { Campaign, CampaignStatus } from '../../../types';
 import { DashboardStats } from '../../../services/dashboardService';
 
@@ -226,11 +226,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, recentCampa
                   tickLine={false} 
                   tick={{fill: '#71717a', fontSize: 12}} 
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{backgroundColor: '#101113', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', color: '#fff'}}
                   itemStyle={{color: '#10b981'}}
                   labelStyle={{color: '#a1a1aa'}}
-                  formatter={(value: number) => [value, 'Enviadas']}
+                  formatter={(value) => [value, 'Enviadas']}
                 />
                 <Area 
                   type="monotone" 

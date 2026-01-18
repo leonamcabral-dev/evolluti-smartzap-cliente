@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// Cache GET requests for 5 minutes - flows rarely change
+// POST/PUT/DELETE remain dynamic by default
+export const revalidate = 300
 
 import { supabase } from '@/lib/supabase'
 import { settingsDb } from '@/lib/supabase-db'

@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
@@ -8,8 +9,13 @@ import { Plus, Trash2, ArrowRight, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CreateFlowFromTemplateDialog } from '@/components/features/flows/builder/CreateFlowFromTemplateDialog'
-import { CreateFlowWithAIDialog } from '@/components/features/flows/builder/CreateFlowWithAIDialog'
 import type { FlowRow } from '@/services/flowsService'
+
+// Lazy load AI dialog (~50-80KB reduction - AI dependencies)
+const CreateFlowWithAIDialog = dynamic(
+  () => import('@/components/features/flows/builder/CreateFlowWithAIDialog').then(m => ({ default: m.CreateFlowWithAIDialog })),
+  { loading: () => null }
+)
 
 function formatDateTime(value: string | null | undefined): string {
   if (!value) return '—'

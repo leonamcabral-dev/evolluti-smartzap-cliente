@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -549,7 +549,8 @@ export function DashboardShell({
         (healthStatus.services.database?.status !== 'ok' ||
             healthStatus.services.qstash.status !== 'ok')
 
-    const navItems = [
+    // Memoize navItems to prevent recreation on every render
+    const navItems = useMemo(() => [
         { path: '/', label: 'Dashboard', icon: LayoutDashboard },
         { path: '/campaigns', label: 'Campanhas', icon: MessageSquare },
         { path: '/workflows', label: 'Workflow', icon: Workflow, badge: 'beta', disabled: true },
@@ -558,7 +559,7 @@ export function DashboardShell({
         { path: '/contacts', label: 'Contatos', icon: Users },
         { path: '/settings/ai', label: 'IA', icon: Sparkles },
         { path: '/settings', label: 'Configurações', icon: Settings },
-    ].filter(item => !item.hidden)
+    ].filter(item => !item.hidden), [])
 
     const getPageTitle = (path: string) => {
         if (path === '/') return 'Dashboard'

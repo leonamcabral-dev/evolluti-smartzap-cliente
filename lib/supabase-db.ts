@@ -478,29 +478,27 @@ export const contactDb = {
 
         let suppressionMap = new Map<string, { reason: string | null; source: string | null; expiresAt: string | null }>()
         if (status === 'SUPPRESSED') {
+            // Optimized: Filter active suppressions at database level instead of fetching all
             const { data: suppressionRows, error: suppressionError } = await supabase
                 .from('phone_suppressions')
                 .select('phone,is_active,expires_at,reason,source')
+                .eq('is_active', true)
+                .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
 
             if (suppressionError) throw suppressionError
 
-            const suppressedPhones = (suppressionRows || [])
-                .filter((row: any) => {
-                    const active = isSuppressionActive({ is_active: row.is_active, expires_at: row.expires_at })
-                    if (active) {
-                        const phone = String(row.phone || '').trim()
-                        if (phone) {
-                            suppressionMap.set(phone, {
-                                reason: row.reason ?? null,
-                                source: row.source ?? null,
-                                expiresAt: row.expires_at ?? null,
-                            })
-                        }
-                    }
-                    return active
-                })
-                .map((row: any) => String(row.phone || '').trim())
-                .filter(Boolean)
+            const suppressedPhones: string[] = []
+            for (const row of suppressionRows || []) {
+                const phone = String(row.phone || '').trim()
+                if (phone) {
+                    suppressedPhones.push(phone)
+                    suppressionMap.set(phone, {
+                        reason: row.reason ?? null,
+                        source: row.source ?? null,
+                        expiresAt: row.expires_at ?? null,
+                    })
+                }
+            }
 
             if (!suppressedPhones.length) {
                 return { data: [], total: 0 }
@@ -585,14 +583,16 @@ export const contactDb = {
         }
 
         if (status === 'SUPPRESSED') {
+            // Optimized: Filter active suppressions at database level
             const { data: suppressionRows, error: suppressionError } = await supabase
                 .from('phone_suppressions')
-                .select('phone,is_active,expires_at')
+                .select('phone')
+                .eq('is_active', true)
+                .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
 
             if (suppressionError) throw suppressionError
 
             const suppressedPhones = (suppressionRows || [])
-                .filter((row: any) => isSuppressionActive({ is_active: row.is_active, expires_at: row.expires_at }))
                 .map((row: any) => String(row.phone || '').trim())
                 .filter(Boolean)
 

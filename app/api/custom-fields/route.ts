@@ -3,7 +3,9 @@ import { customFieldDefDb } from '@/lib/supabase-db'
 import { validateBody, formatZodErrors } from '@/lib/api-validation'
 import { z } from 'zod'
 
-export const dynamic = 'force-dynamic'
+// Cache GET requests for 10 minutes - custom fields rarely change
+// POST/PUT/DELETE remain dynamic by default
+export const revalidate = 600
 
 // Schema for creating a custom field definition
 const CreateCustomFieldSchema = z.object({
@@ -21,14 +23,7 @@ export async function GET(request: Request) {
 
         const fields = await customFieldDefDb.getAll(entityType)
 
-        return NextResponse.json(fields, {
-            headers: {
-                // Dados dinâmicos: cache compartilhado pode causar estado “fantasma” pós CRUD.
-                'Cache-Control': 'private, no-store, no-cache, must-revalidate, max-age=0',
-                Pragma: 'no-cache',
-                Expires: '0'
-            }
-        })
+        return NextResponse.json(fields)
     } catch (error: any) {
         console.error('Failed to fetch custom fields:', error)
         return NextResponse.json(

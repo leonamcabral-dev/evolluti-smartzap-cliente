@@ -1,9 +1,15 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import React from 'react';
 import { Upload } from 'lucide-react';
 import { Template } from '../../../types';
-import { BulkGenerationModal } from './BulkGenerationModal';
+
+// Lazy load BulkGenerationModal (~50-80KB reduction - AI dependencies)
+const BulkGenerationModal = dynamic(
+  () => import('./BulkGenerationModal').then(m => ({ default: m.BulkGenerationModal })),
+  { loading: () => null }
+);
 import {
   TemplateListViewProps,
   TemplateListHeader,

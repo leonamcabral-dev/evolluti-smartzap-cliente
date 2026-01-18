@@ -35,7 +35,7 @@ import { humanizePrecheckReason, humanizeVarSource, type ContactFixFocus, type C
 import { Calendar } from '@/components/ui/calendar'
 import DateTimePicker from '@/components/ui/date-time-picker'
 import { cn } from '@/lib/utils'
-import { ptBR } from 'date-fns/locale'
+import { ptBRLight as ptBR } from '@/lib/locale-pt-br-light'
 import { getPricingBreakdown } from '@/lib/whatsapp-pricing'
 import { useExchangeRate } from '@/hooks/useExchangeRate'
 

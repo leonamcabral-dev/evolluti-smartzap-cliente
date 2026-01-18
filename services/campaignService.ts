@@ -471,14 +471,19 @@ export const campaignService = {
   },
 
   // Update campaign stats from real-time polling
+  // Optimized: fetch realStatus and campaign in parallel
   updateStats: async (id: string): Promise<Campaign | undefined> => {
-    const realStatus = await campaignService.getRealStatus(id);
+    // Parallel fetch - both requests start at the same time
+    const [realStatus, campaign] = await Promise.all([
+      campaignService.getRealStatus(id),
+      campaignService.getById(id),
+    ]);
 
+    // If no campaign, return early
+    if (!campaign) return undefined;
+
+    // If realStatus has data, update the campaign
     if (realStatus && realStatus.stats.total > 0) {
-      // Get campaign from Database
-      const campaign = await campaignService.getById(id);
-      if (!campaign) return undefined;
-
       const isComplete = realStatus.stats.sent + realStatus.stats.failed >= campaign.recipients;
 
       // Update in Database
@@ -503,7 +508,8 @@ export const campaignService = {
       return response.json();
     }
 
-    return campaignService.getById(id);
+    // No realStatus data, return campaign as-is
+    return campaign;
   },
 
   // Get traces for a campaign (debug/executions)

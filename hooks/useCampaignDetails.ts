@@ -291,39 +291,54 @@ export const useCampaignDetailsController = () => {
     }
   };
 
-  // Pause mutation
+  // Pause mutation - optimized: update specific cache, invalidate only active list queries
   const pauseMutation = useMutation({
     mutationFn: () => campaignService.pause(id!),
-    onSuccess: () => {
+    onSuccess: (updatedCampaign) => {
       toast.success('Campanha pausada com sucesso');
-      queryClient.invalidateQueries({ queryKey: ['campaign', id] });
-      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      // Update specific campaign cache directly
+      if (updatedCampaign) {
+        queryClient.setQueryData(['campaign', id], updatedCampaign);
+        lastCampaignRef.current = updatedCampaign;
+      }
+      // Only invalidate active list queries (not all pages)
+      queryClient.invalidateQueries({ queryKey: ['campaigns'], refetchType: 'active' });
     },
     onError: () => {
       toast.error('Erro ao pausar campanha');
     }
   });
 
-  // Resume mutation
+  // Resume mutation - optimized: update specific cache, invalidate only active list queries
   const resumeMutation = useMutation({
     mutationFn: () => campaignService.resume(id!),
-    onSuccess: () => {
+    onSuccess: (updatedCampaign) => {
       toast.success('Campanha retomada com sucesso');
-      queryClient.invalidateQueries({ queryKey: ['campaign', id] });
-      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      // Update specific campaign cache directly
+      if (updatedCampaign) {
+        queryClient.setQueryData(['campaign', id], updatedCampaign);
+        lastCampaignRef.current = updatedCampaign;
+      }
+      // Only invalidate active list queries (not all pages)
+      queryClient.invalidateQueries({ queryKey: ['campaigns'], refetchType: 'active' });
     },
     onError: () => {
       toast.error('Erro ao retomar campanha');
     }
   });
 
-  // Start mutation (for scheduled campaigns)
+  // Start mutation (for scheduled campaigns) - optimized
   const startMutation = useMutation({
     mutationFn: () => campaignService.start(id!),
-    onSuccess: () => {
+    onSuccess: (updatedCampaign) => {
       toast.success('Campanha iniciada com sucesso');
-      queryClient.invalidateQueries({ queryKey: ['campaign', id] });
-      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      // Update specific campaign cache directly
+      if (updatedCampaign) {
+        queryClient.setQueryData(['campaign', id], updatedCampaign);
+        lastCampaignRef.current = updatedCampaign;
+      }
+      // Only invalidate active list queries (not all pages)
+      queryClient.invalidateQueries({ queryKey: ['campaigns'], refetchType: 'active' });
     },
     onError: () => {
       toast.error('Erro ao iniciar campanha');
@@ -335,8 +350,9 @@ export const useCampaignDetailsController = () => {
     onSuccess: (result) => {
       if (result.ok) {
         toast.success('Agendamento cancelado. A campanha voltou para Rascunho.');
+        // Invalidate this campaign and active list queries only
         queryClient.invalidateQueries({ queryKey: ['campaign', id] });
-        queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+        queryClient.invalidateQueries({ queryKey: ['campaigns'], refetchType: 'active' });
       } else {
         toast.error(result.error || 'Falha ao cancelar agendamento');
       }
@@ -350,9 +366,11 @@ export const useCampaignDetailsController = () => {
     mutationFn: () => campaignService.cancel(id!),
     onSuccess: () => {
       toast.success('Envio cancelado');
+      // Invalidate this campaign and its messages
       queryClient.invalidateQueries({ queryKey: ['campaign', id] });
       queryClient.invalidateQueries({ queryKey: ['campaignMessages', id] });
-      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      // Only active list queries
+      queryClient.invalidateQueries({ queryKey: ['campaigns'], refetchType: 'active' });
     },
     onError: (error: any) => {
       toast.error(error?.message || 'Falha ao cancelar envio');
@@ -363,10 +381,12 @@ export const useCampaignDetailsController = () => {
     mutationFn: () => campaignService.resendSkipped(id!),
     onSuccess: async (result) => {
       toast.success(result.message || 'Ignorados reenfileirados')
+      // Invalidate this campaign and its messages in parallel
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['campaign', id] }),
         queryClient.invalidateQueries({ queryKey: ['campaignMessages', id] }),
-        queryClient.invalidateQueries({ queryKey: ['campaigns'] }),
+        // Only active list queries
+        queryClient.invalidateQueries({ queryKey: ['campaigns'], refetchType: 'active' }),
       ])
     },
     onError: (error: any) => {

@@ -1,10 +1,17 @@
 'use client';
 
-import { StrategySelectorModal, AIStrategy } from '@/components/templates/StrategySelectorModal';
+import dynamic from 'next/dynamic';
 import { Badge } from '@/components/ui/badge';
 import { VenetianMask, Megaphone, Wrench } from 'lucide-react';
 
 import React, { useState } from 'react';
+import type { AIStrategy } from '@/components/templates/StrategySelectorModal';
+
+// Lazy load StrategySelectorModal (~30-50KB reduction)
+const StrategySelectorModal = dynamic(
+  () => import('@/components/templates/StrategySelectorModal').then(m => ({ default: m.StrategySelectorModal })),
+  { loading: () => null }
+);
 import { useRouter } from 'next/navigation';
 import { useTemplateProjectMutations } from '@/hooks/useTemplateProjects';
 import { toast } from 'sonner';

@@ -100,10 +100,11 @@ async function connectClientWithRetry(
       return client;
     } catch (err) {
       lastError = err;
-      // Log IMEDIATO do erro para debug
+      // Log IMEDIATO do erro para debug (usando console.log pq Vercel pode filtrar error)
       const errMsg = err instanceof Error ? err.message : String(err);
       const errCode = (err as any)?.code || 'N/A';
-      console.error(`[migrations] Erro de conexão (tentativa ${attempt}): code=${errCode}, msg=${errMsg}`);
+      const errName = (err as any)?.name || 'Error';
+      console.log(`[migrations] ❌ Erro de conexão (tentativa ${attempt}): name=${errName}, code=${errCode}, msg=${errMsg}`);
 
       try {
         await client.end().catch(() => undefined);
@@ -111,13 +112,14 @@ async function connectClientWithRetry(
         // ignore
       }
 
-      if (!isRetryableConnectError(err) || attempt === maxAttempts) {
+      const isRetryable = isRetryableConnectError(err);
+      console.log(`[migrations] isRetryable=${isRetryable}, attempt=${attempt}/${maxAttempts}`);
+
+      if (!isRetryable || attempt === maxAttempts) {
         // Log detalhado para debug
-        const errMsg = err instanceof Error ? err.message : String(err);
-        const errStack = err instanceof Error ? err.stack : '';
-        console.error(
-          `[migrations] Falha definitiva na conexão após ${attempt} tentativas:`,
-          { error: errMsg, stack: errStack }
+        console.log(
+          `[migrations] 💥 Falha definitiva na conexão após ${attempt} tentativas:`,
+          { error: errMsg, code: errCode, name: errName }
         );
         throw err;
       }

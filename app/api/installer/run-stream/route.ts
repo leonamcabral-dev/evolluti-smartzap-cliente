@@ -206,7 +206,8 @@ export async function POST(req: Request) {
   // Determine which steps to skip based on health check
   const skippedSteps: string[] = [];
   if (healthCheck?.skipWaitProject) skippedSteps.push('wait_project');
-  if (healthCheck?.skipWaitStorage) skippedSteps.push('wait_storage');
+  // SmartZap NÃO usa Supabase Storage - sempre pular wait_storage
+  skippedSteps.push('wait_storage');
   if (healthCheck?.skipMigrations) skippedSteps.push('migrations');
   if (healthCheck?.skipBootstrap) skippedSteps.push('bootstrap');
 

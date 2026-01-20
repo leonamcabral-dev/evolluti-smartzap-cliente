@@ -267,23 +267,14 @@ export async function processSupportAgentV2(
       },
     })
 
-    // Use generateText with tools for structured output (simpler than streaming)
-    // File Search tool is added conditionally when agent has knowledge base
+    // Use generateText with tools for structured output
+    // TODO: File Search disabled temporarily - causes API issues
     const result = await generateText({
       model,
       system: buildSystemPrompt(agent, conversation, hasKnowledgeBase),
       messages: aiMessages,
       tools: {
         respond: respondTool,
-        // Conditionally add file_search tool if knowledge base is configured
-        ...(hasKnowledgeBase && agent.file_search_store_id
-          ? {
-              file_search: google.tools.fileSearch({
-                fileSearchStoreNames: [agent.file_search_store_id],
-                topK: 5, // Retrieve top 5 most relevant chunks
-              }),
-            }
-          : {}),
       },
       toolChoice: 'required',
       temperature: DEFAULT_TEMPERATURE,

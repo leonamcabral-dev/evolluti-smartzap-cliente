@@ -107,7 +107,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Import AI dependencies dynamically
     const { createGoogleGenerativeAI } = await import('@ai-sdk/google')
     const { streamText, tool } = await import('ai')
-    // const { withDevTools } = await import('@/lib/ai/devtools') // Disabled for debugging
+    const { withDevTools } = await import('@/lib/ai/devtools')
 
     // Get Gemini API key
     const { data: geminiSetting } = await supabase

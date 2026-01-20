@@ -555,9 +555,10 @@ CREATE TABLE IF NOT EXISTS ai_agents (
 );
 
 -- inbox_conversations: contact_id FK adicionada no final como ALTER TABLE
+-- NOTA: contact_id é TEXT porque contacts.id usa prefixo 'ct_' + uuid (não UUID puro)
 CREATE TABLE IF NOT EXISTS inbox_conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  contact_id UUID,
+  contact_id TEXT,
   ai_agent_id UUID,
   phone TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'open',

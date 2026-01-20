@@ -18,9 +18,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validar token fazendo uma requisição de listagem
-    // A API do QStash retorna informações do estado da conta
-    const qstashRes = await fetch('https://qstash.upstash.io/v2/messages', {
+    // Validar token fazendo uma requisição de listagem de schedules
+    // Este endpoint aceita GET e retorna 200 se o token for válido
+    const qstashRes = await fetch('https://qstash.upstash.io/v2/schedules', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,

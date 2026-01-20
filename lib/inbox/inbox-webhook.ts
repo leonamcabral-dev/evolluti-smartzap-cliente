@@ -10,10 +10,10 @@ import { createClient } from '@/lib/supabase-server'
 import { normalizePhoneNumber } from '@/lib/phone-formatter'
 import { inboxDb } from './inbox-db'
 import {
-  processSupportAgent,
   scheduleWithDebounce,
   cancelDebounce,
 } from '@/lib/ai/agents/support-agent'
+import { processSupportAgentV2 } from '@/lib/ai/agents/support-agent-v2'
 import { sendWhatsAppMessage } from '@/lib/whatsapp-send'
 import type {
   ConversationMode,
@@ -207,8 +207,8 @@ async function processAIResponse(
   // Get recent messages for context
   const { messages } = await inboxDb.listMessages(conversation.id, { limit: 20 })
 
-  // Process with support agent
-  const result = await processSupportAgent({
+  // Process with support agent V2 (AI SDK v6 patterns)
+  const result = await processSupportAgentV2({
     agent,
     conversation: currentConversation,
     messages,

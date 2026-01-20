@@ -162,11 +162,11 @@ const CampaignTableRow = React.memo(
     return (
       <tr
         onClick={() => onRowClick(campaign.id)}
-        className="hover:bg-white/5 transition-all duration-200 group cursor-pointer hover:shadow-[0_0_20px_rgba(16,185,129,0.1)]"
+        className="hover:bg-[var(--ds-bg-hover)] transition-all duration-200 group cursor-pointer hover:shadow-[0_0_20px_rgba(16,185,129,0.1)]"
       >
         <td className="px-6 py-4">
-          <p className="font-medium text-white group-hover:text-primary-400 transition-colors">{campaign.name}</p>
-          <p className="text-xs text-gray-500 mt-1 font-mono">{campaign.templateName}</p>
+          <p className="font-medium text-[var(--ds-text-primary)] group-hover:text-primary-400 transition-colors">{campaign.name}</p>
+          <p className="text-xs text-[var(--ds-text-muted)] mt-1 font-mono">{campaign.templateName}</p>
           {campaign.scheduledAt && campaign.status === CampaignStatus.SCHEDULED && (
             <p className="text-xs text-purple-400 mt-1 flex items-center gap-1">
               <Calendar size={10} />
@@ -180,7 +180,7 @@ const CampaignTableRow = React.memo(
         <td className="px-6 py-4">
           <StatusBadge status={campaign.status} />
         </td>
-        <td className="px-6 py-4 text-gray-400 font-mono">
+        <td className="px-6 py-4 text-[var(--ds-text-secondary)] font-mono">
           {recipients.toLocaleString('pt-BR')}
         </td>
         <td className="px-6 py-4">
@@ -195,7 +195,7 @@ const CampaignTableRow = React.memo(
             />
           </div>
         </td>
-        <td className="px-6 py-4 text-gray-400 font-mono">
+        <td className="px-6 py-4 text-[var(--ds-text-secondary)] font-mono">
           <span
             className="text-xs"
             title={(campaign.firstDispatchAt || campaign.startedAt) && campaign.lastSentAt
@@ -205,7 +205,7 @@ const CampaignTableRow = React.memo(
             {calcSendDuration(campaign)}
           </span>
         </td>
-        <td className="px-6 py-4 text-gray-500 font-mono text-xs">
+        <td className="px-6 py-4 text-[var(--ds-text-muted)] font-mono text-xs">
           {new Date(campaign.createdAt).toLocaleDateString('pt-BR')}
         </td>
         <td className="px-6 py-4 text-right">
@@ -368,12 +368,12 @@ export const CampaignListView: React.FC<CampaignListViewProps> = ({
       {/* Filters Bar */}
       <Container variant="glass" padding="md" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-20">
         {/* Search */}
-        <div className="flex items-center gap-3 w-full sm:w-96 bg-zinc-900 border border-white/5 rounded-lg px-4 py-2.5 focus-within:border-primary-500/50 focus-within:ring-1 focus-within:ring-primary-500/50 transition-all">
-          <Search size={18} className="text-gray-500" />
+        <div className="flex items-center gap-3 w-full sm:w-96 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-subtle)] rounded-lg px-4 py-2.5 focus-within:border-primary-500/50 focus-within:ring-1 focus-within:ring-primary-500/50 transition-all">
+          <Search size={18} className="text-[var(--ds-text-muted)]" />
           <input
             type="text"
             placeholder="Buscar campanhas..."
-            className="bg-transparent border-none outline-none text-sm w-full text-white placeholder-gray-600"
+            className="bg-transparent border-none outline-none text-sm w-full text-[var(--ds-text-primary)] placeholder-[var(--ds-text-muted)]"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
           />
@@ -394,7 +394,7 @@ export const CampaignListView: React.FC<CampaignListViewProps> = ({
           <select
             value={filter}
             onChange={(e) => onFilterChange(e.target.value)}
-            className="px-4 py-2.5 text-sm font-medium bg-zinc-900 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg border border-white/10 transition-colors outline-none cursor-pointer appearance-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2"
+            className="px-4 py-2.5 text-sm font-medium bg-[var(--ds-bg-elevated)] text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-hover)] rounded-lg border border-[var(--ds-border-default)] transition-colors outline-none cursor-pointer appearance-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2"
           >
             <option value="All">Todos os Status</option>
             <option value={CampaignStatus.DRAFT}>Rascunho</option>
@@ -444,7 +444,7 @@ export const CampaignListView: React.FC<CampaignListViewProps> = ({
         <Container variant="glass" padding="none" className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-white/5 border-b border-white/5 text-gray-400 uppercase tracking-wider text-xs">
+              <thead className="bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-subtle)] text-[var(--ds-text-secondary)] uppercase tracking-wider text-xs">
                 <tr>
                   <th className="px-6 py-4 font-medium">Nome</th>
                   <th className="px-6 py-4 font-medium">Status</th>
@@ -455,10 +455,10 @@ export const CampaignListView: React.FC<CampaignListViewProps> = ({
                   <th className="px-6 py-4 font-medium text-right">Acoes</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-[var(--ds-border-subtle)]">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={7} className="px-6 py-12 text-center text-[var(--ds-text-muted)]">
                       Carregando campanhas...
                     </td>
                   </tr>
@@ -466,12 +466,12 @@ export const CampaignListView: React.FC<CampaignListViewProps> = ({
                   <tr>
                     <td colSpan={7} className="px-6 py-16 text-center">
                       <div className="flex flex-col items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center">
-                          <Search size={24} className="text-gray-500" />
+                        <div className="w-12 h-12 rounded-full bg-[var(--ds-bg-surface)] flex items-center justify-center">
+                          <Search size={24} className="text-[var(--ds-text-muted)]" />
                         </div>
                         <div>
-                          <p className="text-gray-400 font-medium">Nenhuma campanha encontrada</p>
-                          <p className="text-gray-600 text-sm mt-1">
+                          <p className="text-[var(--ds-text-secondary)] font-medium">Nenhuma campanha encontrada</p>
+                          <p className="text-[var(--ds-text-muted)] text-sm mt-1">
                             {searchTerm || filter !== 'All'
                               ? 'Tente ajustar os filtros ou buscar por outro termo'
                               : 'Crie sua primeira campanha para comecar'}
@@ -510,7 +510,7 @@ export const CampaignListView: React.FC<CampaignListViewProps> = ({
       {/* Pagination */}
       {totalPages > 1 && (
         <Container variant="glass" padding="md" className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-[var(--ds-text-muted)]">
             Pagina {currentPage} de {totalPages} • {totalFiltered} campanha(s)
           </span>
           <nav className="flex items-center gap-2">

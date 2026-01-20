@@ -5,11 +5,13 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { useConversations, useConversationMutations } from './useConversations'
 import { useConversationWithMessages } from './useConversation'
 import { useLabels } from './useLabels'
 import { useQuickReplies } from './useQuickReplies'
-import type { ConversationStatus, ConversationMode, ConversationPriority } from '@/types'
+import { aiAgentService, type UpdateAIAgentParams } from '@/services/aiAgentService'
+import type { ConversationStatus, ConversationMode, ConversationPriority, AIAgent } from '@/types'
 
 export interface UseInboxOptions {
   initialConversationId?: string | null
@@ -18,6 +20,7 @@ export interface UseInboxOptions {
 export function useInbox(options: UseInboxOptions = {}) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const queryClient = useQueryClient()
 
   // State for filters
   const [search, setSearch] = useState('')
@@ -77,6 +80,60 @@ export function useInbox(options: UseInboxOptions = {}) {
 
   // Quick Replies
   const { quickReplies, isLoading: isLoadingQuickReplies } = useQuickReplies()
+
+  // ==========================================================================
+  // AI Agent Edit Modal State
+  // ==========================================================================
+  const [isAgentModalOpen, setIsAgentModalOpen] = useState(false)
+  const [editingAgent, setEditingAgent] = useState<AIAgent | null>(null)
+  const [isLoadingAgent, setIsLoadingAgent] = useState(false)
+  const [isSavingAgent, setIsSavingAgent] = useState(false)
+
+  // Open agent edit modal - fetches full agent data
+  const handleOpenAgentEditor = useCallback(async () => {
+    const agentId = selectedConversation?.ai_agent_id
+    if (!agentId) return
+
+    setIsLoadingAgent(true)
+    setIsAgentModalOpen(true)
+
+    try {
+      const agent = await aiAgentService.get(agentId)
+      setEditingAgent(agent)
+    } catch (error) {
+      console.error('Failed to load agent:', error)
+      setIsAgentModalOpen(false)
+    } finally {
+      setIsLoadingAgent(false)
+    }
+  }, [selectedConversation?.ai_agent_id])
+
+  // Close agent edit modal
+  const handleCloseAgentEditor = useCallback(() => {
+    setIsAgentModalOpen(false)
+    setEditingAgent(null)
+  }, [])
+
+  // Save agent changes
+  const handleSaveAgent = useCallback(
+    async (params: UpdateAIAgentParams) => {
+      if (!editingAgent) return
+
+      setIsSavingAgent(true)
+      try {
+        await aiAgentService.update(editingAgent.id, params)
+        // Invalidate conversations to refresh agent name
+        queryClient.invalidateQueries({ queryKey: ['inbox-conversations'] })
+        handleCloseAgentEditor()
+      } catch (error) {
+        console.error('Failed to save agent:', error)
+        throw error
+      } finally {
+        setIsSavingAgent(false)
+      }
+    },
+    [editingAgent, queryClient, handleCloseAgentEditor]
+  )
 
   // Select conversation and update URL
   const handleSelectConversation = useCallback(
@@ -163,6 +220,14 @@ export function useInbox(options: UseInboxOptions = {}) {
     await conversationMutations.returnToBot(selectedConversation.id)
   }, [selectedConversation, conversationMutations])
 
+  // Delete conversation
+  const handleDeleteConversation = useCallback(async () => {
+    if (!selectedConversation) return
+    await conversationMutations.deleteConversation(selectedConversation.id)
+    // Clear selection after deletion
+    handleSelectConversation(null)
+  }, [selectedConversation, conversationMutations, handleSelectConversation])
+
   return {
     // Conversations
     conversations,
@@ -216,6 +281,8 @@ export function useInbox(options: UseInboxOptions = {}) {
     // T050: Handoff actions
     onHandoff: handleHandoff,
     onReturnToBot: handleReturnToBot,
+    // Delete conversation
+    onDeleteConversation: handleDeleteConversation,
     isUpdatingConversation:
       conversationMutations.isUpdating ||
       conversationMutations.isSwitchingMode ||
@@ -223,5 +290,15 @@ export function useInbox(options: UseInboxOptions = {}) {
       conversationMutations.isReopening,
     isHandingOff: conversationMutations.isHandingOff,
     isReturningToBot: conversationMutations.isReturningToBot,
+    isDeletingConversation: conversationMutations.isDeleting,
+
+    // AI Agent editing
+    isAgentModalOpen,
+    editingAgent,
+    isLoadingAgent,
+    isSavingAgent,
+    onOpenAgentEditor: handleOpenAgentEditor,
+    onCloseAgentEditor: handleCloseAgentEditor,
+    onSaveAgent: handleSaveAgent,
   }
 }

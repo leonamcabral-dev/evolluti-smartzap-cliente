@@ -66,7 +66,7 @@ const TemplateTableRowComponent: React.FC<TemplateTableRowProps> = ({
     <tr
       onMouseEnter={handleRowEnter}
       onMouseLeave={onMouseLeave}
-      className={`hover:bg-white/5 transition-colors group cursor-pointer ${
+      className={`hover:bg-[var(--ds-bg-hover)] transition-colors group cursor-pointer ${
         isRowSelected ? (isManualDraft ? 'bg-amber-500/5' : 'bg-emerald-500/5') : ''
       }`}
     >
@@ -79,12 +79,12 @@ const TemplateTableRowComponent: React.FC<TemplateTableRowProps> = ({
               ? isManualDraft
                 ? 'bg-amber-500 border-amber-500'
                 : 'bg-emerald-500 border-emerald-500'
-              : 'border-white/20 hover:border-white/40'
+              : 'border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)]'
           }`}
           title={isRowSelected ? 'Desmarcar' : 'Selecionar'}
         >
           {isRowSelected && (
-            <Check className={`w-3 h-3 ${isManualDraft ? 'text-black' : 'text-white'}`} />
+            <Check className={`w-3 h-3 ${isManualDraft ? 'text-black' : 'text-[var(--ds-text-primary)]'}`} />
           )}
         </button>
       </td>
@@ -97,11 +97,11 @@ const TemplateTableRowComponent: React.FC<TemplateTableRowProps> = ({
             className="flex items-center gap-3 hover:opacity-90"
             title="Continuar edicao"
           >
-            <div className="p-2 bg-zinc-950/40 rounded-lg text-gray-400 group-hover:text-emerald-200 transition-colors">
+            <div className="p-2 bg-[var(--ds-bg-elevated)] rounded-lg text-[var(--ds-text-secondary)] group-hover:text-emerald-200 transition-colors">
               <FileText size={16} />
             </div>
             <span
-              className="font-medium text-white group-hover:text-emerald-200 transition-colors truncate max-w-50"
+              className="font-medium text-[var(--ds-text-primary)] group-hover:text-emerald-200 transition-colors truncate max-w-50"
               title={template.name}
             >
               {template.name}
@@ -109,11 +109,11 @@ const TemplateTableRowComponent: React.FC<TemplateTableRowProps> = ({
           </Link>
         ) : (
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-zinc-950/40 rounded-lg text-gray-400 group-hover:text-emerald-200 transition-colors">
+            <div className="p-2 bg-[var(--ds-bg-elevated)] rounded-lg text-[var(--ds-text-secondary)] group-hover:text-emerald-200 transition-colors">
               <FileText size={16} />
             </div>
             <span
-              className="font-medium text-white group-hover:text-emerald-200 transition-colors truncate max-w-50"
+              className="font-medium text-[var(--ds-text-primary)] group-hover:text-emerald-200 transition-colors truncate max-w-50"
               title={template.name}
             >
               {template.name}
@@ -138,10 +138,10 @@ const TemplateTableRowComponent: React.FC<TemplateTableRowProps> = ({
         <span
           className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium ${
             template.category === 'UTILIDADE'
-              ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
+              ? 'bg-emerald-500/10 text-[var(--ds-status-success-text)] border-emerald-500/20'
               : template.category === 'MARKETING'
-                ? 'bg-amber-500/10 text-amber-200 border-amber-500/20'
-                : 'bg-white/5 text-gray-300 border-white/10'
+                ? 'bg-amber-500/10 text-[var(--ds-status-warning-text)] border-amber-500/20'
+                : 'bg-[var(--ds-bg-hover)] text-[var(--ds-text-secondary)] border-[var(--ds-border-default)]'
           }`}
         >
           {template.category}
@@ -149,9 +149,9 @@ const TemplateTableRowComponent: React.FC<TemplateTableRowProps> = ({
       </td>
 
       {/* Language */}
-      <td className="px-4 py-4 text-gray-500 font-mono text-xs" onClick={handleCellClick}>
+      <td className="px-4 py-4 text-[var(--ds-text-muted)] font-mono text-xs" onClick={handleCellClick}>
         {isManualDraft ? (
-          <Link href={draftHref} className="hover:text-gray-300" title="Continuar edicao">
+          <Link href={draftHref} className="hover:text-[var(--ds-text-secondary)]" title="Continuar edicao">
             {template.language}
           </Link>
         ) : (
@@ -163,13 +163,13 @@ const TemplateTableRowComponent: React.FC<TemplateTableRowProps> = ({
       <td className="px-4 py-4 max-w-xs" onClick={handleCellClick}>
         {isManualDraft ? (
           <Link href={draftHref} className="block" title="Continuar edicao">
-            <p className="text-sm text-gray-400 truncate" title={template.content}>
+            <p className="text-sm text-[var(--ds-text-secondary)] truncate" title={template.content}>
               {template.content.slice(0, 50)}
               {template.content.length > 50 ? '...' : ''}
             </p>
           </Link>
         ) : (
-          <p className="text-sm text-gray-400 truncate" title={template.content}>
+          <p className="text-sm text-[var(--ds-text-secondary)] truncate" title={template.content}>
             {template.content.slice(0, 50)}
             {template.content.length > 50 ? '...' : ''}
           </p>
@@ -178,11 +178,11 @@ const TemplateTableRowComponent: React.FC<TemplateTableRowProps> = ({
 
       {/* Updated */}
       <td
-        className="px-4 py-4 text-gray-500 font-mono text-xs whitespace-nowrap"
+        className="px-4 py-4 text-[var(--ds-text-muted)] font-mono text-xs whitespace-nowrap"
         onClick={handleCellClick}
       >
         {isManualDraft ? (
-          <Link href={draftHref} className="hover:text-gray-300" title="Continuar edicao">
+          <Link href={draftHref} className="hover:text-[var(--ds-text-secondary)]" title="Continuar edicao">
             {new Date(template.lastUpdated).toLocaleDateString('pt-BR')}
           </Link>
         ) : (

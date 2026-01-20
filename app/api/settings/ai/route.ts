@@ -6,6 +6,8 @@ import { createAnthropic } from '@ai-sdk/anthropic'
 import { generateText } from 'ai'
 import { clearSettingsCache } from '@/lib/ai'
 import { DEFAULT_AI_FALLBACK, DEFAULT_AI_PROMPTS, DEFAULT_AI_ROUTES } from '@/lib/ai/ai-center-defaults'
+import { DEFAULT_MODEL_ID } from '@/lib/ai/model'
+import { DEFAULT_OCR_MODEL } from '@/lib/ai/ocr/providers/gemini'
 import {
   clearAiCenterCache,
   getAiFallbackConfig,
@@ -37,7 +39,7 @@ async function validateApiKey(provider: string, apiKey: string): Promise<Validat
         switch (provider) {
             case 'google': {
                 const google = createGoogleGenerativeAI({ apiKey })
-                model = google('gemini-2.0-flash')
+                model = google(DEFAULT_MODEL_ID)
                 break
             }
             case 'openai': {
@@ -98,6 +100,38 @@ async function validateApiKey(provider: string, apiKey: string): Promise<Validat
     }
 }
 
+/**
+ * Validate Mistral API key by calling the models endpoint
+ */
+async function validateMistralApiKey(apiKey: string): Promise<ValidationResult> {
+    try {
+        const response = await fetch('https://api.mistral.ai/v1/models', {
+            headers: { 'Authorization': `Bearer ${apiKey}` }
+        })
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                return { valid: false, error: 'Chave de API inválida ou não autorizada.' }
+            }
+            if (response.status === 403) {
+                return { valid: false, error: 'Acesso negado. Verifique se a chave está ativa.' }
+            }
+            return { valid: false, error: `Erro na validação: HTTP ${response.status}` }
+        }
+
+        return { valid: true }
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Erro desconhecido'
+        console.error('[Mistral Key Validation] Error:', message)
+
+        if (message.includes('ENOTFOUND') || message.includes('network') || message.includes('ECONNREFUSED')) {
+            return { valid: false, error: 'Erro de conexão. Verifique sua internet e tente novamente.' }
+        }
+
+        return { valid: false, error: `Erro ao validar chave: ${message}` }
+    }
+}
+
 function parseJsonSetting<T>(value: string | null, fallback: T): T {
     if (!value) return fallback
     try {
@@ -109,7 +143,7 @@ function parseJsonSetting<T>(value: string | null, fallback: T): T {
 
 export async function GET() {
     try {
-        // Get all AI settings from Supabase
+        // Get all AI settings from Supabase (including OCR settings)
         const { data, error } = await supabase.admin
             ?.from('settings')
             .select('key, value')
@@ -117,11 +151,14 @@ export async function GET() {
                 'gemini_api_key',
                 'openai_api_key',
                 'anthropic_api_key',
+                'mistral_api_key',
                 'ai_provider',
                 'ai_model',
                 'ai_routes',
                 'ai_fallback',
                 'ai_prompts',
+                'ocr_provider',
+                'ocr_gemini_model',
             ]) || { data: null, error: null }
 
         if (error) {
@@ -167,6 +204,12 @@ export async function GET() {
             parseJsonSetting(settingsMap.get('ai_prompts') as string | null, DEFAULT_AI_PROMPTS)
         )
 
+        // OCR Settings
+        const mistralKey = settingsMap.get('mistral_api_key') || process.env.MISTRAL_API_KEY || ''
+        const mistralSource = settingsMap.get('mistral_api_key') ? 'database' : (mistralKey ? 'env' : 'none')
+        const ocrProvider = (settingsMap.get('ocr_provider') as 'gemini' | 'mistral') || 'gemini'
+        const ocrGeminiModel = settingsMap.get('ocr_gemini_model') || DEFAULT_OCR_MODEL
+
         return NextResponse.json({
             // Saved configuration
             provider: savedProvider,
@@ -196,6 +239,16 @@ export async function GET() {
             routes,
             fallback,
             prompts,
+            // OCR configuration
+            ocr: {
+                provider: ocrProvider,
+                geminiModel: ocrGeminiModel,
+                mistralStatus: {
+                    isConfigured: !!mistralKey,
+                    source: mistralSource,
+                    tokenPreview: mistralKey ? getPreview(mistralKey) : null,
+                },
+            },
         })
     } catch (error) {
         console.error('Error fetching AI settings:', error)
@@ -209,10 +262,22 @@ export async function GET() {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { apiKey, apiKeyProvider, provider, model, routes, fallback, prompts } = body
+        const {
+            apiKey,
+            apiKeyProvider,
+            provider,
+            model,
+            routes,
+            fallback,
+            prompts,
+            // OCR fields
+            ocr_provider,
+            ocr_gemini_model,
+            mistral_api_key,
+        } = body
 
         // At least one field must be provided
-        if (!apiKey && !provider && !model && !routes && !fallback && !prompts) {
+        if (!apiKey && !provider && !model && !routes && !fallback && !prompts && !ocr_provider && !ocr_gemini_model && !mistral_api_key) {
             return NextResponse.json(
                 { error: 'At least one field is required' },
                 { status: 400 }
@@ -288,6 +353,28 @@ export async function POST(request: NextRequest) {
             })
         }
 
+        // OCR: Save provider selection
+        if (ocr_provider && ['gemini', 'mistral'].includes(ocr_provider)) {
+            updates.push({ key: 'ocr_provider', value: ocr_provider, updated_at: now })
+        }
+
+        // OCR: Save Gemini model for OCR
+        if (ocr_gemini_model) {
+            updates.push({ key: 'ocr_gemini_model', value: ocr_gemini_model, updated_at: now })
+        }
+
+        // OCR: Validate and save Mistral API key
+        if (mistral_api_key) {
+            const validationResult = await validateMistralApiKey(mistral_api_key)
+            if (!validationResult.valid) {
+                return NextResponse.json(
+                    { error: `Chave Mistral inválida: ${validationResult.error}` },
+                    { status: 400 }
+                )
+            }
+            updates.push({ key: 'mistral_api_key', value: mistral_api_key, updated_at: now })
+        }
+
         // Upsert all updates
         if (updates.length > 0) {
             const { error } = await supabase.admin
@@ -322,9 +409,9 @@ export async function DELETE(request: NextRequest) {
         const { searchParams } = new URL(request.url)
         const provider = searchParams.get('provider')
 
-        if (!provider || !['google', 'openai', 'anthropic'].includes(provider)) {
+        if (!provider || !['google', 'openai', 'anthropic', 'mistral'].includes(provider)) {
             return NextResponse.json(
-                { error: 'Valid provider is required (google, openai, anthropic)' },
+                { error: 'Valid provider is required (google, openai, anthropic, mistral)' },
                 { status: 400 }
             )
         }
@@ -334,6 +421,7 @@ export async function DELETE(request: NextRequest) {
             google: 'gemini_api_key',
             openai: 'openai_api_key',
             anthropic: 'anthropic_api_key',
+            mistral: 'mistral_api_key',
         }
 
         const keyName = keyMap[provider]

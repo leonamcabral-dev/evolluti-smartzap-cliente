@@ -18,6 +18,7 @@ import {
   waitForOperation,
   deleteFileFromStore,
 } from '@/lib/ai/file-search-store'
+import { processDocumentOCR } from '@/lib/ai/ocr'
 
 // Helper to get admin client with null check
 function getClient() {
@@ -177,14 +178,27 @@ export async function POST(request: NextRequest) {
 
     if (fileSearchStoreName) {
       try {
+        // Process with OCR if needed (PDFs, images, Office docs → Markdown)
+        const {
+          content: processedContent,
+          mimeType: processedMimeType,
+          ocrResult,
+        } = await processDocumentOCR(content, mime_type, name)
+
+        if (ocrResult) {
+          console.log(
+            `[knowledge] OCR by ${ocrResult.provider}${ocrResult.model ? ` (${ocrResult.model})` : ''}: ${ocrResult.pagesProcessed ?? '?'} pages, ${processedContent.length} chars`
+          )
+        }
+
         console.log(`[knowledge] Uploading ${name} to File Search Store ${fileSearchStoreName}`)
 
         const operation = await uploadToFileSearchStore(
           apiKey,
           fileSearchStoreName,
-          content,
+          processedContent,
           name,
-          mime_type
+          processedMimeType
         )
 
         console.log(`[knowledge] Upload operation started: ${operation.name}`)

@@ -111,26 +111,26 @@ function LoginForm() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-linear-to-br from-emerald-500 to-emerald-600 mb-4">
           <span className="text-3xl font-bold text-white">S</span>
         </div>
-        <h1 className="text-2xl font-bold text-white">
+        <h1 className="text-2xl font-bold text-[var(--ds-text-primary)]">
           {companyName || 'SmartZap'}
         </h1>
-        <p className="text-zinc-400 mt-1">Entre para continuar</p>
+        <p className="text-[var(--ds-text-secondary)] mt-1">Entre para continuar</p>
       </div>
 
       {/* Card */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl">
+      <div className="bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-2xl p-6 shadow-xl">
         {!isConfigured && isLocalhost && (
-          <div className="mb-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
-            <p className="text-sm text-emerald-200 font-medium">Modo local</p>
-            <p className="text-xs text-zinc-300/80 mt-1">
-              Para destravar o login no localhost, defina <code className="bg-zinc-800 px-1.5 py-0.5 rounded">MASTER_PASSWORD</code> no <code className="bg-zinc-800 px-1.5 py-0.5 rounded">.env.local</code> e reinicie o dev server.
+          <div className="mb-4 bg-[var(--ds-status-success-bg)] border border-[var(--ds-status-success)]/20 rounded-xl p-4">
+            <p className="text-sm text-[var(--ds-status-success-text)] font-medium">Modo local</p>
+            <p className="text-xs text-[var(--ds-text-secondary)] mt-1">
+              Para destravar o login no localhost, defina <code className="bg-[var(--ds-bg-surface)] px-1.5 py-0.5 rounded">MASTER_PASSWORD</code> no <code className="bg-[var(--ds-bg-surface)] px-1.5 py-0.5 rounded">.env.local</code> e reinicie o dev server.
             </p>
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--ds-text-muted)]" />
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
@@ -138,20 +138,20 @@ function LoginForm() {
               placeholder="Senha"
               name="password"
               autoComplete="current-password"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-11 pr-11 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] rounded-xl pl-11 pr-11 py-3 text-[var(--ds-text-primary)] placeholder:text-[var(--ds-text-muted)] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               autoFocus
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ds-text-muted)] hover:text-[var(--ds-text-secondary)]"
             >
               {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
 
           {error && (
-            <p className="mt-4 text-red-400 text-sm">{error}</p>
+            <p className="mt-4 text-[var(--ds-status-error-text)] text-sm">{error}</p>
           )}
 
           <button
@@ -172,7 +172,7 @@ function LoginForm() {
       </div>
 
       {/* Footer */}
-      <p className="text-center text-zinc-600 text-sm mt-6">
+      <p className="text-center text-[var(--ds-text-muted)] text-sm mt-6">
         SmartZap © {new Date().getFullYear()}
       </p>
     </div>
@@ -181,7 +181,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--ds-bg-base)] flex items-center justify-center p-4">
       <Suspense fallback={
         <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
       }>

@@ -13,7 +13,7 @@ export { leadFormService } from './leadFormService';
 // ============================================================================
 // SETTINGS SERVICE (usa credenciais salvas no Supabase/env)
 // ============================================================================
-export { settingsService } from './settingsService';
+export { settingsService, type OCRConfig, type OCRProviderType } from './settingsService';
 // ============================================================================
 // FLOWS SERVICE
 // ============================================================================

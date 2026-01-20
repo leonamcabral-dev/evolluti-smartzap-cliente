@@ -61,7 +61,7 @@ export const TemplateCard = React.memo(
           ? isManualDraft
             ? 'border-amber-500/40 bg-amber-500/5'
             : 'border-emerald-500/40 bg-emerald-500/5'
-          : 'border-white/10 bg-zinc-900/60 hover:bg-white/5'
+          : 'border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] hover:bg-[var(--ds-bg-hover)]'
       }`}
     >
       {/* Header: Checkbox, Nome, Status */}
@@ -77,12 +77,12 @@ export const TemplateCard = React.memo(
               ? isManualDraft
                 ? 'bg-amber-500 border-amber-500'
                 : 'bg-emerald-500 border-emerald-500'
-              : 'border-white/20 hover:border-white/40'
+              : 'border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)]'
           }`}
           title={isRowSelected ? 'Desmarcar' : 'Selecionar'}
         >
           {isRowSelected && (
-            <Check className={`w-3 h-3 ${isManualDraft ? 'text-black' : 'text-white'}`} />
+            <Check className={`w-3 h-3 ${isManualDraft ? 'text-black' : 'text-[var(--ds-text-primary)]'}`} />
           )}
         </button>
 
@@ -91,14 +91,14 @@ export const TemplateCard = React.memo(
           {isManualDraft ? (
             <Link href={draftHref} className="block">
               <div className="flex items-center gap-2">
-                <FileText size={14} className="text-gray-400 shrink-0" />
-                <span className="font-medium text-white truncate">{template.name}</span>
+                <FileText size={14} className="text-[var(--ds-text-secondary)] shrink-0" />
+                <span className="font-medium text-[var(--ds-text-primary)] truncate">{template.name}</span>
               </div>
             </Link>
           ) : (
             <div className="flex items-center gap-2 cursor-pointer">
-              <FileText size={14} className="text-gray-400 shrink-0" />
-              <span className="font-medium text-white truncate">{template.name}</span>
+              <FileText size={14} className="text-[var(--ds-text-secondary)] shrink-0" />
+              <span className="font-medium text-[var(--ds-text-primary)] truncate">{template.name}</span>
             </div>
           )}
 
@@ -107,15 +107,15 @@ export const TemplateCard = React.memo(
             <span
               className={`inline-flex items-center rounded border px-1.5 py-0.5 font-medium ${
                 template.category === 'UTILIDADE'
-                  ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
+                  ? 'bg-emerald-500/10 text-[var(--ds-status-success-text)] border-emerald-500/20'
                   : template.category === 'MARKETING'
-                    ? 'bg-amber-500/10 text-amber-200 border-amber-500/20'
-                    : 'bg-white/5 text-gray-300 border-white/10'
+                    ? 'bg-amber-500/10 text-[var(--ds-status-warning-text)] border-amber-500/20'
+                    : 'bg-[var(--ds-bg-hover)] text-[var(--ds-text-secondary)] border-[var(--ds-border-default)]'
               }`}
             >
               {template.category}
             </span>
-            <span className="text-gray-500 font-mono">{template.language}</span>
+            <span className="text-[var(--ds-text-muted)] font-mono">{template.language}</span>
           </div>
         </div>
 
@@ -127,14 +127,14 @@ export const TemplateCard = React.memo(
 
       {/* Content preview */}
       <div className="mt-3" onClick={handleCardClick}>
-        <p className="text-sm text-gray-400 line-clamp-2">
+        <p className="text-sm text-[var(--ds-text-secondary)] line-clamp-2">
           {template.content || <span className="italic">Sem conteudo</span>}
         </p>
       </div>
 
       {/* Footer: Data e Acoes */}
-      <div className="mt-3 flex items-center justify-between pt-3 border-t border-white/5">
-        <span className="text-xs text-gray-500 font-mono">
+      <div className="mt-3 flex items-center justify-between pt-3 border-t border-[var(--ds-border-subtle)]">
+        <span className="text-xs text-[var(--ds-text-muted)] font-mono">
           {new Date(template.lastUpdated).toLocaleDateString('pt-BR')}
         </span>
 
@@ -288,7 +288,7 @@ export const TemplateCardList: React.FC<TemplateCardListProps> = ({
 
   if (isLoading) {
     return (
-      <div className="py-16 text-center text-gray-400">
+      <div className="py-16 text-center text-[var(--ds-text-secondary)]">
         Carregando templates...
       </div>
     )
@@ -297,11 +297,11 @@ export const TemplateCardList: React.FC<TemplateCardListProps> = ({
   if (templates.length === 0) {
     return (
       <div className="py-16 text-center">
-        <div className="w-16 h-16 bg-zinc-950/40 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-600">
+        <div className="w-16 h-16 bg-[var(--ds-bg-surface)] rounded-full flex items-center justify-center mx-auto mb-4 text-[var(--ds-text-muted)]">
           <FileText size={32} />
         </div>
-        <h3 className="text-lg font-bold text-white mb-1">Nenhum template encontrado</h3>
-        <p className="text-gray-500 text-sm">
+        <h3 className="text-lg font-bold text-[var(--ds-text-primary)] mb-1">Nenhum template encontrado</h3>
+        <p className="text-[var(--ds-text-muted)] text-sm">
           Tente ajustar os filtros ou clique em sincronizar.
         </p>
       </div>

@@ -22,19 +22,19 @@ export const TemplateListHeader: React.FC<TemplateListHeaderProps> = ({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Templates</h1>
-        <p className="text-gray-400">Gerencie seus modelos de mensagens aprovados pelo WhatsApp</p>
+        <h1 className="text-3xl font-bold text-[var(--ds-text-primary)] tracking-tight mb-2">Templates</h1>
+        <p className="text-[var(--ds-text-secondary)]">Gerencie seus modelos de mensagens aprovados pelo WhatsApp</p>
       </div>
       <div className="flex gap-3">
         {/* USAGE LIMIT INDICATOR */}
-        <div className="flex flex-col items-end justify-center mr-4 px-3 py-1 bg-zinc-900 border border-white/5 rounded-lg">
-          <div className="flex items-center gap-2 text-xs font-medium text-gray-400">
+        <div className="flex flex-col items-end justify-center mr-4 px-3 py-1 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-subtle)] rounded-lg">
+          <div className="flex items-center gap-2 text-xs font-medium text-[var(--ds-text-secondary)]">
             <span>Uso da Conta</span>
             <span className={`${templateCount >= 250 ? 'text-amber-300' : 'text-emerald-300'}`}>
               {templateCount} / 250
             </span>
           </div>
-          <div className="w-32 h-1.5 bg-zinc-800 rounded-full mt-1 overflow-hidden">
+          <div className="w-32 h-1.5 bg-[var(--ds-bg-surface)] rounded-full mt-1 overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
                 templateCount >= 250

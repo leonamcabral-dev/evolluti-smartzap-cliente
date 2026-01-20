@@ -78,12 +78,12 @@ export function ConversationList({
   }
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950">
+    <div className="flex flex-col h-full bg-[var(--ds-bg-base)]">
       {/* Header */}
-      <div className="p-3 border-b border-zinc-800">
+      <div className="p-3 border-b border-[var(--ds-border-default)]">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-white">Conversas</h2>
+            <h2 className="text-sm font-semibold text-[var(--ds-text-primary)]">Conversas</h2>
             {totalUnread > 0 && (
               <Badge className="h-5 text-xs px-1.5 bg-primary-500">
                 {totalUnread > 99 ? '99+' : totalUnread}
@@ -182,7 +182,7 @@ export function ConversationList({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-xs text-zinc-400"
+                    className="w-full justify-start text-xs text-[var(--ds-text-secondary)]"
                     onClick={clearFilters}
                   >
                     <X className="h-3 w-3 mr-2" />
@@ -196,18 +196,18 @@ export function ConversationList({
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--ds-text-muted)]" />
           <Input
             type="text"
             placeholder="Buscar conversas..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-8 h-8 text-sm bg-zinc-900 border-zinc-800"
+            className="pl-8 h-8 text-sm bg-[var(--ds-bg-elevated)] border-[var(--ds-border-default)]"
           />
           {search && (
             <button
               onClick={() => onSearchChange('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--ds-text-muted)] hover:text-zinc-300"
             >
               <X className="h-4 w-4" />
             </button>
@@ -222,10 +222,10 @@ export function ConversationList({
           <div className="p-3 space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-start gap-3 animate-pulse">
-                <div className="h-10 w-10 rounded-full bg-zinc-800" />
+                <div className="h-10 w-10 rounded-full bg-[var(--ds-bg-surface)]" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 w-3/4 bg-zinc-800 rounded" />
-                  <div className="h-3 w-1/2 bg-zinc-800 rounded" />
+                  <div className="h-4 w-3/4 bg-[var(--ds-bg-surface)] rounded" />
+                  <div className="h-3 w-1/2 bg-[var(--ds-bg-surface)] rounded" />
                 </div>
               </div>
             ))}
@@ -233,10 +233,10 @@ export function ConversationList({
         ) : conversations.length === 0 ? (
           // Empty state
           <div className="flex flex-col items-center justify-center h-[200px] text-center p-4">
-            <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center mb-3">
-              <Search className="h-6 w-6 text-zinc-500" />
+            <div className="w-12 h-12 rounded-full bg-[var(--ds-bg-surface)] flex items-center justify-center mb-3">
+              <Search className="h-6 w-6 text-[var(--ds-text-muted)]" />
             </div>
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-[var(--ds-text-secondary)]">
               {search || activeFilterCount > 0
                 ? 'Nenhuma conversa encontrada'
                 : 'Nenhuma conversa ainda'}

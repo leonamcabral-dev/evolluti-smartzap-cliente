@@ -143,14 +143,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     ? `${devPublicBaseUrl}${webhookPath || '/api/webhook'}`
     : null;
 
-  if (isLoading) return <div className="text-white">Carregando configurações...</div>;
+  if (isLoading) return <div className="text-[var(--ds-text-primary)]">Carregando configurações...</div>;
 
   return (
     <div>
       {!hideHeader && (
         <>
-          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Configurações</h1>
-          <p className="text-gray-400 mb-10">Gerencie sua conexão com a WhatsApp Business API</p>
+          <h1 className="text-3xl font-bold text-[var(--ds-text-primary)] tracking-tight mb-2">Configurações</h1>
+          <p className="text-[var(--ds-text-secondary)] mb-10">Gerencie sua conexão com a WhatsApp Business API</p>
         </>
       )}
 
@@ -259,15 +259,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         {/* T070: AI Agents Section - Link to AI Agents Configuration */}
         {settings.isConnected && (
-          <div className="rounded-xl border border-white/5 bg-zinc-900/50 p-6">
+          <div className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-bg-elevated)] p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10 border border-blue-500/20">
                   <Bot className="h-6 w-6 text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">Agentes de IA</h3>
-                  <p className="text-sm text-zinc-400">
+                  <h3 className="text-base font-semibold text-[var(--ds-text-primary)]">Agentes de IA</h3>
+                  <p className="text-sm text-[var(--ds-text-secondary)]">
                     Configure agentes de IA para responder automaticamente às conversas
                   </p>
                 </div>

@@ -297,13 +297,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE inbox_conversations;
 ALTER PUBLICATION supabase_realtime ADD TABLE inbox_messages;
 
 -- =============================================================================
--- Insert default AI Agent (optional - can be created via UI)
+-- NOTE: AI Agents must be created by the user through the UI
+-- No default agent is inserted - user must configure their own agent
 -- =============================================================================
-
--- Only insert if no agents exist
-INSERT INTO ai_agents (name, system_prompt, is_default)
-SELECT
-  'Assistente Padrão',
-  'Você é um assistente de atendimento ao cliente amigável e prestativo. Responda em português brasileiro de forma clara e concisa. Se não souber a resposta, admita e ofereça alternativas.',
-  true
-WHERE NOT EXISTS (SELECT 1 FROM ai_agents LIMIT 1);

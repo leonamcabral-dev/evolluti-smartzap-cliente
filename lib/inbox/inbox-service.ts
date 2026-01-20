@@ -8,6 +8,7 @@ import {
   getConversationById,
   getOrCreateConversation,
   updateConversation,
+  removeConversation,
   markConversationAsRead,
   getMessagesByConversation,
   createMessage,
@@ -86,6 +87,10 @@ export async function setConversationPriority(
 
 export async function markAsRead(conversationId: string) {
   return markConversationAsRead(conversationId)
+}
+
+export async function deleteConversation(id: string) {
+  return removeConversation(id)
 }
 
 // =============================================================================

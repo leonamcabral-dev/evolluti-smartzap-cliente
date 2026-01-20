@@ -25,24 +25,24 @@ const containerVariants = cva(
     variants: {
       variant: {
         default: [
-          "bg-zinc-900/60",
-          "border border-white/10",
+          "bg-[var(--ds-bg-elevated)]",
+          "border border-[var(--ds-border-default)]",
         ].join(" "),
         elevated: [
-          "bg-zinc-800",
-          "border border-white/10",
+          "bg-[var(--ds-bg-surface)]",
+          "border border-[var(--ds-border-default)]",
           "shadow-md",
         ].join(" "),
         glass: [
           "glass-panel",
         ].join(" "),
         surface: [
-          "bg-zinc-900",
-          "border border-white/10",
+          "bg-[var(--ds-bg-elevated)]",
+          "border border-[var(--ds-border-default)]",
         ].join(" "),
         subtle: [
-          "bg-zinc-950/40",
-          "border border-white/5",
+          "bg-[var(--ds-bg-base)]",
+          "border border-[var(--ds-border-subtle)]",
         ].join(" "),
       },
       padding: {
@@ -55,7 +55,7 @@ const containerVariants = cva(
       hover: {
         true: [
           "hover:shadow-md",
-          "hover:border-white/15",
+          "hover:border-[var(--ds-border-strong)]",
         ].join(" "),
         false: "",
       },

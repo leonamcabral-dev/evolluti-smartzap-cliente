@@ -94,10 +94,10 @@ export function TurboConfigForm({
   };
 
   return (
-    <div className="mt-6 p-5 bg-zinc-900/30 border border-white/10 rounded-2xl">
+    <div className="mt-6 p-5 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-2xl">
       <div className="flex items-center justify-between gap-3">
-        <div className="text-sm font-medium text-white">Configuracoes</div>
-        <label className="flex items-center gap-2 text-sm text-gray-300">
+        <div className="text-sm font-medium text-[var(--ds-text-primary)]">Configuracoes</div>
+        <label className="flex items-center gap-2 text-sm text-[var(--ds-text-primary)]">
           <input
             type="checkbox"
             checked={!!draft.enabled}
@@ -109,119 +109,119 @@ export function TurboConfigForm({
       </div>
 
       <div className="mt-4 flex flex-col gap-2">
-        <div className="text-xs text-gray-400">Perfis rapidos</div>
+        <div className="text-xs text-[var(--ds-text-secondary)]">Perfis rapidos</div>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(TURBO_PRESETS) as TurboPresetKey[]).map((k) => (
             <button
               key={k}
               type="button"
               onClick={() => applyPreset(k)}
-              className="h-10 px-3 bg-zinc-800 hover:bg-zinc-700 border border-white/10 rounded-lg transition-colors text-xs text-white"
+              className="h-10 px-3 bg-[var(--ds-bg-surface)] hover:bg-[var(--ds-bg-hover)] border border-[var(--ds-border-default)] rounded-lg transition-colors text-xs text-[var(--ds-text-primary)]"
               title={TURBO_PRESETS[k].desc}
             >
               {TURBO_PRESETS[k].label}
             </button>
           ))}
         </div>
-        <div className="text-[11px] text-gray-500">
+        <div className="text-[11px] text-[var(--ds-text-muted)]">
           Dica: se voce aplicar um perfil que muda <span className="font-mono">startMps</span>, use "Resetar aprendizado" para o target atual acompanhar.
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1">sendConcurrency</label>
+          <label className="block text-xs font-medium text-[var(--ds-text-secondary)] mb-1">sendConcurrency</label>
           <input
             type="number"
             value={draft.sendConcurrency}
             onChange={(e) => updateField('sendConcurrency', Number(e.target.value))}
-            className="w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg text-sm text-white font-mono"
+            className="w-full px-3 py-2 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-lg text-sm text-[var(--ds-text-primary)] font-mono"
             min={1}
             max={50}
           />
-          <p className="text-[11px] text-gray-500 mt-1">Quantos envios em paralelo por batch (1 = sequencial).</p>
+          <p className="text-[11px] text-[var(--ds-text-muted)] mt-1">Quantos envios em paralelo por batch (1 = sequencial).</p>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1">batchSize</label>
+          <label className="block text-xs font-medium text-[var(--ds-text-secondary)] mb-1">batchSize</label>
           <input
             type="number"
             value={draft.batchSize}
             onChange={(e) => updateField('batchSize', Number(e.target.value))}
-            className="w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg text-sm text-white font-mono"
+            className="w-full px-3 py-2 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-lg text-sm text-[var(--ds-text-primary)] font-mono"
             min={1}
             max={200}
           />
-          <p className="text-[11px] text-gray-500 mt-1">Quantos contatos por step do workflow (mais alto = menos steps). Dica: use batchSize &gt;= sendConcurrency.</p>
+          <p className="text-[11px] text-[var(--ds-text-muted)] mt-1">Quantos contatos por step do workflow (mais alto = menos steps). Dica: use batchSize &gt;= sendConcurrency.</p>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1">startMps</label>
+          <label className="block text-xs font-medium text-[var(--ds-text-secondary)] mb-1">startMps</label>
           <input
             type="number"
             value={draft.startMps}
             onChange={(e) => updateField('startMps', Number(e.target.value))}
-            className="w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg text-sm text-white font-mono"
+            className="w-full px-3 py-2 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-lg text-sm text-[var(--ds-text-primary)] font-mono"
             min={1}
             max={1000}
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1">maxMps</label>
+          <label className="block text-xs font-medium text-[var(--ds-text-secondary)] mb-1">maxMps</label>
           <input
             type="number"
             value={draft.maxMps}
             onChange={(e) => updateField('maxMps', Number(e.target.value))}
-            className="w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg text-sm text-white font-mono"
+            className="w-full px-3 py-2 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-lg text-sm text-[var(--ds-text-primary)] font-mono"
             min={1}
             max={1000}
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1">minMps</label>
+          <label className="block text-xs font-medium text-[var(--ds-text-secondary)] mb-1">minMps</label>
           <input
             type="number"
             value={draft.minMps}
             onChange={(e) => updateField('minMps', Number(e.target.value))}
-            className="w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg text-sm text-white font-mono"
+            className="w-full px-3 py-2 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-lg text-sm text-[var(--ds-text-primary)] font-mono"
             min={1}
             max={1000}
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1">cooldownSec</label>
+          <label className="block text-xs font-medium text-[var(--ds-text-secondary)] mb-1">cooldownSec</label>
           <input
             type="number"
             value={draft.cooldownSec}
             onChange={(e) => updateField('cooldownSec', Number(e.target.value))}
-            className="w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg text-sm text-white font-mono"
+            className="w-full px-3 py-2 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-lg text-sm text-[var(--ds-text-primary)] font-mono"
             min={1}
             max={600}
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1">minIncreaseGapSec</label>
+          <label className="block text-xs font-medium text-[var(--ds-text-secondary)] mb-1">minIncreaseGapSec</label>
           <input
             type="number"
             value={draft.minIncreaseGapSec}
             onChange={(e) => updateField('minIncreaseGapSec', Number(e.target.value))}
-            className="w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg text-sm text-white font-mono"
+            className="w-full px-3 py-2 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-lg text-sm text-[var(--ds-text-primary)] font-mono"
             min={1}
             max={600}
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1">sendFloorDelayMs</label>
+          <label className="block text-xs font-medium text-[var(--ds-text-secondary)] mb-1">sendFloorDelayMs</label>
           <input
             type="number"
             value={draft.sendFloorDelayMs}
             onChange={(e) => updateField('sendFloorDelayMs', Number(e.target.value))}
-            className="w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg text-sm text-white font-mono"
+            className="w-full px-3 py-2 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-lg text-sm text-[var(--ds-text-primary)] font-mono"
             min={0}
             max={5000}
           />
@@ -231,7 +231,7 @@ export function TurboConfigForm({
       <div className="mt-5 flex justify-end gap-3">
         <button
           onClick={onCancel}
-          className="h-10 px-4 text-sm text-gray-400 hover:text-white transition-colors"
+          className="h-10 px-4 text-sm text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)] transition-colors"
         >
           Cancelar
         </button>
@@ -245,7 +245,7 @@ export function TurboConfigForm({
         </button>
       </div>
 
-      <p className="mt-4 text-xs text-gray-500">
+      <p className="mt-4 text-xs text-[var(--ds-text-muted)]">
         Dica: se voce alterar <span className="font-mono">startMps</span>, use "Resetar aprendizado" para o target atual acompanhar.
       </p>
     </div>

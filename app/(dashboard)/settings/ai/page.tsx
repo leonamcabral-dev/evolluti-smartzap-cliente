@@ -5,11 +5,14 @@ import {
   Bot,
   ChevronDown,
   ChevronUp,
+  FileImage,
   FileText,
   FormInput,
+  Info,
   MessageSquareText,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Wand2,
 } from 'lucide-react'
 import { Page, PageActions, PageDescription, PageHeader, PageTitle } from '@/components/ui/page'
@@ -22,7 +25,7 @@ import {
   type AiPromptsConfig,
   type AiRoutesConfig,
 } from '@/lib/ai/ai-center-defaults'
-import { settingsService } from '@/services'
+import { settingsService, type OCRConfig, type OCRProviderType } from '@/services'
 import { toast } from 'sonner'
 
 type PromptItem = {
@@ -54,6 +57,57 @@ type AIConfigResponse = {
   routes: AiRoutesConfig
   prompts: AiPromptsConfig
   fallback: AiFallbackConfig
+  ocr?: OCRConfig
+}
+
+// Modelos Gemini disponíveis para OCR
+const OCR_GEMINI_MODELS = [
+  {
+    id: 'gemini-2.0-flash-lite',
+    name: 'Gemini 2.0 Flash Lite',
+    price: '$0.02/1M',
+    desc: 'Mais barato, OCR básico',
+  },
+  {
+    id: 'gemini-2.0-flash',
+    name: 'Gemini 2.0 Flash',
+    price: '$0.10/1M',
+    desc: 'Bom custo/benefício',
+  },
+  {
+    id: 'gemini-2.5-flash-lite',
+    name: 'Gemini 2.5 Flash Lite',
+    price: '$0.10/1M',
+    desc: 'Rápido e econômico',
+  },
+  {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    price: '$0.30/1M',
+    desc: 'Recomendado - boa qualidade',
+  },
+  {
+    id: 'gemini-3-flash-preview',
+    name: 'Gemini 3 Flash (Preview)',
+    price: '$0.50/1M',
+    desc: 'Mais recente, alta qualidade',
+  },
+  {
+    id: 'gemini-2.5-pro',
+    name: 'Gemini 2.5 Pro',
+    price: '$1.25/1M',
+    desc: 'Máxima qualidade (tabelas complexas)',
+  },
+]
+
+const DEFAULT_OCR_CONFIG: OCRConfig = {
+  provider: 'gemini',
+  geminiModel: 'gemini-2.0-flash',
+  mistralStatus: {
+    isConfigured: false,
+    source: 'none',
+    tokenPreview: null,
+  },
 }
 
 const EMPTY_PROVIDER_STATUS: ProviderStatus = {
@@ -156,7 +210,7 @@ function StatusPill({
         ? 'text-amber-300 border-amber-500/30 bg-amber-500/10'
         : tone === 'red'
           ? 'text-red-300 border-red-500/30 bg-red-500/10'
-          : 'text-zinc-300 border-white/10 bg-white/5'
+          : 'text-[var(--ds-text-secondary)] border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)]'
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${toneClass}`}
@@ -187,12 +241,12 @@ function MockSwitch({
       disabled={disabled}
       onClick={() => onToggle?.(!on)}
       className={`relative inline-flex h-6 w-11 items-center rounded-full border transition ${
-        on ? 'border-emerald-500/40 bg-emerald-500/20' : 'border-white/10 bg-white/5'
+        on ? 'border-emerald-500/40 bg-emerald-500/20' : 'border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)]'
       } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
     >
       <span
         className={`inline-block size-4 rounded-full transition ${
-          on ? 'translate-x-6 bg-emerald-300' : 'translate-x-1 bg-white/50'
+          on ? 'translate-x-6 bg-emerald-300' : 'translate-x-1 bg-[var(--ds-text-muted)]'
         }`}
       />
     </button>
@@ -224,23 +278,23 @@ function PromptCard({
     }
   }
   return (
-    <div className="rounded-2xl border border-white/10 bg-zinc-900/60 p-5">
+    <div className="rounded-2xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] p-5">
       <div className="flex w-full flex-wrap items-center justify-between gap-4 text-left">
         <div className="flex items-start gap-3">
-          <div className="rounded-xl border border-white/10 bg-white/5 p-2 text-white">
+          <div className="rounded-xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)] p-2 text-[var(--ds-text-primary)]">
             <Icon className="size-4" />
           </div>
           <div>
-            <div className="text-sm font-semibold text-white">{item.title}</div>
-            <div className="mt-1 text-xs text-gray-400">{item.description}</div>
-            <div className="mt-2 inline-flex rounded-full border border-white/10 bg-black/40 px-3 py-1 text-xs text-gray-400">
+            <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{item.title}</div>
+            <div className="mt-1 text-xs text-[var(--ds-text-secondary)]">{item.description}</div>
+            <div className="mt-2 inline-flex rounded-full border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] px-3 py-1 text-xs text-[var(--ds-text-secondary)]">
               {item.path}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {routeEnabled !== undefined && onToggleRoute && (
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-[var(--ds-text-muted)]">
               <span>{routeEnabled ? 'Ativa' : 'Desativada'}</span>
               <MockSwitch on={routeEnabled} onToggle={onToggleRoute} label="Ativar rota" />
             </div>
@@ -248,7 +302,7 @@ function PromptCard({
           <button
             type="button"
             onClick={() => setIsOpen((current) => !current)}
-            className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300 transition hover:bg-white/10"
+            className="flex items-center gap-2 rounded-full border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)] px-3 py-1 text-xs text-[var(--ds-text-primary)] transition hover:bg-[var(--ds-bg-surface)]"
             aria-expanded={isOpen}
           >
             {isOpen ? 'Fechar' : 'Editar'}
@@ -261,20 +315,20 @@ function PromptCard({
         <>
           <div className="mt-4">
             <textarea
-              className="min-h-[160px] w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-gray-200 outline-none transition focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/10"
+              className="min-h-[160px] w-full rounded-xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] px-4 py-3 text-sm text-[var(--ds-text-primary)] outline-none transition focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/10"
               rows={item.rows ?? 6}
               value={value}
               onChange={(event) => onChange(event.target.value)}
             />
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-400">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--ds-text-secondary)]">
             <div className="flex flex-wrap gap-2">
-              <span className="font-medium text-gray-300">Variáveis:</span>
+              <span className="font-medium text-[var(--ds-text-primary)]">Variáveis:</span>
               {item.variables.map((v) => (
                 <span
                   key={v}
-                  className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5"
+                  className="rounded-full border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)] px-2 py-0.5"
                 >
                   {v}
                 </span>
@@ -282,7 +336,7 @@ function PromptCard({
             </div>
             <button
               type="button"
-              className="h-8 rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-medium text-white transition hover:bg-white/10"
+              className="h-8 rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)] px-3 text-xs font-medium text-[var(--ds-text-primary)] transition hover:bg-[var(--ds-bg-surface)]"
               onClick={handleCopy}
             >
               Copiar prompt
@@ -315,6 +369,12 @@ export default function AICenterPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  // OCR State
+  const [ocrConfig, setOcrConfig] = useState<OCRConfig>(DEFAULT_OCR_CONFIG)
+  const [mistralKeyDraft, setMistralKeyDraft] = useState('')
+  const [isSavingOcr, setIsSavingOcr] = useState(false)
+  const [showMistralKeyInput, setShowMistralKeyInput] = useState(false)
 
   const orderedProviders = useMemo(
     () => normalizeProviderOrder(fallback.order),
@@ -380,6 +440,11 @@ export default function AICenterPage() {
         openai: data.providers?.openai ?? EMPTY_PROVIDER_STATUS,
         anthropic: data.providers?.anthropic ?? EMPTY_PROVIDER_STATUS,
       })
+
+      // Load OCR configuration
+      if (data.ocr) {
+        setOcrConfig(data.ocr)
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Erro ao carregar configuracoes de IA'
@@ -472,6 +537,70 @@ export default function AICenterPage() {
     }
   }
 
+  // OCR Handlers
+  const handleOcrProviderChange = async (newProvider: OCRProviderType) => {
+    setIsSavingOcr(true)
+    try {
+      await settingsService.saveAIConfig({ ocr_provider: newProvider })
+      setOcrConfig((current) => ({ ...current, provider: newProvider }))
+      toast.success('Provider de OCR atualizado')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro ao salvar provider OCR'
+      toast.error(message)
+    } finally {
+      setIsSavingOcr(false)
+    }
+  }
+
+  const handleOcrGeminiModelChange = async (newModel: string) => {
+    setIsSavingOcr(true)
+    try {
+      await settingsService.saveAIConfig({ ocr_gemini_model: newModel })
+      setOcrConfig((current) => ({ ...current, geminiModel: newModel }))
+      toast.success('Modelo OCR atualizado')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro ao salvar modelo OCR'
+      toast.error(message)
+    } finally {
+      setIsSavingOcr(false)
+    }
+  }
+
+  const handleSaveMistralKey = async () => {
+    const apiKey = mistralKeyDraft.trim()
+    if (!apiKey) {
+      toast.error('Informe a chave de API do Mistral')
+      return
+    }
+    setIsSavingOcr(true)
+    try {
+      await settingsService.saveAIConfig({ mistral_api_key: apiKey })
+      setMistralKeyDraft('')
+      setShowMistralKeyInput(false)
+      toast.success('Chave Mistral salva')
+      await loadConfig()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro ao salvar chave Mistral'
+      toast.error(message)
+    } finally {
+      setIsSavingOcr(false)
+    }
+  }
+
+  const handleRemoveMistralKey = async () => {
+    setIsSavingOcr(true)
+    try {
+      await settingsService.removeAIKey('mistral')
+      toast.success('Chave Mistral removida')
+      await loadConfig()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro ao remover chave Mistral'
+      toast.error(message)
+    } finally {
+      setIsSavingOcr(false)
+    }
+  }
+
   return (
     <Page>
       <PageHeader>
@@ -507,18 +636,18 @@ export default function AICenterPage() {
       <div className="mb-6">
         <a
           href="/settings/ai/agents"
-          className="group flex items-center justify-between rounded-2xl border border-white/10 bg-zinc-900/60 p-4 transition hover:border-emerald-500/30 hover:bg-emerald-500/5"
+          className="group flex items-center justify-between rounded-2xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] p-4 transition hover:border-emerald-500/30 hover:bg-emerald-500/5"
         >
           <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-white/10 bg-white/5 p-2 text-emerald-300">
+            <div className="rounded-xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)] p-2 text-emerald-300">
               <Bot className="size-5" />
             </div>
             <div>
-              <div className="text-sm font-semibold text-white">Agentes de Atendimento</div>
-              <div className="text-xs text-gray-400">Configure os agentes IA para o Inbox</div>
+              <div className="text-sm font-semibold text-[var(--ds-text-primary)]">Agentes de Atendimento</div>
+              <div className="text-xs text-[var(--ds-text-secondary)]">Configure os agentes IA para o Inbox</div>
             </div>
           </div>
-          <ChevronDown className="size-4 -rotate-90 text-gray-500 transition group-hover:text-emerald-300" />
+          <ChevronDown className="size-4 -rotate-90 text-[var(--ds-text-muted)] transition group-hover:text-emerald-300" />
         </a>
       </div>
 
@@ -526,10 +655,10 @@ export default function AICenterPage() {
         <section className="glass-panel rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1">
-              <h3 className="text-lg font-semibold text-white">Modelo principal</h3>
-              <p className="text-sm text-gray-400">Escolha o modelo para produção.</p>
+              <h3 className="text-lg font-semibold text-[var(--ds-text-primary)]">Modelo principal</h3>
+              <p className="text-sm text-[var(--ds-text-secondary)]">Escolha o modelo para produção.</p>
             </div>
-            <div className="flex items-center gap-3 text-xs text-gray-500">
+            <div className="flex items-center gap-3 text-xs text-[var(--ds-text-muted)]">
               <span>Fallback automático: {fallbackSummary}</span>
               <MockSwitch
                 on={fallback.enabled}
@@ -571,24 +700,24 @@ export default function AICenterPage() {
                   className={`rounded-xl border p-4 ${
                     isActive
                       ? 'border-emerald-500/30 bg-emerald-500/5'
-                      : 'border-white/10 bg-zinc-900/60'
+                      : 'border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)]'
                   }`}
                 >
                   <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex flex-col items-center gap-1 text-xs text-gray-500">
+                    <div className="flex flex-col items-center gap-1 text-xs text-[var(--ds-text-muted)]">
                       <button
                         type="button"
-                        className="flex h-6 w-6 items-center justify-center rounded-md border border-white/10 text-gray-400 transition hover:bg-white/5 hover:text-white disabled:opacity-40"
+                        className="flex h-6 w-6 items-center justify-center rounded-md border border-[var(--ds-border-default)] text-[var(--ds-text-secondary)] transition hover:bg-[var(--ds-bg-hover)] hover:text-[var(--ds-text-primary)] disabled:opacity-40"
                         onClick={() => handleFallbackMove(item.id, -1)}
                         disabled={index === 0}
                         aria-label="Mover para cima"
                       >
                         <ChevronUp className="size-3" />
                       </button>
-                      <span className="text-[11px] font-medium text-gray-400">{index + 1}</span>
+                      <span className="text-[11px] font-medium text-[var(--ds-text-secondary)]">{index + 1}</span>
                       <button
                         type="button"
-                        className="flex h-6 w-6 items-center justify-center rounded-md border border-white/10 text-gray-400 transition hover:bg-white/5 hover:text-white disabled:opacity-40"
+                        className="flex h-6 w-6 items-center justify-center rounded-md border border-[var(--ds-border-default)] text-[var(--ds-text-secondary)] transition hover:bg-[var(--ds-bg-hover)] hover:text-[var(--ds-text-primary)] disabled:opacity-40"
                         onClick={() => handleFallbackMove(item.id, 1)}
                         disabled={index === orderedProviders.length - 1}
                         aria-label="Mover para baixo"
@@ -598,8 +727,8 @@ export default function AICenterPage() {
                     </div>
                     <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3">
                       <div>
-                        <div className="text-sm font-semibold text-white">{item.name}</div>
-                        <div className="text-xs text-gray-400">
+                        <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{item.name}</div>
+                        <div className="text-xs text-[var(--ds-text-secondary)]">
                           Modelo: {isActive ? primaryModelLabel : item.models[0]?.name ?? '—'}
                         </div>
                       </div>
@@ -608,7 +737,7 @@ export default function AICenterPage() {
                       {isActive ? (
                         <button
                           type="button"
-                          className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10"
+                          className="rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)] px-3 py-1.5 text-xs font-medium text-[var(--ds-text-primary)] transition hover:bg-[var(--ds-bg-surface)]"
                           onClick={() =>
                             setInlineKeyProvider((current) => (current === item.id ? null : item.id))
                           }
@@ -622,7 +751,7 @@ export default function AICenterPage() {
                       ) : status.isConfigured ? (
                         <button
                           type="button"
-                          className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10"
+                          className="rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)] px-3 py-1.5 text-xs font-medium text-[var(--ds-text-primary)] transition hover:bg-[var(--ds-bg-surface)]"
                           onClick={() => handleProviderSelect(item.id)}
                         >
                           Definir como padrão
@@ -644,7 +773,7 @@ export default function AICenterPage() {
 
                   {isActive && (
                     <div className="mt-4">
-                      <label className="text-xs text-gray-500">Selecionar modelo</label>
+                      <label className="text-xs text-[var(--ds-text-muted)]">Selecionar modelo</label>
                       <div className="relative mt-2">
                         <select
                           value={model}
@@ -660,7 +789,7 @@ export default function AICenterPage() {
                             }))
                           }}
                           disabled={!status.isConfigured}
-                          className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none transition focus:border-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="w-full rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] px-3 py-2 text-sm text-[var(--ds-text-primary)] outline-none transition focus:border-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {primaryModelOptions.map((modelOption) => (
                             <option key={modelOption.id} value={modelOption.id}>
@@ -684,7 +813,7 @@ export default function AICenterPage() {
                             [item.id]: event.target.value,
                           }))
                         }
-                        className="min-w-[220px] flex-1 rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-sm text-white outline-none transition focus:border-emerald-500/40"
+                        className="min-w-[220px] flex-1 rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] px-3 py-2 text-sm text-[var(--ds-text-primary)] outline-none transition focus:border-emerald-500/40"
                       />
                       <button
                         type="button"
@@ -702,14 +831,200 @@ export default function AICenterPage() {
           </div>
         </section>
 
+        {/* OCR Configuration Section */}
         <section className="glass-panel rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-sm font-semibold text-white">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-primary)]">
+                <FileImage className="size-4 text-emerald-300" />
+                OCR (Extração de Documentos)
+              </div>
+              <p className="text-sm text-[var(--ds-text-secondary)]">
+                Configure o provider para extrair texto de PDFs e imagens.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-4">
+            {/* Gemini Card */}
+            <div
+              className={`rounded-xl border p-4 transition ${
+                ocrConfig.provider === 'gemini'
+                  ? 'border-emerald-500/30 bg-emerald-500/5'
+                  : 'border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)]'
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-9 items-center justify-center rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)]">
+                    <span className="text-base">✨</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-[var(--ds-text-primary)]">Gemini</div>
+                    <div className="text-xs text-[var(--ds-text-secondary)]">
+                      Usa sua chave Gemini já configurada
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {ocrConfig.provider === 'gemini' ? (
+                    <span className="rounded-full bg-emerald-500/20 px-2.5 py-1 text-xs font-medium text-emerald-300">
+                      Em uso
+                    </span>
+                  ) : providerStatuses.google.isConfigured ? (
+                    <button
+                      type="button"
+                      onClick={() => handleOcrProviderChange('gemini')}
+                      disabled={isSavingOcr}
+                      className="rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)] px-3 py-1.5 text-xs font-medium text-[var(--ds-text-primary)] transition hover:bg-[var(--ds-bg-surface)]"
+                    >
+                      Usar Gemini
+                    </button>
+                  ) : (
+                    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-300">
+                      Sem chave
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Gemini Model Selection - shown when Gemini is active */}
+              {ocrConfig.provider === 'gemini' && providerStatuses.google.isConfigured && (
+                <div className="mt-4 border-t border-[var(--ds-border-subtle)] pt-4">
+                  <label className="text-xs text-[var(--ds-text-muted)]">Modelo para OCR</label>
+                  <div className="mt-2">
+                    <select
+                      value={ocrConfig.geminiModel}
+                      onChange={(e) => handleOcrGeminiModelChange(e.target.value)}
+                      disabled={isSavingOcr}
+                      className="w-full rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] px-3 py-2 text-sm text-[var(--ds-text-primary)] outline-none transition focus:border-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {OCR_GEMINI_MODELS.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} ({m.price}) - {m.desc}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mistral Card */}
+            <div
+              className={`rounded-xl border p-4 transition ${
+                ocrConfig.provider === 'mistral'
+                  ? 'border-emerald-500/30 bg-emerald-500/5'
+                  : 'border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)]'
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-9 items-center justify-center rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)]">
+                    <span className="text-base">🔮</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-[var(--ds-text-primary)]">Mistral</div>
+                    <div className="text-xs text-[var(--ds-text-secondary)]">
+                      {ocrConfig.mistralStatus.isConfigured
+                        ? ocrConfig.mistralStatus.tokenPreview
+                          ? `Chave: ${ocrConfig.mistralStatus.tokenPreview}`
+                          : 'Chave configurada'
+                        : 'Qualidade superior para tabelas'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {ocrConfig.provider === 'mistral' ? (
+                    <>
+                      <span className="rounded-full bg-emerald-500/20 px-2.5 py-1 text-xs font-medium text-emerald-300">
+                        Em uso
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowMistralKeyInput(!showMistralKeyInput)}
+                        className="rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)] px-3 py-1.5 text-xs font-medium text-[var(--ds-text-primary)] transition hover:bg-[var(--ds-bg-surface)]"
+                      >
+                        {showMistralKeyInput ? 'Cancelar' : 'Atualizar chave'}
+                      </button>
+                    </>
+                  ) : ocrConfig.mistralStatus.isConfigured ? (
+                    <button
+                      type="button"
+                      onClick={() => handleOcrProviderChange('mistral')}
+                      disabled={isSavingOcr}
+                      className="rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)] px-3 py-1.5 text-xs font-medium text-[var(--ds-text-primary)] transition hover:bg-[var(--ds-bg-surface)]"
+                    >
+                      Usar Mistral
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowMistralKeyInput(!showMistralKeyInput)}
+                      className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-200 transition hover:bg-amber-500/20"
+                    >
+                      {showMistralKeyInput ? 'Cancelar' : 'Adicionar chave'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Mistral Key Input - shown when adding/updating key */}
+              {showMistralKeyInput && (
+                <div className="mt-4 border-t border-[var(--ds-border-subtle)] pt-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="password"
+                      placeholder="Chave de API do Mistral"
+                      value={mistralKeyDraft}
+                      onChange={(e) => setMistralKeyDraft(e.target.value)}
+                      className="min-w-[220px] flex-1 rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] px-3 py-2 text-sm text-[var(--ds-text-primary)] outline-none transition focus:border-emerald-500/40"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveMistralKey}
+                      disabled={isSavingOcr || !mistralKeyDraft.trim()}
+                      className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-zinc-900 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isSavingOcr ? 'Salvando...' : 'Salvar chave'}
+                    </button>
+                    {ocrConfig.mistralStatus.isConfigured &&
+                      ocrConfig.mistralStatus.source === 'database' && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveMistralKey}
+                          disabled={isSavingOcr}
+                          className="flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
+                        >
+                          <Trash2 className="size-3" />
+                          Remover
+                        </button>
+                      )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Info note */}
+            <div className="flex items-start gap-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-bg-tertiary)] p-3 text-xs text-[var(--ds-text-secondary)]">
+              <Info className="mt-0.5 size-4 shrink-0 text-emerald-300/60" />
+              <span>
+                O OCR converte PDFs e imagens em texto antes de indexar na base de conhecimento
+                dos agentes. Escolha Gemini para custo-benefício ou Mistral para melhor precisão
+                em tabelas complexas.
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="glass-panel rounded-2xl p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-primary)]">
                 <Wand2 className="size-4 text-emerald-300" />
                 Prompts do sistema
               </div>
-              <p className="text-sm text-gray-400">Edite os prompts sem sair daqui.</p>
+              <p className="text-sm text-[var(--ds-text-secondary)]">Edite os prompts sem sair daqui.</p>
             </div>
             <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
               {PROMPTS.length} prompts configuráveis

@@ -22,20 +22,20 @@ const statusBadgeVariants = cva(
     variants: {
       status: {
         // Generic status
-        success: "bg-emerald-500/10 text-emerald-400",
-        error: "bg-red-500/10 text-red-400",
-        warning: "bg-amber-500/10 text-amber-400",
-        info: "bg-blue-500/10 text-blue-400",
-        processing: "bg-blue-500/10 text-blue-400 animate-pulse",
-        default: "bg-zinc-500/10 text-zinc-400",
+        success: "bg-emerald-500/10 text-[var(--ds-status-success-text)]",
+        error: "bg-red-500/10 text-[var(--ds-status-error-text)]",
+        warning: "bg-amber-500/10 text-[var(--ds-status-warning-text)]",
+        info: "bg-blue-500/10 text-[var(--ds-status-info-text)]",
+        processing: "bg-blue-500/10 text-[var(--ds-status-info-text)] animate-pulse",
+        default: "bg-[var(--ds-bg-surface)] text-[var(--ds-text-secondary)]",
 
         // Campaign status (SmartZap specific)
-        draft: "bg-zinc-500/10 text-zinc-400",
-        scheduled: "bg-purple-500/10 text-purple-400",
-        sending: "bg-blue-500/10 text-blue-400 animate-pulse",
-        completed: "bg-emerald-500/10 text-emerald-400",
-        paused: "bg-amber-500/10 text-amber-400",
-        failed: "bg-red-500/10 text-red-400",
+        draft: "bg-[var(--ds-bg-surface)] text-[var(--ds-text-secondary)]",
+        scheduled: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
+        sending: "bg-blue-500/10 text-[var(--ds-status-info-text)] animate-pulse",
+        completed: "bg-emerald-500/10 text-[var(--ds-status-success-text)]",
+        paused: "bg-amber-500/10 text-[var(--ds-status-warning-text)]",
+        failed: "bg-red-500/10 text-[var(--ds-status-error-text)]",
       },
       size: {
         sm: "text-[10px] px-2 py-px",

@@ -178,21 +178,21 @@ export function TurboConfigSection({
         <div className="flex items-center gap-2 shrink-0">
           <Link
             href="/settings/performance"
-            className="h-10 px-4 rounded-xl bg-white/5 text-white hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all text-sm font-medium"
+            className="h-10 px-4 rounded-xl bg-[var(--ds-bg-hover)] text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)] transition-all text-sm font-medium"
             title="Abrir central de performance (baseline/historico)"
           >
             Performance
           </Link>
           <Link
             href="/settings/meta-diagnostics"
-            className="h-10 px-4 rounded-xl bg-white/5 text-white hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all text-sm font-medium"
+            className="h-10 px-4 rounded-xl bg-[var(--ds-bg-hover)] text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)] transition-all text-sm font-medium"
             title="Abrir central de diagnostico Meta (Graph API + infra + acoes)"
           >
             Diagnostico
           </Link>
           <button
             onClick={() => setIsEditing((v) => !v)}
-            className="h-10 px-4 rounded-xl bg-white/5 text-white hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all text-sm font-medium"
+            className="h-10 px-4 rounded-xl bg-[var(--ds-bg-hover)] text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)] transition-all text-sm font-medium"
           >
             {isEditing ? 'Fechar' : 'Configurar'}
           </button>

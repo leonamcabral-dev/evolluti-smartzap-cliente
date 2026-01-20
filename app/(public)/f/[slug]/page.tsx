@@ -155,21 +155,21 @@ export default function PublicLeadFormPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-0px)] bg-zinc-950 px-3 py-6 text-zinc-100 sm:px-4 sm:py-10">
+    <div className="min-h-[calc(100vh-0px)] bg-[var(--ds-bg-base)] px-3 py-6 text-[var(--ds-text-primary)] sm:px-4 sm:py-10">
       <div className="mx-auto w-full max-w-2xl">
-        <Card className="gap-4 border-zinc-800 bg-zinc-900/60 py-5 backdrop-blur sm:gap-6 sm:py-6">
+        <Card className="gap-4 border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] py-5 backdrop-blur sm:gap-6 sm:py-6">
           <CardHeader className="px-4 sm:px-6">
             <CardTitle className="text-xl sm:text-2xl">
               <span className="inline-flex flex-wrap items-center gap-2">
                 {isLoading ? 'Carregando…' : (form?.name || 'Formulário')}
                 {isInactive ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-zinc-700/80 bg-zinc-800/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-300">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--ds-text-secondary)]">
                     Desativado
                   </span>
                 ) : null}
               </span>
             </CardTitle>
-            <CardDescription className="text-zinc-400">
+            <CardDescription className="text-[var(--ds-text-secondary)]">
               {isInactive
                 ? 'Este formulário está temporariamente indisponível.'
                 : 'Preencha seus dados para ser adicionado automaticamente na lista.'}
@@ -180,28 +180,28 @@ export default function PublicLeadFormPage() {
             {isInactive ? (
               <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 rounded-full border border-zinc-800 bg-zinc-900/40 p-2">
-                    <CircleSlash className="h-5 w-5 text-zinc-300" />
+                  <div className="mt-0.5 rounded-full border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] p-2">
+                    <CircleSlash className="h-5 w-5 text-[var(--ds-text-secondary)]" />
                   </div>
-                  <p className="text-sm text-zinc-400">
+                  <p className="text-sm text-[var(--ds-text-secondary)]">
                     Se você recebeu este link, solicite um novo ou confirme se foi reativado pelo responsável.
                   </p>
                 </div>
 
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-[var(--ds-text-muted)]">
                   Quando reativado, esta página se atualiza automaticamente.
                 </p>
               </div>
             ) : null}
 
             {loadError ? (
-              <div className="rounded-xl border border-red-900/60 bg-red-950/40 p-4 text-sm text-red-200">
+              <div className="rounded-xl border border-[var(--ds-status-error)]/40 bg-[var(--ds-status-error-bg)] p-4 text-sm text-[var(--ds-status-error-text)]">
                 {loadError}
               </div>
             ) : null}
 
             {successMessage ? (
-              <div className="rounded-xl border border-emerald-900/50 bg-emerald-950/30 p-4 text-sm text-emerald-100">
+              <div className="rounded-xl border border-[var(--ds-status-success)]/40 bg-[var(--ds-status-success-bg)] p-4 text-sm text-[var(--ds-status-success-text)]">
                 {successMessage}
               </div>
             ) : null}
@@ -215,7 +215,7 @@ export default function PublicLeadFormPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Seu nome"
-                    className="bg-zinc-800 border-zinc-700"
+                    className="bg-[var(--ds-bg-surface)] border-[var(--ds-border-default)]"
                     required
                   />
                 </div>
@@ -240,7 +240,7 @@ export default function PublicLeadFormPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="voce@exemplo.com"
-                      className="bg-zinc-800 border-zinc-700"
+                      className="bg-[var(--ds-bg-surface)] border-[var(--ds-border-default)]"
                       type="email"
                     />
                   </div>
@@ -259,7 +259,7 @@ export default function PublicLeadFormPage() {
                               {f.label}{f.required ? ' *' : ''}
                             </Label>
                             <select
-                              className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 text-sm"
+                              className="h-10 w-full rounded-md border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] px-3 text-sm text-[var(--ds-text-primary)]"
                               value={String(value)}
                               onChange={(e) =>
                                 setCustomFields((prev) => ({ ...prev, [key]: e.target.value }))
@@ -288,7 +288,7 @@ export default function PublicLeadFormPage() {
                             id={`cf_${key}`}
                             value={String(value)}
                             onChange={(e) => setCustomFields((prev) => ({ ...prev, [key]: e.target.value }))}
-                            className="bg-zinc-800 border-zinc-700"
+                            className="bg-[var(--ds-bg-surface)] border-[var(--ds-border-default)]"
                             type={inputType}
                             required={!!f.required}
                           />
@@ -305,7 +305,7 @@ export default function PublicLeadFormPage() {
                 </div>
 
                 {submitError ? (
-                  <div className="rounded-xl border border-red-900/60 bg-red-950/40 p-3 text-sm text-red-200">
+                  <div className="rounded-xl border border-[var(--ds-status-error)]/40 bg-[var(--ds-status-error-bg)] p-3 text-sm text-[var(--ds-status-error-text)]">
                     {submitError}
                   </div>
                 ) : null}
@@ -314,7 +314,7 @@ export default function PublicLeadFormPage() {
                   {isSubmitting ? 'Enviando…' : 'Enviar'}
                 </Button>
 
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-[var(--ds-text-muted)]">
                   Ao enviar, você concorda em receber mensagens relacionadas ao conteúdo/curso.
                 </p>
               </form>

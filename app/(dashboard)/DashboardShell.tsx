@@ -72,7 +72,7 @@ const OnboardingOverlay = ({
                 : health?.services.database?.status === 'error'
                     ? 'error'
                     : 'pending',
-            icon: React.createElement(Database, { size: 20, className: 'text-emerald-400' }),
+            icon: React.createElement(Database, { size: 20, className: 'text-emerald-600 dark:text-emerald-400' }),
             actionLabel: 'Abrir Assistente de Configuração',
             actionUrl: '/install/start',
             errorMessage: health?.services.database?.message,
@@ -93,7 +93,7 @@ const OnboardingOverlay = ({
                 : health?.services.qstash.status === 'error'
                     ? 'error'
                     : 'pending',
-            icon: React.createElement(Zap, { size: 20, className: 'text-purple-400' }),
+            icon: React.createElement(Zap, { size: 20, className: 'text-purple-600 dark:text-purple-400' }),
             actionLabel: 'Configurar no Assistente',
             actionUrl: '/install/start',
             errorMessage: health?.services.qstash.message,
@@ -113,7 +113,7 @@ const OnboardingOverlay = ({
                 : health?.services.whatsapp.status === 'error'
                     ? 'error'
                     : 'pending',
-            icon: React.createElement(MessageCircle, { size: 20, className: 'text-green-400' }),
+            icon: React.createElement(MessageCircle, { size: 20, className: 'text-green-600 dark:text-green-400' }),
             errorMessage: health?.services.whatsapp.message,
             isRequired: true,
             actionLabel: 'Configurar WhatsApp',
@@ -138,17 +138,17 @@ const OnboardingOverlay = ({
                 {/* Header */}
                 <div className="text-center mb-10">
                     <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-linear-to-br from-primary-500 to-emerald-600 mb-6 shadow-lg shadow-primary-500/20">
-                        <Sparkles size={40} className="text-white" />
+                        <Sparkles size={40} className="text-[var(--ds-text-primary)]" />
                     </div>
-                    <h1 className="text-4xl font-bold text-white tracking-tight mb-3">
+                    <h1 className="text-4xl font-bold text-[var(--ds-text-primary)] tracking-tight mb-3">
                         Configuração Necessária
                     </h1>
-                    <p className="text-gray-400 text-lg max-w-md mx-auto mb-6">
+                    <p className="text-[var(--ds-text-secondary)] text-lg max-w-md mx-auto mb-6">
                         Para utilizar o sistema, precisamos configurar os serviços essenciais. Utilize nosso assistente para facilitar o processo.
                     </p>
                     <a
                         href="/install/start"
-                        className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-500 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-primary-500/25"
+                        className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-500 text-[var(--ds-text-primary)] px-6 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-primary-500/25"
                     >
                         <Sparkles size={18} />
                         Iniciar Assistente de Instalação
@@ -158,19 +158,19 @@ const OnboardingOverlay = ({
                 {/* Progress Bar */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="text-gray-400">
+                        <span className="text-[var(--ds-text-secondary)]">
                             Progresso: {completedSteps}/{steps.length} configurados
                         </span>
                         <button
                             onClick={onRefresh}
                             disabled={isLoading}
-                            className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
+                            className="flex items-center gap-1 text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)] transition-colors"
                         >
                             <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
                             Verificar novamente
                         </button>
                     </div>
-                    <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-[var(--ds-bg-surface)] rounded-full overflow-hidden">
                         <div
                             className="h-full bg-linear-to-r from-primary-500 to-emerald-500 transition-all duration-500"
                             style={{ width: `${progressPercent}%` }}
@@ -180,7 +180,7 @@ const OnboardingOverlay = ({
                     {/* Redeploy warning */}
                     {completedSteps === 0 && (
                         <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                            <p className="text-sm text-amber-300 mb-2">
+                            <p className="text-sm text-amber-700 dark:text-amber-300 mb-2">
                                 💡 <strong>Importante:</strong> Após configurar QStash, faça um <strong>redeploy</strong> para ativar as variáveis.
                             </p>
                             <div className="flex gap-2">
@@ -189,7 +189,7 @@ const OnboardingOverlay = ({
                                         href={`${health.vercel.dashboardUrl}/deployments`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-xs px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg transition-colors"
+                                        className="text-xs px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300 rounded-lg transition-colors"
                                     >
                                         Abrir Deployments →
                                     </a>
@@ -222,17 +222,17 @@ const OnboardingOverlay = ({
                                             ? 'bg-red-500/5 border-red-500/30'
                                             : isNextStep
                                                 ? 'bg-primary-500/5 border-primary-500/30 ring-2 ring-primary-500/20'
-                                                : 'bg-zinc-900/50 border-white/10 opacity-60'
+                                                : 'bg-[var(--ds-bg-elevated)] border-[var(--ds-border-default)] opacity-60'
                                         }`}
                                 >
                                     {/* Step number badge */}
                                     <div className={`absolute top-4 left-4 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isConfigured
-                                        ? 'bg-emerald-500 text-white'
+                                        ? 'bg-emerald-500 text-[var(--ds-text-primary)]'
                                         : isError
-                                            ? 'bg-red-500 text-white'
+                                            ? 'bg-red-500 text-[var(--ds-text-primary)]'
                                             : isNextStep
-                                                ? 'bg-primary-500 text-white'
-                                                : 'bg-zinc-700 text-gray-400'
+                                                ? 'bg-primary-500 text-[var(--ds-text-primary)]'
+                                                : 'bg-[var(--ds-bg-surface)] text-[var(--ds-text-secondary)]'
                                         }`}>
                                         {isConfigured ? <CheckCircle2 size={16} /> : index + 1}
                                     </div>
@@ -241,12 +241,12 @@ const OnboardingOverlay = ({
                                         {/* Header */}
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
-                                                <h3 className={`font-semibold ${isConfigured ? 'text-emerald-400' : isError ? 'text-red-400' : 'text-white'
+                                                <h3 className={`font-semibold ${isConfigured ? 'text-emerald-600 dark:text-emerald-400' : isError ? 'text-red-600 dark:text-red-400' : 'text-[var(--ds-text-primary)]'
                                                     }`}>
                                                     {step.title}
                                                 </h3>
                                                 {step.isRequired && !isConfigured && (
-                                                    <span className="px-1.5 py-0.5 bg-white/10 text-gray-400 text-[10px] font-medium rounded">
+                                                    <span className="px-1.5 py-0.5 bg-[var(--ds-bg-hover)] text-[var(--ds-text-secondary)] text-[10px] font-medium rounded">
                                                         OBRIGATÓRIO
                                                     </span>
                                                 )}
@@ -258,7 +258,7 @@ const OnboardingOverlay = ({
                                             )}
                                         </div>
 
-                                        <p className="text-sm text-gray-400">
+                                        <p className="text-sm text-[var(--ds-text-secondary)]">
                                             {step.description}
                                         </p>
 
@@ -270,7 +270,7 @@ const OnboardingOverlay = ({
                                         )}
 
                                         {isConfigured && (
-                                            <div className="flex items-center gap-2 text-sm text-emerald-400 mt-3">
+                                            <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 mt-3">
                                                 <CheckCircle2 size={14} />
                                                 <span>Configurado</span>
                                             </div>
@@ -278,14 +278,14 @@ const OnboardingOverlay = ({
 
                                         {/* Instructions + Action - TOGETHER */}
                                         {isNextStep && step.instructions.length > 0 && (
-                                            <div className="mt-4 bg-zinc-800/50 rounded-xl p-4 border border-white/5">
+                                            <div className="mt-4 bg-[var(--ds-bg-surface)] rounded-xl p-4 border border-[var(--ds-border-subtle)]">
                                                 <ol className="space-y-2 mb-4">
                                                     {step.instructions.map((instruction, i) => (
                                                         <li
                                                             key={i}
-                                                            className="flex items-center gap-3 text-sm text-gray-300"
+                                                            className="flex items-center gap-3 text-sm text-[var(--ds-text-secondary)]"
                                                         >
-                                                            <span className="shrink-0 w-5 h-5 rounded-full bg-primary-500/20 text-primary-400 flex items-center justify-center text-xs font-bold">
+                                                            <span className="shrink-0 w-5 h-5 rounded-full bg-primary-500/20 text-primary-600 dark:text-primary-400 flex items-center justify-center text-xs font-bold">
                                                                 {i + 1}
                                                             </span>
                                                             <span>{instruction}</span>
@@ -299,7 +299,7 @@ const OnboardingOverlay = ({
                                                         href={step.actionUrl}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-sm bg-primary-500 hover:bg-primary-400 text-white transition-all"
+                                                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-sm bg-primary-500 hover:bg-primary-400 text-[var(--ds-text-primary)] transition-all"
                                                     >
                                                         {step.actionLabel}
                                                         <ExternalLink size={14} />
@@ -311,7 +311,7 @@ const OnboardingOverlay = ({
                                                         href={step.helpUrl}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                                                        className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs text-[var(--ds-text-muted)] hover:text-[var(--ds-text-secondary)] transition-colors"
                                                     >
                                                         <span>Precisa de ajuda? Ver documentação</span>
                                                     </a>
@@ -322,7 +322,7 @@ const OnboardingOverlay = ({
 
                                     {index < steps.length - 1 && (
                                         <div className="absolute -bottom-4 left-7 z-10">
-                                            <div className={`w-0.5 h-8 ${isConfigured ? 'bg-emerald-500/30' : 'bg-zinc-700'}`} />
+                                            <div className={`w-0.5 h-8 ${isConfigured ? 'bg-emerald-500/30' : 'bg-[var(--ds-bg-surface)]'}`} />
                                         </div>
                                     )}
                                 </div>
@@ -337,13 +337,13 @@ const OnboardingOverlay = ({
                         <div className="mt-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
                             <div className="flex items-start gap-3">
                                 <div className="p-2 bg-amber-500/20 rounded-lg">
-                                    <MessageCircle size={20} className="text-amber-400" />
+                                    <MessageCircle size={20} className="text-amber-600 dark:text-amber-400" />
                                 </div>
                                 <div>
-                                    <h4 className="font-medium text-amber-300 mb-1">
+                                    <h4 className="font-medium text-amber-700 dark:text-amber-300 mb-1">
                                         Infraestrutura pronta!
                                     </h4>
-                                    <p className="text-sm text-amber-200/70">
+                                    <p className="text-sm text-amber-700/70 dark:text-amber-200/70">
                                         QStash está configurado. Agora adicione suas credenciais do WhatsApp
                                         na página de configurações.
                                     </p>
@@ -363,11 +363,11 @@ const OnboardingOverlay = ({
 
                 {
                     !infrastructureReady && (
-                        <div className="mt-8 p-4 bg-zinc-800/50 border border-white/10 rounded-xl text-center">
-                            <p className="text-gray-400 text-sm">
+                        <div className="mt-8 p-4 bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] rounded-xl text-center">
+                            <p className="text-[var(--ds-text-secondary)] text-sm">
                                 Complete os passos acima na ordem para liberar o acesso ao sistema.
                             </p>
-                            <p className="text-gray-500 text-xs mt-2">
+                            <p className="text-[var(--ds-text-muted)] text-xs mt-2">
                                 Após configurar cada serviço no Vercel, clique em "Verificar novamente".
                             </p>
                         </div>
@@ -375,28 +375,28 @@ const OnboardingOverlay = ({
                 }
 
                 {/* Help links */}
-                <div className="mt-8 pt-6 border-t border-white/5">
-                    <h4 className="text-sm font-medium text-gray-400 mb-3">Precisa de ajuda?</h4>
+                <div className="mt-8 pt-6 border-t border-[var(--ds-border-subtle)]">
+                    <h4 className="text-sm font-medium text-[var(--ds-text-secondary)] mb-3">Precisa de ajuda?</h4>
                     <div className="grid grid-cols-2 gap-3">
                         <a
                             href="https://vercel.com/docs/storage/upstash"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 p-3 bg-zinc-800/50 hover:bg-zinc-800 border border-white/10 rounded-xl text-sm text-gray-300 transition-colors"
+                            className="flex items-center gap-2 p-3 bg-[var(--ds-bg-surface)] hover:bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] rounded-xl text-sm text-[var(--ds-text-secondary)] transition-colors"
                         >
-                            <Database size={16} className="text-red-400" />
+                            <Database size={16} className="text-red-600 dark:text-red-400" />
                             Docs: Upstash no Vercel
-                            <ExternalLink size={12} className="text-gray-500 ml-auto" />
+                            <ExternalLink size={12} className="text-[var(--ds-text-muted)] ml-auto" />
                         </a>
                         <a
                             href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 p-3 bg-zinc-800/50 hover:bg-zinc-800 border border-white/10 rounded-xl text-sm text-gray-300 transition-colors"
+                            className="flex items-center gap-2 p-3 bg-[var(--ds-bg-surface)] hover:bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] rounded-xl text-sm text-[var(--ds-text-secondary)] transition-colors"
                         >
-                            <MessageCircle size={16} className="text-green-400" />
+                            <MessageCircle size={16} className="text-green-600 dark:text-green-400" />
                             Docs: WhatsApp Cloud API
-                            <ExternalLink size={12} className="text-gray-500 ml-auto" />
+                            <ExternalLink size={12} className="text-[var(--ds-text-muted)] ml-auto" />
                         </a>
                     </div>
                 </div>
@@ -625,7 +625,7 @@ export function DashboardShell({
         return (
             <PageLayoutProvider>
                 <div
-                    className="min-h-screen bg-zinc-950 text-gray-100 flex font-sans selection:bg-primary-500/30"
+                    className="min-h-screen bg-[var(--ds-bg-base)] text-[var(--ds-text-primary)] flex font-sans selection:bg-primary-500/30"
                     style={{
                         "--builder-sidebar-width": "56px",
                         "--background": "oklch(0 0 0)",
@@ -644,11 +644,11 @@ export function DashboardShell({
 
     return (
         <PageLayoutProvider>
-            <div className="min-h-screen text-gray-100 flex font-sans selection:bg-primary-500/30">
+            <div className="min-h-screen text-[var(--ds-text-primary)] flex font-sans selection:bg-primary-500/30">
             {/* Mobile Overlay */}
             {isMobileMenuOpen && (
                 <div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 lg:hidden"
+                    className="fixed inset-0 bg-[var(--ds-bg-overlay)] backdrop-blur-sm z-40 lg:hidden"
                     onClick={handleCloseMobileMenu}
                     role="button"
                     aria-label="Fechar menu"
@@ -675,7 +675,7 @@ export function DashboardShell({
                 <header className="h-20 flex items-center justify-between px-6 lg:px-10 shrink-0">
                     <div className="flex items-center">
                         <button
-                            className="lg:hidden p-2 text-gray-400 mr-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2 rounded-md"
+                            className="lg:hidden p-2 text-[var(--ds-text-secondary)] mr-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2 rounded-md"
                             onClick={() => {
                                 updateSidebarExpanded(true)
                                 setIsMobileMenuOpen(true)
@@ -685,17 +685,17 @@ export function DashboardShell({
                             <Menu size={24} aria-hidden="true" />
                         </button>
 
-                        <nav className="hidden md:flex items-center text-sm text-gray-500" aria-label="Breadcrumb">
-                            <span className="hover:text-white cursor-pointer transition-colors">App</span>
-                            <span className="mx-2 text-gray-700" aria-hidden="true">/</span>
-                            <span className="text-gray-300" aria-current="page">{getPageTitle(pathname || '/')}</span>
+                        <nav className="hidden md:flex items-center text-sm text-[var(--ds-text-muted)]" aria-label="Breadcrumb">
+                            <span className="hover:text-[var(--ds-text-primary)] cursor-pointer transition-colors">App</span>
+                            <span className="mx-2 text-[var(--ds-text-muted)]" aria-hidden="true">/</span>
+                            <span className="text-[var(--ds-text-secondary)]" aria-current="page">{getPageTitle(pathname || '/')}</span>
                         </nav>
                     </div>
 
                     <div className="flex items-center gap-6">
                         <button className="relative group focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2 rounded-md p-1" aria-label="Notificações (1 nova)">
-                            <Bell size={20} className="text-gray-500 group-hover:text-white transition-colors cursor-pointer" aria-hidden="true" />
-                            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary-500 rounded-full border-2 border-zinc-950" aria-label="1 notificação não lida"></span>
+                            <Bell size={20} className="text-[var(--ds-text-muted)] group-hover:text-[var(--ds-text-primary)] transition-colors cursor-pointer" aria-hidden="true" />
+                            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary-500 rounded-full border-2 border-[var(--ds-bg-base)]" aria-label="1 notificação não lida"></span>
                         </button>
                     </div>
                 </header>

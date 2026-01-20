@@ -21,10 +21,10 @@ export function CalendarStatusSection({
     <Container variant="subtle" padding="sm" className="mt-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold text-white">Google Calendar</div>
+          <div className="text-sm font-semibold text-[var(--ds-text-primary)]">Google Calendar</div>
           <div className="mt-1">
             {calendarAuthLoading ? (
-              <span className="text-xs text-gray-400">Verificando...</span>
+              <span className="text-xs text-[var(--ds-text-secondary)]">Verificando...</span>
             ) : (
               <StatusBadge status={calendarAuthStatus?.connected ? 'success' : 'default'} showDot>
                 {calendarAuthStatus?.connected ? 'Conectado' : 'Desconectado'}
@@ -32,12 +32,12 @@ export function CalendarStatusSection({
             )}
           </div>
           {calendarAuthStatus?.calendar?.calendarSummary && (
-            <div className="mt-2 text-xs text-gray-400">
+            <div className="mt-2 text-xs text-[var(--ds-text-secondary)]">
               Calendario: {calendarAuthStatus.calendar.calendarSummary}
             </div>
           )}
           {calendarAuthStatus?.connected && (
-            <div className="mt-2 text-xs text-gray-400">
+            <div className="mt-2 text-xs text-[var(--ds-text-secondary)]">
               Conta: {calendarAuthStatus?.calendar?.accountEmail || 'nao disponivel'}
             </div>
           )}
@@ -46,7 +46,7 @@ export function CalendarStatusSection({
               href={calendarTestResult.link}
               target="_blank"
               rel="noreferrer"
-              className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-200 hover:text-emerald-100"
+              className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-300 hover:text-emerald-500 dark:hover:text-emerald-200"
             >
               <ExternalLink size={12} />
               Evento de teste criado
@@ -58,7 +58,7 @@ export function CalendarStatusSection({
             </div>
           )}
           {!calendarAuthStatus?.connected && (
-            <div className="mt-2 text-xs text-gray-500">
+            <div className="mt-2 text-xs text-[var(--ds-text-muted)]">
               Conecte uma vez para liberar o agendamento no WhatsApp.
             </div>
           )}
@@ -67,7 +67,7 @@ export function CalendarStatusSection({
           <button
             type="button"
             onClick={handlePrimaryCalendarAction}
-            className="h-9 px-4 rounded-lg bg-emerald-500/90 text-white text-xs font-medium hover:bg-emerald-500 transition-colors"
+            className="h-9 px-4 rounded-lg bg-emerald-500/90 text-[var(--ds-text-primary)] text-xs font-medium hover:bg-emerald-500 transition-colors"
           >
             {calendarAuthStatus?.connected ? 'Gerenciar conexao' : 'Conectar Google Calendar'}
           </button>
@@ -80,7 +80,7 @@ export function CalendarStatusSection({
                   setCalendarWizardError(null);
                   setIsCalendarWizardOpen(true);
                 }}
-                className="h-9 px-3 rounded-lg border border-white/10 bg-white/5 text-xs text-white hover:bg-white/10 transition-colors"
+                className="h-9 px-3 rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)] text-xs text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-surface)] transition-colors"
               >
                 Trocar calendario
               </button>
@@ -88,7 +88,7 @@ export function CalendarStatusSection({
                 type="button"
                 onClick={handleCalendarTestEvent}
                 disabled={calendarTestLoading}
-                className="h-9 px-3 rounded-lg border border-white/10 bg-white/5 text-xs text-white hover:bg-white/10 transition-colors disabled:opacity-50"
+                className="h-9 px-3 rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-hover)] text-xs text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-surface)] transition-colors disabled:opacity-50"
               >
                 {calendarTestLoading ? 'Testando...' : 'Testar evento'}
               </button>

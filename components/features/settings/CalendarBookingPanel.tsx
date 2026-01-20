@@ -48,11 +48,11 @@ export function CalendarBookingPanel({
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-            <Calendar size={20} className="text-emerald-400" />
+            <Calendar size={20} className="text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-white">Agendamento (Google Calendar)</h3>
-            <p className="text-sm text-gray-500">
+            <h3 className="text-base font-semibold text-[var(--ds-text-primary)]">Agendamento (Google Calendar)</h3>
+            <p className="text-sm text-[var(--ds-text-muted)]">
               {isConfigured ? 'Conectado e configurado' : 'Configure para habilitar agendamentos'}
             </p>
           </div>
@@ -68,7 +68,7 @@ export function CalendarBookingPanel({
               setIsExpanded(true);
               hook.setIsEditingCalendarBooking(true);
             }}
-            className="h-9 px-4 rounded-lg bg-white/5 text-white hover:bg-white/10 border border-white/10 text-sm font-medium inline-flex items-center gap-2"
+            className="h-9 px-4 rounded-lg bg-[var(--ds-bg-hover)] text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] text-sm font-medium inline-flex items-center gap-2"
           >
             <Edit2 size={14} /> Editar
           </button>
@@ -77,25 +77,25 @@ export function CalendarBookingPanel({
 
       {/* Resumo compacto quando conectado */}
       {isConfigured && !isExpanded && (
-        <div className="mt-4 flex items-center justify-between p-4 rounded-xl bg-zinc-900/50 border border-white/10">
+        <div className="mt-4 flex items-center justify-between p-4 rounded-xl bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)]">
           <div className="flex items-center gap-6 text-sm">
             <div>
-              <span className="text-gray-500">Calendario:</span>{' '}
-              <span className="text-white">{hook.calendarAuthStatus?.calendar?.calendarSummary}</span>
+              <span className="text-[var(--ds-text-muted)]">Calendario:</span>{' '}
+              <span className="text-[var(--ds-text-primary)]">{hook.calendarAuthStatus?.calendar?.calendarSummary}</span>
             </div>
             <div>
-              <span className="text-gray-500">Slots:</span>{' '}
-              <span className="text-white">{hook.calendarDraft.slotDurationMinutes}min</span>
+              <span className="text-[var(--ds-text-muted)]">Slots:</span>{' '}
+              <span className="text-[var(--ds-text-primary)]">{hook.calendarDraft.slotDurationMinutes}min</span>
             </div>
             <div>
-              <span className="text-gray-500">Dias:</span>{' '}
-              <span className="text-white">{enabledDayLabels || 'Nenhum'}</span>
+              <span className="text-[var(--ds-text-muted)]">Dias:</span>{' '}
+              <span className="text-[var(--ds-text-primary)]">{enabledDayLabels || 'Nenhum'}</span>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setIsExpanded(true)}
-            className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+            className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 flex items-center gap-1"
           >
             Expandir <ChevronDown size={16} />
           </button>
@@ -137,7 +137,7 @@ export function CalendarBookingPanel({
               <button
                 type="button"
                 onClick={() => setIsExpanded(false)}
-                className="text-sm text-gray-500 hover:text-white flex items-center gap-1"
+                className="text-sm text-[var(--ds-text-muted)] hover:text-[var(--ds-text-primary)] flex items-center gap-1"
               >
                 <ChevronUp size={16} /> Recolher
               </button>

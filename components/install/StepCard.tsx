@@ -65,10 +65,10 @@ export const StepCard = forwardRef<HTMLDivElement, StepCardProps>(
         className={cn(
           // Base
           'relative p-6 sm:p-8 rounded-2xl',
-          // Background
-          'bg-zinc-900/70 backdrop-blur-xl',
+          // Background - adapta ao tema
+          'bg-[var(--ds-bg-elevated)]/90 backdrop-blur-xl',
           // Border
-          'border border-zinc-800/80',
+          'border border-[var(--ds-border-default)]',
           // Glow
           glowColors[glowColor],
           // Focus glow (quando input dentro tem foco)
@@ -82,7 +82,7 @@ export const StepCard = forwardRef<HTMLDivElement, StepCardProps>(
       >
         {/* Gradient line no topo */}
         {showTopGradient && (
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zinc-700/50 to-transparent rounded-t-2xl" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--ds-border-strong)] to-transparent rounded-t-2xl" />
         )}
 
         {children}

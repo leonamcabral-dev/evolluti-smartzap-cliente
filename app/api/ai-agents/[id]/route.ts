@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { deleteFileSearchStore } from '@/lib/ai/file-search-store'
 
 // Helper to get admin client with null check
 function getClient() {
@@ -157,7 +158,7 @@ export async function DELETE(
     // Check if agent exists and if it's the default
     const { data: existing, error: fetchError } = await supabase
       .from('ai_agents')
-      .select('id, is_default, name')
+      .select('id, is_default, name, file_search_store_id')
       .eq('id', id)
       .single()
 
@@ -182,14 +183,47 @@ export async function DELETE(
       .select('id', { count: 'exact', head: true })
       .eq('ai_agent_id', id)
 
+    // If agent has conversations, switch them to human mode and remove assignment
     if (assignedCount && assignedCount > 0) {
-      return NextResponse.json(
-        {
-          error: `Este agente está atribuído a ${assignedCount} conversa(s). Remova as atribuições primeiro.`,
-          assignedCount
-        },
-        { status: 400 }
-      )
+      const { error: updateError } = await supabase
+        .from('inbox_conversations')
+        .update({
+          ai_agent_id: null,
+          mode: 'human',
+        })
+        .eq('ai_agent_id', id)
+
+      if (updateError) {
+        console.error('[AI Agents] Failed to update conversations:', updateError)
+        return NextResponse.json(
+          { error: 'Falha ao atualizar conversas do agente' },
+          { status: 500 }
+        )
+      }
+
+      console.log(`[AI Agents] Switched ${assignedCount} conversations to human mode before deleting agent ${existing.name}`)
+    }
+
+    // Delete File Search Store if exists (cleanup orphaned stores)
+    if (existing.file_search_store_id) {
+      try {
+        // Get Gemini API key
+        const { data: geminiSetting } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('key', 'gemini_api_key')
+          .maybeSingle()
+
+        const apiKey = geminiSetting?.value || process.env.GEMINI_API_KEY
+
+        if (apiKey) {
+          await deleteFileSearchStore(apiKey, existing.file_search_store_id)
+          console.log(`[AI Agents] Deleted File Search Store: ${existing.file_search_store_id}`)
+        }
+      } catch (storeError) {
+        // Don't block agent deletion if store deletion fails
+        console.error('[AI Agents] Failed to delete File Search Store (continuing):', storeError)
+      }
     }
 
     // Delete agent

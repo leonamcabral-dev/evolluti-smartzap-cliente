@@ -80,6 +80,7 @@ function FoldersManager() {
   const [newFolderName, setNewFolderName] = useState('')
   const [newFolderColor, setNewFolderColor] = useState<string>(TAG_COLORS[0])
   const [editingFolder, setEditingFolder] = useState<CampaignFolder | null>(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   const handleCreate = async () => {
     if (!newFolderName.trim()) return
@@ -106,14 +107,14 @@ function FoldersManager() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza? As campanhas desta pasta ficarão sem pasta.')) return
-
+  const handleConfirmDelete = async (id: string) => {
     try {
       await deleteFolder(id)
       toast.success('Pasta removida!')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao remover pasta')
+    } finally {
+      setPendingDeleteId(null)
     }
   }
 
@@ -155,7 +156,32 @@ function FoldersManager() {
         ) : (
           folders.map((folder) => (
             <div key={folder.id} className="flex items-center gap-2 p-3">
-              {editingFolder?.id === folder.id ? (
+              {/* Delete confirmation inline */}
+              {pendingDeleteId === folder.id ? (
+                <div className="flex-1 flex items-center justify-between gap-2">
+                  <span className="text-sm text-zinc-400">
+                    Remover <strong className="text-zinc-200">{folder.name}</strong>?
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setPendingDeleteId(null)}
+                      className="h-7 px-2 text-xs"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleConfirmDelete(folder.id)}
+                      disabled={isDeleting}
+                      className="h-7 px-2 text-xs bg-red-600 hover:bg-red-700"
+                    >
+                      {isDeleting ? 'Removendo...' : 'Remover'}
+                    </Button>
+                  </div>
+                </div>
+              ) : editingFolder?.id === folder.id ? (
                 <>
                   <ColorPicker
                     value={editingFolder.color}
@@ -192,7 +218,7 @@ function FoldersManager() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => handleDelete(folder.id)}
+                    onClick={() => setPendingDeleteId(folder.id)}
                     disabled={isDeleting}
                   >
                     <TrashIcon className="h-4 w-4 text-red-400" />
@@ -215,6 +241,7 @@ function TagsManager() {
   const { tags, isLoading, create, delete: deleteTag, isCreating, isDeleting } = useCampaignTags()
   const [newTagName, setNewTagName] = useState('')
   const [newTagColor, setNewTagColor] = useState<string>(TAG_COLORS[0])
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   const handleCreate = async () => {
     if (!newTagName.trim()) return
@@ -229,14 +256,14 @@ function TagsManager() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza? A tag será removida de todas as campanhas.')) return
-
+  const handleConfirmDelete = async (id: string) => {
     try {
       await deleteTag(id)
       toast.success('Tag removida!')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao remover tag')
+    } finally {
+      setPendingDeleteId(null)
     }
   }
 
@@ -278,19 +305,48 @@ function TagsManager() {
         ) : (
           tags.map((tag) => (
             <div key={tag.id} className="flex items-center gap-2 p-3">
-              <div
-                className="w-4 h-4 rounded-full flex-shrink-0"
-                style={{ backgroundColor: tag.color }}
-              />
-              <span className="flex-1 text-sm text-zinc-200 truncate">{tag.name}</span>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => handleDelete(tag.id)}
-                disabled={isDeleting}
-              >
-                <TrashIcon className="h-4 w-4 text-red-400" />
-              </Button>
+              {/* Delete confirmation inline */}
+              {pendingDeleteId === tag.id ? (
+                <div className="flex-1 flex items-center justify-between gap-2">
+                  <span className="text-sm text-zinc-400">
+                    Remover <strong className="text-zinc-200">{tag.name}</strong>?
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setPendingDeleteId(null)}
+                      className="h-7 px-2 text-xs"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleConfirmDelete(tag.id)}
+                      disabled={isDeleting}
+                      className="h-7 px-2 text-xs bg-red-600 hover:bg-red-700"
+                    >
+                      {isDeleting ? 'Removendo...' : 'Remover'}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div
+                    className="w-4 h-4 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: tag.color }}
+                  />
+                  <span className="flex-1 text-sm text-zinc-200 truncate">{tag.name}</span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setPendingDeleteId(tag.id)}
+                    disabled={isDeleting}
+                  >
+                    <TrashIcon className="h-4 w-4 text-red-400" />
+                  </Button>
+                </>
+              )}
             </div>
           ))
         )}

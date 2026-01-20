@@ -112,6 +112,16 @@ async function updateConversation(id: string, params: UpdateConversationParams):
   return response.json()
 }
 
+async function deleteConversation(id: string): Promise<void> {
+  const response = await fetch(`/api/inbox/conversations/${id}`, {
+    method: 'DELETE',
+  })
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Failed to delete conversation' }))
+    throw new Error(error.error || 'Failed to delete conversation')
+  }
+}
+
 async function markAsRead(conversationId: string): Promise<void> {
   const response = await fetch(`/api/inbox/conversations/${conversationId}/read`, {
     method: 'POST',
@@ -346,6 +356,7 @@ export const inboxService = {
   listConversations,
   getConversation,
   updateConversation,
+  deleteConversation,
   markAsRead,
 
   // Messages

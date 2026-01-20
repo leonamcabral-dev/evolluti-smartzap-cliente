@@ -18,6 +18,11 @@ export interface FileSearchStore {
   name: string // e.g., "fileSearchStores/abc123"
   displayName?: string
   createTime?: string
+  updateTime?: string
+  activeDocumentsCount?: string
+  pendingDocumentsCount?: string
+  failedDocumentsCount?: string
+  sizeBytes?: string
 }
 
 export interface FileSearchFile {
@@ -31,6 +36,56 @@ export interface FileSearchOperation {
   done: boolean
   metadata?: Record<string, unknown>
   error?: { code: number; message: string }
+  response?: Record<string, unknown>
+}
+
+/**
+ * Chunking configuration for file upload
+ * Controls how documents are split into chunks for semantic search
+ */
+export interface ChunkingConfig {
+  whiteSpaceConfig?: {
+    /** Maximum tokens per chunk (default: 256, recommended: 200-500) */
+    maxTokensPerChunk?: number
+    /** Overlap tokens between chunks (default: 20, recommended: 10-50) */
+    maxOverlapTokens?: number
+  }
+}
+
+/**
+ * Custom metadata for file filtering
+ * Allows filtering documents at query time
+ */
+export interface CustomMetadata {
+  key: string
+  stringValue?: string
+  numericValue?: number
+}
+
+/**
+ * Upload configuration options
+ */
+export interface UploadConfig {
+  /** Display name for the file (visible in citations) */
+  displayName?: string
+  /** Custom chunking configuration */
+  chunkingConfig?: ChunkingConfig
+  /** Custom metadata for filtering */
+  customMetadata?: CustomMetadata[]
+  /** MIME type of the file */
+  mimeType?: string
+}
+
+/**
+ * Default chunking configuration optimized for RAG
+ * - 300 tokens per chunk: good balance between context and precision
+ * - 30 tokens overlap: ensures continuity between chunks
+ */
+export const DEFAULT_CHUNKING_CONFIG: ChunkingConfig = {
+  whiteSpaceConfig: {
+    maxTokensPerChunk: 300,
+    maxOverlapTokens: 30,
+  },
 }
 
 // ============================================================================
@@ -110,13 +165,21 @@ export async function deleteFileSearchStore(
  * The file will be chunked, embedded, and indexed automatically
  *
  * Uses the multipart upload approach as documented in Google's API
+ *
+ * @param apiKey - Google API key
+ * @param storeName - File Search Store name (e.g., "fileSearchStores/abc123")
+ * @param fileContent - File content as ArrayBuffer, Blob, or string
+ * @param fileName - Display name for the file (visible in citations)
+ * @param mimeType - MIME type of the file
+ * @param config - Optional upload configuration (chunking, metadata)
  */
 export async function uploadToFileSearchStore(
   apiKey: string,
   storeName: string,
   fileContent: ArrayBuffer | Blob | string,
   fileName: string,
-  mimeType: string
+  mimeType: string,
+  config?: Omit<UploadConfig, 'displayName' | 'mimeType'>
 ): Promise<FileSearchOperation> {
   // Convert content to Blob
   let blob: Blob
@@ -132,9 +195,32 @@ export async function uploadToFileSearchStore(
   // Use the simple multipart upload
   const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/${storeName}:uploadToFileSearchStore?key=${apiKey}`
 
+  // Build config object with chunking and metadata
+  const uploadConfig: Record<string, unknown> = {
+    displayName: fileName,
+  }
+
+  // Apply chunking config (use defaults if not provided)
+  const chunkingConfig = config?.chunkingConfig ?? DEFAULT_CHUNKING_CONFIG
+  if (chunkingConfig.whiteSpaceConfig) {
+    uploadConfig.chunkingConfig = {
+      whiteSpaceConfig: {
+        maxTokensPerChunk: chunkingConfig.whiteSpaceConfig.maxTokensPerChunk ?? 300,
+        maxOverlapTokens: chunkingConfig.whiteSpaceConfig.maxOverlapTokens ?? 30,
+      },
+    }
+  }
+
+  // Add custom metadata if provided
+  if (config?.customMetadata && config.customMetadata.length > 0) {
+    uploadConfig.customMetadata = config.customMetadata
+  }
+
+  console.log('[file-search-store] Upload config:', JSON.stringify(uploadConfig, null, 2))
+
   // Create multipart form data
   const formData = new FormData()
-  formData.append('config', JSON.stringify({ displayName: fileName }))
+  formData.append('config', JSON.stringify(uploadConfig))
   formData.append('file', blob, fileName)
 
   const response = await fetch(uploadUrl, {

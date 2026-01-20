@@ -70,8 +70,8 @@ export const TemplateFilters: React.FC<TemplateFiltersProps> = ({
             onClick={() => setCategoryFilter(cat.value)}
             className={`rounded-full border px-3 py-1 text-[10px] uppercase tracking-widest transition-colors whitespace-nowrap focus-visible:outline focus-visible:outline-emerald-400 focus-visible:outline-offset-2 ${
               categoryFilter === cat.value
-                ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
-                : 'border-white/10 bg-zinc-950/40 text-gray-400 hover:text-white'
+                ? 'border-emerald-400/40 bg-emerald-500/10 text-[var(--ds-status-success-text)]'
+                : 'border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)]'
             }`}
             aria-pressed={categoryFilter === cat.value}
             aria-label={`Filtrar por categoria: ${cat.label}`}
@@ -94,8 +94,8 @@ export const TemplateFilters: React.FC<TemplateFiltersProps> = ({
               onClick={() => setStatusFilter(s.value)}
               className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors whitespace-nowrap focus-visible:outline focus-visible:outline-emerald-400 focus-visible:outline-offset-2 ${
                 statusFilter === s.value
-                  ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
-                  : 'border-white/10 bg-zinc-950/40 text-gray-400 hover:text-white'
+                  ? 'border-emerald-400/40 bg-emerald-500/10 text-[var(--ds-status-success-text)]'
+                  : 'border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)]'
               }`}
               aria-pressed={statusFilter === s.value}
               aria-label={`Filtrar por status: ${s.label}`}
@@ -107,12 +107,12 @@ export const TemplateFilters: React.FC<TemplateFiltersProps> = ({
       </div>
 
       <div className="flex items-center gap-2 w-full md:w-auto">
-        <div className="flex items-center gap-3 bg-zinc-950/40 border border-white/10 rounded-xl px-4 py-3 w-full md:w-72 transition-all focus-within:border-primary-500/50 focus-within:ring-1 focus-within:ring-primary-500/50">
-          <Search size={18} className="text-gray-500" aria-hidden="true" />
+        <div className="flex items-center gap-3 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-xl px-4 py-3 w-full md:w-72 transition-all focus-within:border-primary-500/50 focus-within:ring-1 focus-within:ring-primary-500/50">
+          <Search size={18} className="text-[var(--ds-text-muted)]" aria-hidden="true" />
           <input
             type="text"
             placeholder="Buscar templates..."
-            className="bg-transparent border-none outline-none text-sm w-full text-white placeholder:text-gray-600"
+            className="bg-transparent border-none outline-none text-sm w-full text-[var(--ds-text-primary)] placeholder:text-[var(--ds-text-muted)]"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             aria-label="Buscar templates por nome ou conteudo"
@@ -140,7 +140,7 @@ export const TemplateFilters: React.FC<TemplateFiltersProps> = ({
               <button
                 type="button"
                 onClick={onClearDraftSelection}
-                className="px-3 py-2 text-gray-300 hover:text-white transition-colors whitespace-nowrap"
+                className="px-3 py-2 text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)] transition-colors whitespace-nowrap"
                 title="Limpar selecao de rascunhos"
               >
                 Limpar

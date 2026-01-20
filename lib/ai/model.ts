@@ -51,18 +51,80 @@ export function getGeminiModel(modelId: string = 'gemini-2.5-flash') {
 
 /**
  * Default model for support agent
- * gemini-2.5-flash is fast and cost-effective for chat
+ * gemini-3-flash-preview is the latest and supports File Search natively
  */
-export const DEFAULT_MODEL_ID = 'gemini-2.5-flash'
+export const DEFAULT_MODEL_ID = 'gemini-3-flash-preview'
 
 /**
- * Available models for support agents
+ * Available models for AI agents
+ * Organized by generation (newest first)
+ *
+ * File Search API compatible models:
+ * - gemini-3-pro-preview
+ * - gemini-3-flash-preview
+ * - gemini-3-flash-preview-lite
+ * - gemini-2.5-pro
+ * - gemini-2.5-flash (legacy)
  */
-export const SUPPORT_AGENT_MODELS = [
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Rápido e eficiente (recomendado)' },
-  { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', description: 'Ultra-rápido, menor custo' },
-  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'Melhor qualidade, maior custo' },
+export const AI_AGENT_MODELS = [
+  // Gemini 3 - Latest generation (recommended for File Search)
+  {
+    id: 'gemini-3-flash-preview',
+    name: 'Gemini 3 Flash',
+    description: 'Mais recente, rápido e com melhor RAG (recomendado)',
+    generation: 3,
+    supportsFileSearch: true,
+  },
+  {
+    id: 'gemini-3-pro-preview',
+    name: 'Gemini 3 Pro',
+    description: 'Máxima qualidade, melhor raciocínio',
+    generation: 3,
+    supportsFileSearch: true,
+  },
+  {
+    id: 'gemini-3-flash-preview-lite',
+    name: 'Gemini 3 Flash Lite',
+    description: 'Ultra-rápido, menor custo',
+    generation: 3,
+    supportsFileSearch: true,
+  },
+  // Gemini 2.5 - Previous generation (still supported)
+  {
+    id: 'gemini-2.5-pro',
+    name: 'Gemini 2.5 Pro',
+    description: 'Alta qualidade, geração anterior',
+    generation: 2.5,
+    supportsFileSearch: true,
+  },
+  {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    description: 'Rápido e eficiente, geração anterior',
+    generation: 2.5,
+    supportsFileSearch: true,
+  },
 ] as const
+
+/**
+ * @deprecated Use AI_AGENT_MODELS instead
+ */
+export const SUPPORT_AGENT_MODELS = AI_AGENT_MODELS
+
+/**
+ * Get model info by ID
+ */
+export function getModelInfo(modelId: string) {
+  return AI_AGENT_MODELS.find(m => m.id === modelId)
+}
+
+/**
+ * Check if a model supports File Search
+ */
+export function supportsFileSearch(modelId: string): boolean {
+  const model = getModelInfo(modelId)
+  return model?.supportsFileSearch ?? false
+}
 
 // =============================================================================
 // Response Schema

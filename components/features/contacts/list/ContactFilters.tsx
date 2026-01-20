@@ -43,14 +43,14 @@ export const ContactFilters: React.FC<ContactFiltersProps> = ({
   onToggleFilters
 }) => {
   return (
-    <div className="p-5 border-b border-white/5 flex flex-col lg:flex-row gap-4">
+    <div className="p-5 border-b border-[var(--ds-border-subtle)] flex flex-col lg:flex-row gap-4">
       {/* Search */}
-      <div className="flex items-center gap-3 flex-1 bg-zinc-900/50 border border-white/10 rounded-xl px-4 py-2.5 max-w-md focus-within:border-primary-500/50 focus-within:ring-1 focus-within:ring-primary-500/50 transition-all">
-        <Search size={18} className="text-gray-500" aria-hidden="true" />
+      <div className="flex items-center gap-3 flex-1 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-xl px-4 py-2.5 max-w-md focus-within:border-primary-500/50 focus-within:ring-1 focus-within:ring-primary-500/50 transition-all">
+        <Search size={18} className="text-[var(--ds-text-muted)]" aria-hidden="true" />
         <input
           type="text"
           placeholder="Buscar por nome ou telefone..."
-          className="bg-transparent border-none outline-none text-sm w-full text-white placeholder-gray-600"
+          className="bg-transparent border-none outline-none text-sm w-full text-[var(--ds-text-primary)] placeholder-[var(--ds-text-muted)]"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           aria-label="Buscar contatos por nome ou telefone"
@@ -63,7 +63,7 @@ export const ContactFilters: React.FC<ContactFiltersProps> = ({
           onClick={onToggleFilters}
           className={`p-2.5 rounded-xl border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2 ${showFilters || statusFilter !== 'ALL' || tagFilter !== 'ALL'
             ? 'text-primary-400 bg-primary-500/10 border-primary-500/30'
-            : 'text-gray-400 hover:text-white hover:bg-white/5 border-white/10'
+            : 'text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-hover)] border-[var(--ds-border-default)]'
             }`}
           aria-label={showFilters ? "Ocultar filtros avançados" : "Mostrar filtros avançados"}
           aria-expanded={showFilters}
@@ -75,7 +75,7 @@ export const ContactFilters: React.FC<ContactFiltersProps> = ({
         <select
           value={statusFilter}
           onChange={(e) => onStatusFilterChange(e.target.value as ContactStatus | 'ALL' | 'SUPPRESSED')}
-          className="px-4 py-2.5 text-sm font-medium bg-zinc-900 text-gray-300 hover:text-white rounded-xl border border-white/10 transition-colors outline-none cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2"
+          className="px-4 py-2.5 text-sm font-medium bg-[var(--ds-bg-elevated)] text-[var(--ds-text-primary)] hover:text-[var(--ds-text-primary)] rounded-xl border border-[var(--ds-border-default)] transition-colors outline-none cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2"
           aria-label="Filtrar contatos por status"
         >
           {statusOptions.map(opt => (
@@ -87,7 +87,7 @@ export const ContactFilters: React.FC<ContactFiltersProps> = ({
         <select
           value={tagFilter}
           onChange={(e) => onTagFilterChange(e.target.value)}
-          className="px-4 py-2.5 text-sm font-medium bg-zinc-900 text-gray-300 hover:text-white rounded-xl border border-white/10 transition-colors outline-none cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2"
+          className="px-4 py-2.5 text-sm font-medium bg-[var(--ds-bg-elevated)] text-[var(--ds-text-primary)] hover:text-[var(--ds-text-primary)] rounded-xl border border-[var(--ds-border-default)] transition-colors outline-none cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2"
           aria-label="Filtrar contatos por tag"
         >
           <option value="ALL">Todas Tags</option>
@@ -114,10 +114,10 @@ export const ContactResultsInfo: React.FC<ContactResultsInfoProps> = ({
   onClearFilters
 }) => {
   return (
-    <div className="px-5 py-3 bg-white/2 border-b border-white/5 flex items-center justify-between text-sm">
-      <span className="text-gray-500" aria-live="polite">
-        Mostrando <span className="text-white font-medium">{displayedCount}</span> de{' '}
-        <span className="text-white font-medium">{totalFiltered}</span> contatos
+    <div className="px-5 py-3 bg-[var(--ds-bg-hover)] border-b border-[var(--ds-border-subtle)] flex items-center justify-between text-sm">
+      <span className="text-[var(--ds-text-muted)]" aria-live="polite">
+        Mostrando <span className="text-[var(--ds-text-primary)] font-medium">{displayedCount}</span> de{' '}
+        <span className="text-[var(--ds-text-primary)] font-medium">{totalFiltered}</span> contatos
       </span>
       {hasActiveFilters && (
         <button
@@ -150,7 +150,7 @@ export const ContactSelectionBanner: React.FC<ContactSelectionBannerProps> = ({
   if (selectedCount === pageCount && selectedCount < totalFiltered) {
     return (
       <div className="bg-primary-500/10 border-b border-primary-500/20 px-6 py-2 text-center text-sm">
-        <span className="text-gray-300">
+        <span className="text-[var(--ds-text-primary)]">
           Todos os <strong>{pageCount}</strong> contatos desta página foram selecionados.
         </span>
         <button
@@ -172,7 +172,7 @@ export const ContactSelectionBanner: React.FC<ContactSelectionBannerProps> = ({
         </span>
         <button
           onClick={onClearSelection}
-          className="ml-2 text-gray-400 hover:text-white hover:underline transition-colors"
+          className="ml-2 text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)] hover:underline transition-colors"
         >
           Limpar seleção
         </button>

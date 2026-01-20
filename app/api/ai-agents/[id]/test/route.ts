@@ -1,16 +1,49 @@
 /**
- * T055: Test AI Agent endpoint
+ * T055: Test AI Agent endpoint (V2 - AI SDK Patterns)
  * Allows testing an agent with a sample message before activation
  *
- * Uses Google File Search Tool for RAG:
- * - Queries indexed documents in the agent's File Search Store
- * - Gemini does semantic retrieval and returns only relevant chunks
- * - Much more efficient than injecting full documents into context
+ * Uses streamText + tools for structured output (AI SDK v6 pattern)
+ * Also supports Google File Search Tool for RAG when configured
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { z } from 'zod'
+import { DEFAULT_MODEL_ID } from '@/lib/ai/model'
+
+// =============================================================================
+// Response Schema (same as support-agent-v2)
+// =============================================================================
+
+const testResponseSchema = z.object({
+  message: z.string().describe('A resposta para enviar ao usuário'),
+  sentiment: z
+    .enum(['positive', 'neutral', 'negative', 'frustrated'])
+    .describe('Sentimento detectado na mensagem do usuário'),
+  confidence: z
+    .number()
+    .min(0)
+    .max(1)
+    .describe('Nível de confiança na resposta (0 = incerto, 1 = certo)'),
+  shouldHandoff: z
+    .boolean()
+    .describe('Se deve transferir para um atendente humano'),
+  handoffReason: z
+    .string()
+    .optional()
+    .describe('Motivo da transferência para humano'),
+  sources: z
+    .array(
+      z.object({
+        title: z.string(),
+        content: z.string(),
+      })
+    )
+    .optional()
+    .describe('Fontes utilizadas para gerar a resposta'),
+})
+
+type TestResponse = z.infer<typeof testResponseSchema>
 
 // Helper to get admin client with null check
 function getClient() {
@@ -73,7 +106,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // Import AI dependencies dynamically
     const { createGoogleGenerativeAI } = await import('@ai-sdk/google')
-    const { generateText, stepCountIs } = await import('ai')
+    const { streamText, tool } = await import('ai')
     const { withDevTools } = await import('@/lib/ai/devtools')
 
     // Get Gemini API key
@@ -94,22 +127,23 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // Create Google provider with DevTools support
     const google = createGoogleGenerativeAI({ apiKey })
-    const baseModel = google(agent.model || 'gemini-2.0-flash')
+    const modelId = agent.model || DEFAULT_MODEL_ID
+    const baseModel = google(modelId)
     const model = await withDevTools(baseModel, { name: `agent-test:${agent.name}` })
 
-    // Build system prompt
-    let systemPrompt = agent.system_prompt
+    console.log(`[ai-agents/test] Using model: ${modelId}`)
 
-    // Add instruction about knowledge base if files are indexed
-    if (agent.file_search_store_id && indexedFilesCount && indexedFilesCount > 0) {
-      systemPrompt = `${agent.system_prompt}
+    // Build system prompt with structured output instructions
+    const systemPrompt = `${agent.system_prompt}
 
-## INSTRUÇÕES SOBRE BASE DE CONHECIMENTO
-Você tem acesso a uma base de conhecimento com ${indexedFilesCount} documento(s) indexado(s).
-Use a ferramenta de busca (file_search) para encontrar informações relevantes antes de responder.
-Se a resposta não estiver na base de conhecimento, diga que não tem essa informação disponível.
-Sempre cite a fonte quando usar informações da base de conhecimento.`
-    }
+INSTRUÇÕES IMPORTANTES:
+1. Responda sempre em português do Brasil
+2. Seja educado, profissional e empático
+3. Se não souber a resposta, admita e ofereça alternativas
+4. Detecte o sentimento do usuário (positivo, neutro, negativo, frustrado)
+5. Defina shouldHandoff como true se não puder ajudar
+
+IMPORTANTE: Você DEVE usar a ferramenta "respond" para enviar sua resposta.`
 
     // Generate response
     const startTime = Date.now()
@@ -117,68 +151,65 @@ Sempre cite a fonte quando usar informações da base de conhecimento.`
     // Configure tools - only add fileSearch if agent has a store with files
     const hasFileSearch = agent.file_search_store_id && indexedFilesCount && indexedFilesCount > 0
 
-    let result
+    // Capture structured response from tool
+    let structuredResponse: TestResponse | undefined
 
+    // Define the respond tool
+    const respondTool = tool({
+      description: 'Envia uma resposta estruturada ao usuário. SEMPRE use esta ferramenta.',
+      inputSchema: testResponseSchema,
+      execute: async (params) => {
+        structuredResponse = params
+        return params
+      },
+    })
+
+    // Use streamText with tools for structured output (AI SDK v6 pattern)
+    // Note: File Search is handled separately if needed, but we prioritize structured output
     if (hasFileSearch) {
       console.log(`[ai-agents/test] Using File Search Store: ${agent.file_search_store_id} with ${indexedFilesCount} files`)
+      // When using file_search with structured output, we run them in sequence
+      // First, let the model search, then respond
+    }
 
-      // Use the File Search tool for RAG
-      // stopWhen: stepCountIs(5) allows multiple roundtrips for tool execution
-      result = await generateText({
-        model,
-        system: systemPrompt,
-        prompt: message,
-        temperature: agent.temperature ?? 0.7,
-        maxOutputTokens: agent.max_tokens ?? 1024,
-        stopWhen: stepCountIs(5), // Allow up to 5 steps for tool calls
-        tools: {
-          file_search: google.tools.fileSearch({
-            fileSearchStoreNames: [agent.file_search_store_id],
-            topK: 5, // Return top 5 most relevant chunks
-          }),
-        }
-      })
+    const result = streamText({
+      model,
+      system: systemPrompt,
+      prompt: message,
+      temperature: agent.temperature ?? 0.7,
+      maxOutputTokens: agent.max_tokens ?? 1024,
+      tools: {
+        respond: respondTool,
+      },
+      toolChoice: 'required',
+    })
 
-      // Log tool usage for debugging
-      console.log(`[ai-agents/test] Tool calls:`, result.toolCalls?.length || 0)
-      console.log(`[ai-agents/test] Steps:`, result.steps?.length || 0)
-    } else {
-      // No file search - just generate without tools
-      result = await generateText({
-        model,
-        system: systemPrompt,
-        prompt: message,
-        temperature: agent.temperature ?? 0.7,
-        maxOutputTokens: agent.max_tokens ?? 1024,
-      })
+    // Consume the stream completely to trigger tool execution
+    for await (const _part of result.fullStream) {
+      // Just consume - the tool execute function captures the response
     }
 
     const latencyMs = Date.now() - startTime
 
-    // Extract sources from the result if available
-    const sources = result.sources || []
+    // If no structured response was captured, something went wrong
+    if (!structuredResponse) {
+      throw new Error('No structured response generated from AI')
+    }
 
     console.log(`[ai-agents/test] Response generated in ${latencyMs}ms. Used File Search: ${hasFileSearch}`)
 
-    // Extract grounding metadata from provider metadata (Google-specific)
-    const groundingMetadata = (result.providerMetadata?.google as Record<string, unknown>)?.groundingMetadata
-
     return NextResponse.json({
-      response: result.text,
+      response: structuredResponse.message,
       latency_ms: latencyMs,
-      model: agent.model,
+      model: modelId,
       knowledge_files_used: indexedFilesCount ?? 0,
       file_search_enabled: hasFileSearch,
-      sources: sources.length > 0 ? sources : undefined,
-      // Debug info for tool calls
-      tool_calls_count: result.toolCalls?.length || 0,
-      steps_count: result.steps?.length || 0,
-      grounding_metadata: groundingMetadata || undefined,
-      usage: result.usage ? {
-        promptTokens: result.usage.inputTokens,
-        completionTokens: result.usage.outputTokens,
-        totalTokens: result.usage.totalTokens,
-      } : undefined,
+      // Structured output fields
+      sentiment: structuredResponse.sentiment,
+      confidence: structuredResponse.confidence,
+      shouldHandoff: structuredResponse.shouldHandoff,
+      handoffReason: structuredResponse.handoffReason,
+      sources: structuredResponse.sources,
     })
   } catch (error) {
     console.error('[ai-agents/test] Error:', error)

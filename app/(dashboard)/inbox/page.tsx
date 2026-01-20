@@ -7,6 +7,7 @@
 
 import { Suspense } from 'react'
 import { InboxView } from '@/components/features/inbox'
+import { AIAgentForm } from '@/components/features/settings/ai-agents'
 import { useInbox } from '@/hooks/useInbox'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { Loader2, MessageSquare, RefreshCw } from 'lucide-react'
@@ -15,51 +16,67 @@ function InboxPageContent() {
   const inbox = useInbox()
 
   return (
-    <InboxView
-      // Conversations
-      conversations={inbox.conversations}
-      isLoadingConversations={inbox.isLoadingConversations}
-      totalUnread={inbox.totalUnread}
-      // Selected conversation
-      selectedConversationId={inbox.selectedConversationId}
-      onSelectConversation={inbox.onSelectConversation}
-      selectedConversation={inbox.selectedConversation}
-      isLoadingSelectedConversation={inbox.isLoadingSelectedConversation}
-      // Messages
-      messages={inbox.messages}
-      isLoadingMessages={inbox.isLoadingMessages}
-      isLoadingMoreMessages={inbox.isLoadingMoreMessages}
-      hasMoreMessages={inbox.hasMoreMessages}
-      onLoadMoreMessages={inbox.onLoadMoreMessages}
-      onSendMessage={inbox.onSendMessage}
-      isSending={inbox.isSending}
-      // Labels
-      labels={inbox.labels}
-      // Quick Replies
-      quickReplies={inbox.quickReplies}
-      quickRepliesLoading={inbox.quickRepliesLoading}
-      // Filters
-      search={inbox.search}
-      onSearchChange={inbox.onSearchChange}
-      statusFilter={inbox.statusFilter}
-      onStatusFilterChange={inbox.onStatusFilterChange}
-      modeFilter={inbox.modeFilter}
-      onModeFilterChange={inbox.onModeFilterChange}
-      labelFilter={inbox.labelFilter}
-      onLabelFilterChange={inbox.onLabelFilterChange}
-      // Conversation actions
-      onModeToggle={inbox.onModeToggle}
-      onCloseConversation={inbox.onCloseConversation}
-      onReopenConversation={inbox.onReopenConversation}
-      onPriorityChange={inbox.onPriorityChange}
-      onLabelToggle={inbox.onLabelToggle}
-      // T050: Handoff actions
-      onHandoff={inbox.onHandoff}
-      onReturnToBot={inbox.onReturnToBot}
-      isUpdatingConversation={inbox.isUpdatingConversation}
-      isHandingOff={inbox.isHandingOff}
-      isReturningToBot={inbox.isReturningToBot}
-    />
+    <>
+      <InboxView
+        // Conversations
+        conversations={inbox.conversations}
+        isLoadingConversations={inbox.isLoadingConversations}
+        totalUnread={inbox.totalUnread}
+        // Selected conversation
+        selectedConversationId={inbox.selectedConversationId}
+        onSelectConversation={inbox.onSelectConversation}
+        selectedConversation={inbox.selectedConversation}
+        isLoadingSelectedConversation={inbox.isLoadingSelectedConversation}
+        // Messages
+        messages={inbox.messages}
+        isLoadingMessages={inbox.isLoadingMessages}
+        isLoadingMoreMessages={inbox.isLoadingMoreMessages}
+        hasMoreMessages={inbox.hasMoreMessages}
+        onLoadMoreMessages={inbox.onLoadMoreMessages}
+        onSendMessage={inbox.onSendMessage}
+        isSending={inbox.isSending}
+        // Labels
+        labels={inbox.labels}
+        // Quick Replies
+        quickReplies={inbox.quickReplies}
+        quickRepliesLoading={inbox.quickRepliesLoading}
+        // Filters
+        search={inbox.search}
+        onSearchChange={inbox.onSearchChange}
+        statusFilter={inbox.statusFilter}
+        onStatusFilterChange={inbox.onStatusFilterChange}
+        modeFilter={inbox.modeFilter}
+        onModeFilterChange={inbox.onModeFilterChange}
+        labelFilter={inbox.labelFilter}
+        onLabelFilterChange={inbox.onLabelFilterChange}
+        // Conversation actions
+        onModeToggle={inbox.onModeToggle}
+        onCloseConversation={inbox.onCloseConversation}
+        onReopenConversation={inbox.onReopenConversation}
+        onPriorityChange={inbox.onPriorityChange}
+        onLabelToggle={inbox.onLabelToggle}
+        // T050: Handoff actions
+        onHandoff={inbox.onHandoff}
+        onReturnToBot={inbox.onReturnToBot}
+        // Delete conversation
+        onDeleteConversation={inbox.onDeleteConversation}
+        // Configure AI agent
+        onConfigureAgent={inbox.onOpenAgentEditor}
+        isUpdatingConversation={inbox.isUpdatingConversation}
+        isHandingOff={inbox.isHandingOff}
+        isReturningToBot={inbox.isReturningToBot}
+        isDeletingConversation={inbox.isDeletingConversation}
+      />
+
+      {/* AI Agent Edit Modal */}
+      <AIAgentForm
+        open={inbox.isAgentModalOpen}
+        onOpenChange={(open) => !open && inbox.onCloseAgentEditor()}
+        agent={inbox.editingAgent}
+        onSubmit={inbox.onSaveAgent}
+        isSubmitting={inbox.isSavingAgent}
+      />
+    </>
   )
 }
 

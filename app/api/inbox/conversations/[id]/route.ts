@@ -1,10 +1,10 @@
 /**
- * T021, T022: GET/PATCH /api/inbox/conversations/[id]
+ * T021, T022: GET/PATCH/DELETE /api/inbox/conversations/[id]
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { getConversation, patchConversation } from '@/lib/inbox/inbox-service'
+import { getConversation, patchConversation, deleteConversation } from '@/lib/inbox/inbox-service'
 
 const patchSchema = z.object({
   status: z.enum(['open', 'closed']).optional(),
@@ -66,6 +66,25 @@ export async function PATCH(
     return NextResponse.json(conversation)
   } catch (error) {
     console.error('[PATCH /api/inbox/conversations/[id]]', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  try {
+    const { id } = await params
+
+    await deleteConversation(id)
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('[DELETE /api/inbox/conversations/[id]]', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }

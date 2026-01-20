@@ -34,7 +34,11 @@ export const ConversationItem = memo(function ConversationItem({
     last_message_preview,
     last_message_at,
     labels,
+    ai_agent,
   } = conversation
+
+  // Agent display name for bot mode
+  const agentName = ai_agent?.name
 
   // Display name: contact name or phone
   const displayName = contact?.name || phone
@@ -58,15 +62,15 @@ export const ConversationItem = memo(function ConversationItem({
       onClick={onClick}
       className={cn(
         'w-full p-3 flex items-start gap-3 text-left',
-        'hover:bg-zinc-800/50 transition-colors',
-        'border-b border-zinc-800',
-        isSelected && 'bg-zinc-800 border-l-2 border-l-primary-500',
-        unread_count > 0 && !isSelected && 'bg-zinc-900/50'
+        'hover:bg-[var(--ds-bg-hover)] transition-colors',
+        'border-b border-[var(--ds-border-default)]',
+        isSelected && 'bg-[var(--ds-bg-elevated)] border-l-2 border-l-primary-500',
+        unread_count > 0 && !isSelected && 'bg-[var(--ds-bg-surface)]'
       )}
     >
       {/* Avatar */}
       <Avatar className="h-10 w-10 shrink-0">
-        <AvatarFallback className="bg-zinc-700 text-zinc-300 text-sm">
+        <AvatarFallback className="bg-[var(--ds-bg-surface)] text-[var(--ds-text-primary)] text-sm">
           {initials}
         </AvatarFallback>
       </Avatar>
@@ -78,19 +82,19 @@ export const ConversationItem = memo(function ConversationItem({
           <span
             className={cn(
               'truncate text-sm',
-              unread_count > 0 ? 'font-semibold text-white' : 'text-zinc-300'
+              unread_count > 0 ? 'font-semibold text-[var(--ds-text-primary)]' : 'text-[var(--ds-text-primary)]'
             )}
           >
             {displayName}
           </span>
-          <span className="text-xs text-zinc-500 shrink-0">{timeAgo}</span>
+          <span className="text-xs text-[var(--ds-text-muted)] shrink-0">{timeAgo}</span>
         </div>
 
         {/* Message preview */}
         <p
           className={cn(
             'text-xs truncate mt-0.5',
-            unread_count > 0 ? 'text-zinc-300' : 'text-zinc-500'
+            unread_count > 0 ? 'text-[var(--ds-text-primary)]' : 'text-[var(--ds-text-muted)]'
           )}
         >
           {last_message_preview || 'Sem mensagens'}
@@ -98,11 +102,11 @@ export const ConversationItem = memo(function ConversationItem({
 
         {/* Footer: badges */}
         <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-          {/* Mode badge */}
+          {/* Mode badge - shows agent name when in bot mode */}
           {mode === 'bot' ? (
-            <Badge variant="outline" className="h-5 text-[10px] px-1.5 gap-1 border-blue-500/50 text-blue-400">
-              <Bot className="h-3 w-3" />
-              Bot
+            <Badge variant="outline" className="h-5 text-[10px] px-1.5 gap-1 border-blue-500/50 text-blue-400 max-w-[120px]">
+              <Bot className="h-3 w-3 shrink-0" />
+              <span className="truncate">{agentName || 'Bot'}</span>
             </Badge>
           ) : (
             <Badge variant="outline" className="h-5 text-[10px] px-1.5 gap-1 border-amber-500/50 text-amber-400">
@@ -140,7 +144,7 @@ export const ConversationItem = memo(function ConversationItem({
             </Badge>
           ))}
           {labels && labels.length > 2 && (
-            <span className="text-[10px] text-zinc-500">+{labels.length - 2}</span>
+            <span className="text-[10px] text-[var(--ds-text-muted)]">+{labels.length - 2}</span>
           )}
         </div>
       </div>

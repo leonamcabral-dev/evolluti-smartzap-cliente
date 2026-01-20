@@ -126,7 +126,7 @@ export const TokenInput = forwardRef<HTMLInputElement, TokenInputProps>(
       <div className={cn('relative', className)}>
         {/* Label */}
         {label && (
-          <label className="block text-sm font-medium text-zinc-300 mb-2">
+          <label className="block text-sm font-medium text-[var(--ds-text-secondary)] mb-2">
             {label}
           </label>
         )}
@@ -144,13 +144,13 @@ export const TokenInput = forwardRef<HTMLInputElement, TokenInputProps>(
           className={cn(
             'relative flex items-center gap-2',
             'px-4 py-3 rounded-xl',
-            'bg-zinc-800/50 border',
+            'bg-[var(--ds-bg-surface)]/50 border',
             'transition-all duration-200',
             // Default state
             !isError &&
               !success &&
               !validating &&
-              'border-zinc-700',
+              'border-[var(--ds-border-default)]',
             !isError && !success && !validating && colors.focus,
             // Validating
             validating && colors.validating,
@@ -172,7 +172,7 @@ export const TokenInput = forwardRef<HTMLInputElement, TokenInputProps>(
             disabled={isDisabled}
             className={cn(
               'flex-1 bg-transparent outline-none',
-              'text-zinc-100 placeholder:text-zinc-500',
+              'text-[var(--ds-text-primary)] placeholder:text-[var(--ds-text-muted)]',
               'font-mono text-sm',
               'disabled:opacity-50 disabled:cursor-not-allowed'
             )}
@@ -218,7 +218,7 @@ export const TokenInput = forwardRef<HTMLInputElement, TokenInputProps>(
                 key="toggle"
                 type="button"
                 onClick={() => setShowValue(!showValue)}
-                className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+                className="text-[var(--ds-text-muted)] hover:text-[var(--ds-text-secondary)] transition-colors p-1"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -277,8 +277,8 @@ export const TokenInput = forwardRef<HTMLInputElement, TokenInputProps>(
               className={cn(
                 'text-xs',
                 value.length >= minLength
-                  ? 'text-emerald-400'
-                  : 'text-zinc-500'
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-[var(--ds-text-muted)]'
               )}
             >
               {value.length}/{minLength}+

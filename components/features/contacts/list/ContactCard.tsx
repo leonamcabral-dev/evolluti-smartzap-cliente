@@ -37,7 +37,7 @@ export const ContactCard = React.memo(
         className={`p-4 border rounded-xl transition-colors ${
           isSelected
             ? 'border-primary-500/40 bg-primary-500/5'
-            : 'border-white/10 bg-zinc-900/60 hover:bg-white/5'
+            : 'border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] hover:bg-[var(--ds-bg-hover)]'
         }`}
       >
         {/* Header: Checkbox, Avatar, Name, Status */}
@@ -51,16 +51,16 @@ export const ContactCard = React.memo(
             className={`mt-0.5 w-5 h-5 shrink-0 rounded border flex items-center justify-center transition-colors ${
               isSelected
                 ? 'bg-primary-500 border-primary-500'
-                : 'border-white/20 hover:border-white/40'
+                : 'border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)]'
             }`}
             aria-label={isSelected ? 'Desmarcar' : 'Selecionar'}
           >
-            {isSelected && <Check className="w-3 h-3 text-white" />}
+            {isSelected && <Check className="w-3 h-3 text-[var(--ds-text-primary)]" />}
           </button>
 
           {/* Avatar */}
           <div
-            className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-white/10 text-white flex items-center justify-center font-bold text-xs"
+            className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-[var(--ds-bg-surface)] to-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] text-[var(--ds-text-primary)] flex items-center justify-center font-bold text-xs"
             aria-hidden="true"
           >
             {getContactInitials(displayName)}
@@ -68,8 +68,8 @@ export const ContactCard = React.memo(
 
           {/* Name + Phone */}
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-white truncate">{displayName}</p>
-            <p className="text-xs text-gray-500 font-mono">{contact.phone}</p>
+            <p className="font-medium text-[var(--ds-text-primary)] truncate">{displayName}</p>
+            <p className="text-xs text-[var(--ds-text-muted)] font-mono">{contact.phone}</p>
           </div>
 
           {/* Status */}
@@ -99,7 +99,7 @@ export const ContactCard = React.memo(
             {contact.tags.map((tag, i) => (
               <span
                 key={i}
-                className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium bg-zinc-800 text-gray-300 border border-white/5"
+                className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium bg-[var(--ds-bg-surface)] text-[var(--ds-text-primary)] border border-[var(--ds-border-subtle)]"
               >
                 <Tag size={10} className="mr-1 opacity-50" /> {tag}
               </span>
@@ -120,8 +120,8 @@ export const ContactCard = React.memo(
         )}
 
         {/* Footer: Dates + Actions */}
-        <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
-          <div className="text-xs text-gray-500">
+        <div className="mt-3 pt-3 border-t border-[var(--ds-border-subtle)] flex items-center justify-between">
+          <div className="text-xs text-[var(--ds-text-muted)]">
             <span>
               Criado: {contact.createdAt ? new Date(contact.createdAt).toLocaleDateString('pt-BR') : '-'}
             </span>
@@ -208,7 +208,7 @@ export const ContactCardList: React.FC<ContactCardListProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="py-12 text-center text-gray-500">
+      <div className="py-12 text-center text-[var(--ds-text-muted)]">
         Carregando contatos...
       </div>
     )
@@ -217,11 +217,11 @@ export const ContactCardList: React.FC<ContactCardListProps> = ({
   if (contacts.length === 0) {
     return (
       <div className="py-16 text-center">
-        <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center mx-auto mb-3">
-          <User size={24} className="text-gray-500" />
+        <div className="w-12 h-12 rounded-full bg-[var(--ds-bg-surface)] flex items-center justify-center mx-auto mb-3">
+          <User size={24} className="text-[var(--ds-text-muted)]" />
         </div>
-        <p className="text-gray-400 font-medium">Nenhum contato encontrado</p>
-        <p className="text-gray-600 text-sm mt-1">
+        <p className="text-[var(--ds-text-secondary)] font-medium">Nenhum contato encontrado</p>
+        <p className="text-[var(--ds-text-muted)] text-sm mt-1">
           Tente ajustar os filtros ou importe novos contatos.
         </p>
       </div>

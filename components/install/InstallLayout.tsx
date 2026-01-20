@@ -35,7 +35,8 @@ export function InstallLayout({
     <div
       className={cn(
         'min-h-screen flex flex-col items-center justify-center p-4',
-        'bg-gradient-to-br from-zinc-950 via-zinc-900 to-emerald-950/20',
+        'bg-[var(--ds-bg-base)]',
+        'dark:bg-gradient-to-br dark:from-zinc-950 dark:via-zinc-900 dark:to-emerald-950/20',
         'relative overflow-hidden',
         className
       )}
@@ -55,10 +56,10 @@ export function InstallLayout({
             transition={{ duration: 0.5, ease: 'easeOut' }}
             className="mb-8 text-center"
           >
-            <h1 className="text-2xl font-display font-bold text-zinc-100">
+            <h1 className="text-2xl font-display font-bold text-[var(--ds-text-primary)]">
               SmartZap
             </h1>
-            <p className="text-sm text-zinc-400 mt-1">
+            <p className="text-sm text-[var(--ds-text-secondary)] mt-1">
               Configuração Inicial
             </p>
           </motion.div>

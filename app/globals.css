@@ -15,12 +15,12 @@
      DESIGN SYSTEM TOKENS
      ================================ */
 
-  /* DS - Typography */
+  /* DS - Typography (não muda com tema) */
   --ds-font-display: "Satoshi", "Inter", system-ui, sans-serif;
   --ds-font-body: "Inter", system-ui, -apple-system, sans-serif;
   --ds-font-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
 
-  /* DS - Text sizes */
+  /* DS - Text sizes (não muda com tema) */
   --ds-text-xs: 0.75rem;
   --ds-text-sm: 0.875rem;
   --ds-text-base: 1rem;
@@ -30,81 +30,90 @@
   --ds-text-3xl: 1.875rem;
   --ds-text-4xl: 2.25rem;
 
-  /* DS - Colors (semantic) */
+  /* DS - Brand colors (Emerald - mantendo identidade SmartZap) */
   --ds-brand-primary: #10b981;
   --ds-brand-primary-hover: #059669;
   --ds-brand-primary-muted: rgba(16, 185, 129, 0.1);
 
-  --ds-bg-base: #09090b;
-  --ds-bg-elevated: #18181b;
-  --ds-bg-surface: #27272a;
-  --ds-bg-overlay: rgba(9, 9, 11, 0.8);
-  --ds-bg-glass: rgba(24, 24, 27, 0.7);
-  --ds-bg-hover: rgba(255, 255, 255, 0.05);
+  /* ================================
+     LIGHT MODE - Geist Inspired
+     Clean, professional, high contrast
+     ================================ */
 
-  --ds-text-primary: #f4f4f5;
-  --ds-text-secondary: #a1a1aa;
-  --ds-text-muted: #71717a;
-  --ds-text-brand: #34d399;
+  /* DS - Backgrounds (LIGHT MODE - Geist style) */
+  --ds-bg-base: #ffffff;
+  --ds-bg-elevated: #fafafa;
+  --ds-bg-surface: #f4f4f5;
+  --ds-bg-overlay: rgba(255, 255, 255, 0.95);
+  --ds-bg-glass: rgba(250, 250, 250, 0.85);
+  --ds-bg-hover: rgba(0, 0, 0, 0.04);
 
-  --ds-border-subtle: rgba(255, 255, 255, 0.05);
-  --ds-border-default: rgba(255, 255, 255, 0.10);
-  --ds-border-strong: rgba(255, 255, 255, 0.15);
-  --ds-border-focus: #34d399;
+  /* DS - Text colors (LIGHT MODE - Geist style - high contrast) */
+  --ds-text-primary: #0a0a0a;
+  --ds-text-secondary: #525252;
+  --ds-text-muted: #737373;
+  --ds-text-brand: #059669;
+  --ds-text-disabled: #a3a3a3;
 
-  /* DS - Status colors */
-  --ds-status-success: #10b981;
-  --ds-status-success-text: #34d399;
-  --ds-status-success-bg: rgba(16, 185, 129, 0.1);
+  /* DS - Border colors (LIGHT MODE - Geist style - visible but elegant) */
+  --ds-border-subtle: rgba(0, 0, 0, 0.06);
+  --ds-border-default: rgba(0, 0, 0, 0.09);
+  --ds-border-strong: rgba(0, 0, 0, 0.14);
+  --ds-border-focus: #10b981;
+
+  /* DS - Status colors (LIGHT MODE - Geist style) */
+  --ds-status-success: #22c55e;
+  --ds-status-success-text: #15803d;
+  --ds-status-success-bg: rgba(34, 197, 94, 0.08);
   --ds-status-error: #ef4444;
-  --ds-status-error-text: #f87171;
-  --ds-status-error-bg: rgba(239, 68, 68, 0.1);
+  --ds-status-error-text: #dc2626;
+  --ds-status-error-bg: rgba(239, 68, 68, 0.08);
   --ds-status-warning: #f59e0b;
-  --ds-status-warning-text: #fbbf24;
-  --ds-status-warning-bg: rgba(245, 158, 11, 0.1);
+  --ds-status-warning-text: #d97706;
+  --ds-status-warning-bg: rgba(245, 158, 11, 0.08);
   --ds-status-info: #3b82f6;
-  --ds-status-info-text: #60a5fa;
-  --ds-status-info-bg: rgba(59, 130, 246, 0.1);
+  --ds-status-info-text: #2563eb;
+  --ds-status-info-bg: rgba(59, 130, 246, 0.08);
 
-  /* DS - Campaign status colors */
-  --ds-campaign-draft-text: #a1a1aa;
-  --ds-campaign-draft-bg: rgba(113, 113, 122, 0.1);
-  --ds-campaign-scheduled-text: #c084fc;
-  --ds-campaign-scheduled-bg: rgba(168, 85, 247, 0.1);
-  --ds-campaign-sending-text: #60a5fa;
-  --ds-campaign-sending-bg: rgba(59, 130, 246, 0.1);
-  --ds-campaign-completed-text: #34d399;
-  --ds-campaign-completed-bg: rgba(16, 185, 129, 0.1);
-  --ds-campaign-paused-text: #fbbf24;
-  --ds-campaign-paused-bg: rgba(245, 158, 11, 0.1);
-  --ds-campaign-failed-text: #f87171;
-  --ds-campaign-failed-bg: rgba(239, 68, 68, 0.1);
+  /* DS - Campaign status colors (LIGHT MODE - Geist style) */
+  --ds-campaign-draft-text: #525252;
+  --ds-campaign-draft-bg: rgba(82, 82, 82, 0.08);
+  --ds-campaign-scheduled-text: #7c3aed;
+  --ds-campaign-scheduled-bg: rgba(124, 58, 237, 0.08);
+  --ds-campaign-sending-text: #2563eb;
+  --ds-campaign-sending-bg: rgba(37, 99, 235, 0.08);
+  --ds-campaign-completed-text: #15803d;
+  --ds-campaign-completed-bg: rgba(21, 128, 61, 0.08);
+  --ds-campaign-paused-text: #d97706;
+  --ds-campaign-paused-bg: rgba(217, 119, 6, 0.08);
+  --ds-campaign-failed-text: #dc2626;
+  --ds-campaign-failed-bg: rgba(220, 38, 38, 0.08);
 
-  /* DS - Shadows */
-  --ds-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --ds-shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.4);
-  --ds-shadow-md: 0 4px 8px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
-  --ds-shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.5), 0 4px 10px -4px rgba(0, 0, 0, 0.4);
-  --ds-shadow-xl: 0 20px 40px -5px rgba(0, 0, 0, 0.6), 0 8px 16px -6px rgba(0, 0, 0, 0.4);
+  /* DS - Shadows (LIGHT MODE - Geist style - clean and subtle) */
+  --ds-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+  --ds-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --ds-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --ds-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
 
-  /* DS - Glow effects */
-  --ds-glow-brand-sm: 0 0 10px rgba(16, 185, 129, 0.2);
-  --ds-glow-brand-md: 0 0 20px rgba(16, 185, 129, 0.3);
-  --ds-glow-brand-ring: 0 0 0 3px rgba(16, 185, 129, 0.2);
-  --ds-glow-error-ring: 0 0 0 3px rgba(239, 68, 68, 0.2);
+  /* DS - Glow effects (LIGHT MODE - Geist: subtle focus rings) */
+  --ds-glow-brand-sm: 0 0 0 2px rgba(16, 185, 129, 0.15);
+  --ds-glow-brand-md: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  --ds-glow-brand-ring: 0 0 0 2px rgba(16, 185, 129, 0.25);
+  --ds-glow-error-ring: 0 0 0 2px rgba(239, 68, 68, 0.25);
 
-  /* DS - Composite shadows */
-  --ds-shadow-card: 0 2px 4px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
-  --ds-shadow-card-hover: 0 4px 8px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  --ds-shadow-button: 0 1px 2px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-  --ds-shadow-button-hover: 0 2px 4px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
-  --ds-shadow-button-primary: 0 2px 4px 0 rgba(0, 0, 0, 0.4), 0 0 10px rgba(16, 185, 129, 0.2);
-  --ds-shadow-button-primary-hover: 0 4px 8px -1px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.3);
-  --ds-shadow-input-focus: 0 0 0 3px rgba(16, 185, 129, 0.2);
-  --ds-shadow-modal: 0 20px 40px -5px rgba(0, 0, 0, 0.6), 0 8px 16px -6px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  --ds-shadow-dropdown: 0 10px 25px -3px rgba(0, 0, 0, 0.5), 0 4px 10px -4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  /* DS - Composite shadows (LIGHT MODE - Geist style) */
+  --ds-shadow-card: 0 0 0 1px rgba(0, 0, 0, 0.03), 0 1px 3px 0 rgba(0, 0, 0, 0.06);
+  --ds-shadow-card-hover: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+  --ds-shadow-button: 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --ds-shadow-button-hover: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  --ds-shadow-button-primary: 0 1px 2px 0 rgba(0, 0, 0, 0.08);
+  --ds-shadow-button-primary-hover: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+  --ds-shadow-input-focus: 0 0 0 2px rgba(16, 185, 129, 0.25);
+  --ds-shadow-modal: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 16px 32px -8px rgba(0, 0, 0, 0.12);
+  --ds-shadow-dropdown: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 8px 16px -4px rgba(0, 0, 0, 0.1);
 
-  /* DS - Motion */
+  /* DS - Motion (não muda com tema) */
   --ds-duration-fastest: 75ms;
   --ds-duration-fast: 150ms;
   --ds-duration-normal: 200ms;
@@ -116,7 +125,7 @@
   --ds-transition-normal: all 200ms cubic-bezier(0, 0, 0.2, 1);
   --ds-transition-colors: color 200ms cubic-bezier(0, 0, 0.2, 1), background-color 200ms cubic-bezier(0, 0, 0.2, 1), border-color 200ms cubic-bezier(0, 0, 0.2, 1);
 
-  /* DS - Border radius */
+  /* DS - Border radius (não muda com tema) */
   --ds-radius-sm: 0.25rem;
   --ds-radius-md: 0.375rem;
   --ds-radius-lg: 0.5rem;
@@ -193,60 +202,63 @@
   --node-selected: hsl(243, 75%, 59%);
   --node-ring: hsl(240, 6%, 90%);
 
+  /* ================================
+     SHADCN/UI OKLCH VARIABLES (LIGHT MODE)
+     ================================ */
   --radius: 0.625rem;
-  --background: oklch(0 0 0);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.04 0 0);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.04 0 0);
-  --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.98 0 0);
-  --primary-foreground: oklch(0.09 0 0);
-  --secondary: oklch(0.1 0 0);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.15 0 0);
-  --muted-foreground: oklch(0.65 0 0);
-  --accent: oklch(0.15 0 0);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.65 0.25 29);
-  --border: oklch(0.27 0 0);
-  --input: oklch(0.27 0 0);
-  --ring: oklch(0.8 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.15 0 0);
+  --card: oklch(0.99 0 0);
+  --card-foreground: oklch(0.15 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0 0);
+  --primary: oklch(0.15 0 0);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.96 0 0);
+  --secondary-foreground: oklch(0.15 0 0);
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.45 0 0);
+  --accent: oklch(0.96 0 0);
+  --accent-foreground: oklch(0.15 0 0);
+  --destructive: oklch(0.55 0.2 27);
+  --border: oklch(0.90 0 0);
+  --input: oklch(0.90 0 0);
+  --ring: oklch(0.15 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0 0 0);
-  --sidebar-foreground: oklch(0.65 0 0);
-  --sidebar-primary: oklch(0.98 0 0);
-  --sidebar-primary-foreground: oklch(0 0 0);
-  --sidebar-accent: oklch(0.1 0 0);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.18 0 0);
-  --sidebar-ring: oklch(0.8 0 0);
+  --sidebar: oklch(0.98 0 0);
+  --sidebar-foreground: oklch(0.45 0 0);
+  --sidebar-primary: oklch(0.15 0 0);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.96 0 0);
+  --sidebar-accent-foreground: oklch(0.15 0 0);
+  --sidebar-border: oklch(0.90 0 0);
+  --sidebar-ring: oklch(0.15 0 0);
 
   /* ================================
-     INTERNATIONAL PHONE INPUT THEME
+     INTERNATIONAL PHONE INPUT THEME (LIGHT MODE)
      ================================ */
   --react-international-phone-height: 48px;
-  --react-international-phone-background-color: #27272a; /* zinc-800 */
-  --react-international-phone-text-color: #f4f4f5; /* zinc-100 */
+  --react-international-phone-background-color: #f4f4f5; /* zinc-100 */
+  --react-international-phone-text-color: #18181b; /* zinc-900 */
   --react-international-phone-font-size: 14px;
   --react-international-phone-border-radius: 0.75rem; /* rounded-xl */
-  --react-international-phone-border-color: #3f3f46; /* zinc-700 */
+  --react-international-phone-border-color: #d4d4d8; /* zinc-300 */
 
-  --react-international-phone-country-selector-background-color: #27272a;
-  --react-international-phone-country-selector-background-color-hover: #3f3f46; /* zinc-700 */
-  --react-international-phone-country-selector-border-color: #3f3f46;
-  --react-international-phone-country-selector-arrow-color: #a1a1aa; /* zinc-400 */
+  --react-international-phone-country-selector-background-color: #f4f4f5;
+  --react-international-phone-country-selector-background-color-hover: #e4e4e7; /* zinc-200 */
+  --react-international-phone-country-selector-border-color: #d4d4d8;
+  --react-international-phone-country-selector-arrow-color: #52525b; /* zinc-600 */
 
-  --react-international-phone-dropdown-item-background-color: #18181b; /* zinc-900 */
-  --react-international-phone-dropdown-item-text-color: #f4f4f5;
-  --react-international-phone-dropdown-shadow: 0 10px 30px rgba(0, 0, 0, .5);
-  --react-international-phone-dropdown-item-dial-code-color: #a1a1aa;
-  --react-international-phone-selected-dropdown-item-background-color: #27272a; /* zinc-800 */
-  --react-international-phone-selected-dropdown-item-text-color: #f4f4f5;
+  --react-international-phone-dropdown-item-background-color: #ffffff;
+  --react-international-phone-dropdown-item-text-color: #18181b;
+  --react-international-phone-dropdown-shadow: 0 10px 30px rgba(0, 0, 0, .15);
+  --react-international-phone-dropdown-item-dial-code-color: #71717a;
+  --react-international-phone-selected-dropdown-item-background-color: #f4f4f5;
+  --react-international-phone-selected-dropdown-item-text-color: #18181b;
 }
 
 /* Tailwind v4 theme customizations */
@@ -268,11 +280,11 @@
   --color-primary-950: var(--color-primary-950);
 }
 
-/* Base styles */
+/* Base styles - theme-aware */
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #09090b;
-  color: #f4f4f5;
+  background-color: var(--ds-bg-base);
+  color: var(--ds-text-primary);
 }
 
 /* ================================
@@ -364,37 +376,37 @@ textarea:focus-visible {
    VISUAL DESIGN
    ================================ */
 
-/* The Dot Grid Background Effect */
+/* The Dot Grid Background Effect - theme-aware */
 .bg-grid-dots {
-  background-color: #09090b;
-  background-image: radial-gradient(#27272a 1.5px, transparent 1.5px);
+  background-color: var(--ds-bg-base);
+  background-image: radial-gradient(var(--ds-bg-surface) 1.5px, transparent 1.5px);
   background-size: 24px 24px;
 }
 
-/* Custom Scrollbar for Dark Mode */
+/* Custom Scrollbar - theme-aware */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #09090b;
+  background: var(--ds-bg-base);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: var(--ds-bg-surface);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: var(--ds-border-strong);
 }
 
-/* Glass panel effect */
+/* Glass panel effect - theme-aware */
 .glass-panel {
-  background: rgba(24, 24, 27, 0.7);
+  background: var(--ds-bg-glass);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ds-border-subtle);
 }
 
 /* No scrollbar utility */
@@ -657,6 +669,89 @@ textarea:focus-visible {
 }
 
 .dark {
+  /* ================================
+     DS TOKENS - DARK MODE OVERRIDES
+     ================================ */
+
+  /* DS - Backgrounds (DARK MODE) */
+  --ds-bg-base: #09090b;
+  --ds-bg-elevated: #18181b;
+  --ds-bg-surface: #27272a;
+  --ds-bg-overlay: rgba(9, 9, 11, 0.8);
+  --ds-bg-glass: rgba(24, 24, 27, 0.7);
+  --ds-bg-hover: rgba(255, 255, 255, 0.05);
+
+  /* DS - Text colors (DARK MODE) */
+  --ds-text-primary: #f4f4f5;
+  --ds-text-secondary: #a1a1aa;
+  --ds-text-muted: #71717a;
+  --ds-text-brand: #34d399;
+  --ds-text-disabled: #52525b;
+
+  /* DS - Border colors (DARK MODE) */
+  --ds-border-subtle: rgba(255, 255, 255, 0.05);
+  --ds-border-default: rgba(255, 255, 255, 0.10);
+  --ds-border-strong: rgba(255, 255, 255, 0.15);
+  --ds-border-focus: #34d399;
+
+  /* DS - Status colors (DARK MODE - tons -400 para texto) */
+  --ds-status-success-text: #34d399;
+  --ds-status-error-text: #f87171;
+  --ds-status-warning-text: #fbbf24;
+  --ds-status-info-text: #60a5fa;
+
+  /* DS - Campaign status colors (DARK MODE) */
+  --ds-campaign-draft-text: #a1a1aa;
+  --ds-campaign-scheduled-text: #c084fc;
+  --ds-campaign-sending-text: #60a5fa;
+  --ds-campaign-completed-text: #34d399;
+  --ds-campaign-paused-text: #fbbf24;
+  --ds-campaign-failed-text: #f87171;
+
+  /* DS - Shadows (DARK MODE - maior opacidade) */
+  --ds-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --ds-shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.4);
+  --ds-shadow-md: 0 4px 8px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --ds-shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.5), 0 4px 10px -4px rgba(0, 0, 0, 0.4);
+  --ds-shadow-xl: 0 20px 40px -5px rgba(0, 0, 0, 0.6), 0 8px 16px -6px rgba(0, 0, 0, 0.4);
+
+  /* DS - Glow effects (DARK MODE) */
+  --ds-glow-brand-sm: 0 0 10px rgba(16, 185, 129, 0.2);
+  --ds-glow-brand-md: 0 0 20px rgba(16, 185, 129, 0.3);
+  --ds-glow-brand-ring: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  --ds-glow-error-ring: 0 0 0 3px rgba(239, 68, 68, 0.2);
+
+  /* DS - Composite shadows (DARK MODE) */
+  --ds-shadow-card: 0 2px 4px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+  --ds-shadow-card-hover: 0 4px 8px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  --ds-shadow-button: 0 1px 2px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  --ds-shadow-button-hover: 0 2px 4px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+  --ds-shadow-button-primary: 0 2px 4px 0 rgba(0, 0, 0, 0.4), 0 0 10px rgba(16, 185, 129, 0.2);
+  --ds-shadow-button-primary-hover: 0 4px 8px -1px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.3);
+  --ds-shadow-input-focus: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  --ds-shadow-modal: 0 20px 40px -5px rgba(0, 0, 0, 0.6), 0 8px 16px -6px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --ds-shadow-dropdown: 0 10px 25px -3px rgba(0, 0, 0, 0.5), 0 4px 10px -4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  /* ================================
+     INTERNATIONAL PHONE INPUT (DARK MODE)
+     ================================ */
+  --react-international-phone-background-color: #27272a;
+  --react-international-phone-text-color: #f4f4f5;
+  --react-international-phone-border-color: #3f3f46;
+  --react-international-phone-country-selector-background-color: #27272a;
+  --react-international-phone-country-selector-background-color-hover: #3f3f46;
+  --react-international-phone-country-selector-border-color: #3f3f46;
+  --react-international-phone-country-selector-arrow-color: #a1a1aa;
+  --react-international-phone-dropdown-item-background-color: #18181b;
+  --react-international-phone-dropdown-item-text-color: #f4f4f5;
+  --react-international-phone-dropdown-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+  --react-international-phone-dropdown-item-dial-code-color: #a1a1aa;
+  --react-international-phone-selected-dropdown-item-background-color: #27272a;
+  --react-international-phone-selected-dropdown-item-text-color: #f4f4f5;
+
+  /* ================================
+     SHADCN/UI OKLCH VARIABLES
+     ================================ */
   --background: oklch(0 0 0);
   --foreground: oklch(0.98 0 0);
   --card: oklch(0.04 0 0);

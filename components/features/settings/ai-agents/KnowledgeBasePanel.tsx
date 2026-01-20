@@ -80,7 +80,29 @@ export function KnowledgeBasePanel({
       if (!agentId) return
 
       try {
-        const content = await file.text()
+        // Determinar se é arquivo binário (PDF, imagens) ou texto
+        const binaryTypes = [
+          'application/pdf',
+          'image/',
+          'application/vnd.openxmlformats', // docx, pptx, xlsx
+        ]
+        const isBinary = binaryTypes.some((t) => file.type.startsWith(t))
+
+        let content: string
+
+        if (isBinary) {
+          // Para binários: ler como data URL (base64)
+          content = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result as string)
+            reader.onerror = () => reject(reader.error)
+            reader.readAsDataURL(file)
+          })
+        } else {
+          // Para texto: ler como string UTF-8
+          content = await file.text()
+        }
+
         await onUpload({
           name: file.name,
           content,

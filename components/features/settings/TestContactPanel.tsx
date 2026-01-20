@@ -87,7 +87,7 @@ export function TestContactPanel({
               <UserCheck size={24} className="text-amber-400" />
             </div>
             <div>
-              <p className="font-medium text-white">{testContact.name || 'Contato de Teste'}</p>
+              <p className="font-medium text-[var(--ds-text-primary)]">{testContact.name || 'Contato de Teste'}</p>
               <p className="text-sm text-amber-400 font-mono">
                 {formatPhoneNumberDisplay(testContact.phone, 'international')}
               </p>
@@ -96,13 +96,13 @@ export function TestContactPanel({
           <div className="flex items-center gap-2">
             <button
               onClick={handleEdit}
-              className="h-10 px-4 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+              className="h-10 px-4 text-sm text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-hover)] rounded-lg transition-colors"
             >
               Editar
             </button>
             <button
               onClick={handleRemove}
-              className="h-10 w-10 flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+              className="h-10 w-10 flex items-center justify-center text-[var(--ds-text-secondary)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
             >
               <X size={16} />
             </button>
@@ -113,7 +113,7 @@ export function TestContactPanel({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-[var(--ds-text-primary)] mb-2">
                 Nome
               </label>
               <input
@@ -121,11 +121,11 @@ export function TestContactPanel({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ex: Meu Teste"
-                className="w-full px-4 py-3 bg-zinc-900/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none text-sm text-white transition-all"
+                className="w-full px-4 py-3 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none text-sm text-[var(--ds-text-primary)] transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-[var(--ds-text-primary)] mb-2">
                 Telefone (com código do país)
               </label>
               <input
@@ -133,7 +133,7 @@ export function TestContactPanel({
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="Ex: +5511999999999"
-                className="w-full px-4 py-3 bg-zinc-900/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none text-sm text-white font-mono transition-all"
+                className="w-full px-4 py-3 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none text-sm text-[var(--ds-text-primary)] font-mono transition-all"
               />
             </div>
           </div>
@@ -141,7 +141,7 @@ export function TestContactPanel({
             {isEditing && (
               <button
                 onClick={handleCancel}
-                className="h-10 px-4 text-sm text-gray-400 hover:text-white transition-colors"
+                className="h-10 px-4 text-sm text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)] transition-colors"
               >
                 Cancelar
               </button>

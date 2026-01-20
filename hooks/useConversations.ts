@@ -245,6 +245,14 @@ export function useConversationMutations() {
     },
   })
 
+  // Delete conversation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => inboxService.deleteConversation(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CONVERSATIONS_LIST_KEY })
+    },
+  })
+
   return {
     update: updateMutation.mutateAsync,
     markAsRead: markAsReadMutation.mutateAsync,
@@ -253,6 +261,7 @@ export function useConversationMutations() {
     switchMode: switchModeMutation.mutateAsync,
     handoff: handoffMutation.mutateAsync,
     returnToBot: returnToBotMutation.mutateAsync,
+    deleteConversation: deleteMutation.mutateAsync,
 
     isUpdating: updateMutation.isPending,
     isMarkingAsRead: markAsReadMutation.isPending,
@@ -261,5 +270,6 @@ export function useConversationMutations() {
     isSwitchingMode: switchModeMutation.isPending,
     isHandingOff: handoffMutation.isPending,
     isReturningToBot: returnToBotMutation.isPending,
+    isDeleting: deleteMutation.isPending,
   }
 }

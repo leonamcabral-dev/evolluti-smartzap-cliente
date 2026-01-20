@@ -42,7 +42,7 @@ const StatusBadge = ({ status, approvedCount, totalCount }: { status: string; ap
     );
   }
   return (
-    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border bg-zinc-500/10 text-zinc-400 border-zinc-500/20">
+    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border bg-[var(--ds-bg-surface)] text-[var(--ds-text-secondary)] border-[var(--ds-border-default)]">
       Rascunho
     </span>
   );
@@ -222,8 +222,8 @@ export default function TemplatesPage() {
         <button
           onClick={() => setTab('meta')}
           className={`rounded-full border px-4 py-2 text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'meta'
-            ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
-            : 'border-white/10 bg-zinc-950/40 text-gray-400 hover:text-white'
+            ? 'border-emerald-400/40 bg-emerald-500/10 text-[var(--ds-status-success-text)]'
+            : 'border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)]'
             }`}
         >
           <CheckCircle className="w-4 h-4" />
@@ -233,13 +233,13 @@ export default function TemplatesPage() {
         <button
           onClick={() => setTab('flows')}
           className={`rounded-full border px-4 py-2 text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'flows'
-            ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
-            : 'border-white/10 bg-zinc-950/40 text-gray-400 hover:text-white'
+            ? 'border-emerald-400/40 bg-emerald-500/10 text-[var(--ds-status-success-text)]'
+            : 'border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)]'
             }`}
         >
           <Workflow className="w-4 h-4" />
           MiniApps
-          <span className="rounded-full bg-emerald-500/20 px-1 py-px text-[8px] font-semibold uppercase tracking-wider text-emerald-200 border border-emerald-500/30">
+          <span className="rounded-full bg-emerald-500/20 px-1 py-px text-[8px] font-semibold uppercase tracking-wider text-[var(--ds-status-success-text)] border border-emerald-500/30">
             beta
           </span>
         </button>
@@ -247,13 +247,13 @@ export default function TemplatesPage() {
         <button
           onClick={() => setTab('forms')}
           className={`rounded-full border px-4 py-2 text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'forms'
-            ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
-            : 'border-white/10 bg-zinc-950/40 text-gray-400 hover:text-white'
+            ? 'border-emerald-400/40 bg-emerald-500/10 text-[var(--ds-status-success-text)]'
+            : 'border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)]'
             }`}
         >
           <FileText className="w-4 h-4" />
           Forms
-          <span className="rounded-full bg-emerald-500/20 px-1 py-px text-[8px] font-semibold uppercase tracking-wider text-emerald-200 border border-emerald-500/30">
+          <span className="rounded-full bg-emerald-500/20 px-1 py-px text-[8px] font-semibold uppercase tracking-wider text-[var(--ds-status-success-text)] border border-emerald-500/30">
             beta
           </span>
         </button>
@@ -261,13 +261,13 @@ export default function TemplatesPage() {
         <button
           onClick={() => setTab('projects')}
           className={`rounded-full border px-4 py-2 text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'projects'
-            ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
-            : 'border-white/10 bg-zinc-950/40 text-gray-400 hover:text-white'
+            ? 'border-emerald-400/40 bg-emerald-500/10 text-[var(--ds-status-success-text)]'
+            : 'border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)]'
             }`}
         >
           <LayoutGrid className="w-4 h-4" />
           Projetos (Fábrica)
-          <span className="rounded-full bg-emerald-500/20 px-1 py-px text-[8px] font-semibold uppercase tracking-wider text-emerald-200 border border-emerald-500/30">
+          <span className="rounded-full bg-emerald-500/20 px-1 py-px text-[8px] font-semibold uppercase tracking-wider text-[var(--ds-status-success-text)] border border-emerald-500/30">
             beta
           </span>
         </button>
@@ -325,13 +325,13 @@ export default function TemplatesPage() {
       {activeTab === 'projects' && (
         <>
           {/* Filters Bar */}
-          <div className="rounded-2xl border border-white/10 bg-zinc-900/60 p-6 shadow-[0_12px_30px_rgba(0,0,0,0.35)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 w-full sm:w-96 bg-zinc-950/40 border border-white/10 rounded-xl px-4 py-3 transition-all">
-              <Search size={18} className="text-gray-500" />
+          <div className="rounded-2xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] p-6 shadow-[0_12px_30px_rgba(0,0,0,0.35)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 w-full sm:w-96 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-xl px-4 py-3 transition-all">
+              <Search size={18} className="text-[var(--ds-text-muted)]" />
               <input
                 type="text"
                 placeholder="Buscar projetos..."
-                className="bg-transparent border-none outline-none text-sm w-full text-white placeholder:text-gray-600"
+                className="bg-transparent border-none outline-none text-sm w-full text-[var(--ds-text-primary)] placeholder:text-[var(--ds-text-muted)]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -339,7 +339,7 @@ export default function TemplatesPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => refetch()}
-                className="p-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg border border-white/10 transition-colors"
+                className="p-2.5 text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-hover)] rounded-lg border border-[var(--ds-border-default)] transition-colors"
                 title="Atualizar"
               >
                 <RefreshCw size={18} />
@@ -348,10 +348,10 @@ export default function TemplatesPage() {
           </div>
 
           {/* Table */}
-          <div className="rounded-2xl border border-white/10 bg-zinc-900/60 shadow-[0_12px_30px_rgba(0,0,0,0.35)] overflow-hidden">
+          <div className="rounded-2xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] shadow-[0_12px_30px_rgba(0,0,0,0.35)] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-zinc-950/40 border-b border-white/10 text-gray-500 uppercase tracking-widest text-xs">
+                <thead className="bg-[var(--ds-bg-elevated)] border-b border-[var(--ds-border-default)] text-[var(--ds-text-muted)] uppercase tracking-widest text-xs">
                   <tr>
                     <th className="px-6 py-4 font-medium">Nome</th>
                     <th className="px-6 py-4 font-medium">Status</th>
@@ -361,7 +361,7 @@ export default function TemplatesPage() {
                     <th className="px-6 py-4 font-medium text-right">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-[var(--ds-border-subtle)]">
                   {isLoadingProjects ? (
                     <tr>
                       <td colSpan={6} className="px-6 py-12 text-center">
@@ -370,7 +370,7 @@ export default function TemplatesPage() {
                     </tr>
                   ) : filteredProjects.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan={6} className="px-6 py-12 text-center text-[var(--ds-text-muted)]">
                         Nenhum projeto encontrado.
                       </td>
                     </tr>
@@ -384,7 +384,7 @@ export default function TemplatesPage() {
                         <tr
                           key={project.id}
                           onClick={() => router.push(`/templates/${project.id}`)}
-                          className="hover:bg-white/5 transition-colors group cursor-pointer"
+                          className="hover:bg-[var(--ds-bg-hover)] transition-colors group cursor-pointer"
                         >
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
@@ -392,7 +392,7 @@ export default function TemplatesPage() {
                                 <Folder size={16} />
                               </div>
                               <div>
-                                <p className="font-medium text-white group-hover:text-emerald-200 transition-colors">
+                                <p className="font-medium text-[var(--ds-text-primary)] group-hover:text-[var(--ds-status-success-text)] transition-colors">
                                   {project.title}
                                 </p>
                               </div>
@@ -405,23 +405,23 @@ export default function TemplatesPage() {
                               totalCount={project.template_count}
                             />
                           </td>
-                          <td className="px-6 py-4 text-center text-gray-400 font-mono">
+                          <td className="px-6 py-4 text-center text-[var(--ds-text-secondary)] font-mono">
                             {project.template_count}
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="flex-1 w-24 bg-zinc-800 rounded-full h-1">
+                              <div className="flex-1 w-24 bg-[var(--ds-bg-surface)] rounded-full h-1">
                                 <div
                                   className="bg-emerald-500 h-1 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"
                                   style={{ width: `${approvedPercent}%` }}
                                 />
                               </div>
-                              <span className="text-xs text-gray-400 font-mono w-10">
+                              <span className="text-xs text-[var(--ds-text-secondary)] font-mono w-10">
                                 {approvedPercent}%
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-gray-500 font-mono text-xs">
+                          <td className="px-6 py-4 text-[var(--ds-text-muted)] font-mono text-xs">
                             {new Date(project.created_at).toLocaleDateString('pt-BR')}
                           </td>
                           <td className="px-6 py-4 text-right">
@@ -429,7 +429,7 @@ export default function TemplatesPage() {
                               <button
                                 onClick={(e) => handleDeleteProject(e, project.id)}
                                 title="Excluir"
-                                className="p-2 rounded-lg text-gray-400 hover:text-amber-300 hover:bg-amber-500/10"
+                                className="p-2 rounded-lg text-[var(--ds-text-secondary)] hover:text-amber-300 hover:bg-amber-500/10"
                               >
                                 <Trash2 size={16} />
                               </button>

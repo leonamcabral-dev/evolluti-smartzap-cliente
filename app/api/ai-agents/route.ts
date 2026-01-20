@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { DEFAULT_MODEL_ID } from '@/lib/ai/model'
 
 // Helper to get admin client with null check
 function getClient() {
@@ -21,7 +22,7 @@ function getClient() {
 const createAgentSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(100),
   system_prompt: z.string().min(10, 'System prompt deve ter pelo menos 10 caracteres'),
-  model: z.string().default('gemini-2.0-flash'),
+  model: z.string().default(DEFAULT_MODEL_ID),
   temperature: z.number().min(0).max(2).default(0.7),
   max_tokens: z.number().int().min(100).max(8192).default(1024),
   file_search_store_id: z.string().nullable().optional(),

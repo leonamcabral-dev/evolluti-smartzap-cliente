@@ -71,7 +71,8 @@ export async function getConversations(
       contact:contacts(*),
       labels:inbox_conversation_labels(
         label:inbox_labels(*)
-      )
+      ),
+      ai_agent:ai_agents(id, name, is_active)
     `, { count: 'exact' })
     .order('last_message_at', { ascending: false, nullsFirst: false })
 
@@ -224,6 +225,10 @@ export async function getOrCreateConversation(
     agentId = defaultAgent?.id
   }
 
+  // Determine mode: only use 'bot' if there's an active agent configured
+  // If no agent exists, default to 'human' mode (manual attendance)
+  const mode = agentId ? 'bot' : 'human'
+
   // Create new conversation
   const { data, error } = await supabase
     .from('inbox_conversations')
@@ -232,7 +237,7 @@ export async function getOrCreateConversation(
       contact_id: contactId,
       ai_agent_id: agentId,
       status: 'open',
-      mode: 'bot',
+      mode,
     })
     .select()
     .single()
@@ -281,6 +286,22 @@ export async function updateConversation(
   }
 
   return getConversationById(id) as Promise<InboxConversation>
+}
+
+/**
+ * Delete a conversation and all its messages (cascade)
+ */
+export async function removeConversation(id: string): Promise<void> {
+  const supabase = getClient()
+
+  const { error } = await supabase
+    .from('inbox_conversations')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    throw new Error(`Failed to delete conversation: ${error.message}`)
+  }
 }
 
 // =============================================================================

@@ -5,8 +5,8 @@
  * Lists agents with create/edit/delete capabilities
  */
 
-import React, { useState, useCallback } from 'react'
-import { Bot, Plus, Loader2, AlertCircle } from 'lucide-react'
+import React, { useState, useCallback, useMemo } from 'react'
+import { Bot, Plus, Loader2, AlertCircle, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -104,6 +104,16 @@ export function AIAgentsSettingsView({
     [onToggleActive]
   )
 
+  // Check if there's an active default agent
+  const hasActiveDefaultAgent = useMemo(() => {
+    return agents.some((agent) => agent.is_default && agent.is_active)
+  }, [agents])
+
+  // Check if there are agents but none is default
+  const hasAgentsButNoDefault = useMemo(() => {
+    return agents.length > 0 && !agents.some((agent) => agent.is_default)
+  }, [agents])
+
   return (
     <TooltipProvider>
       <Card>
@@ -147,6 +157,21 @@ export function AIAgentsSettingsView({
           {/* Empty state */}
           {!isLoading && !error && agents.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
+              {/* Warning banner */}
+              <div className="w-full max-w-md mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-amber-400">
+                      Atendimento automático desativado
+                    </p>
+                    <p className="text-xs text-amber-400/70 mt-1">
+                      Sem um agente configurado, todas as conversas serão direcionadas para atendimento humano.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="p-4 rounded-full bg-zinc-800 mb-4">
                 <Bot className="h-8 w-8 text-zinc-500" />
               </div>
@@ -160,6 +185,40 @@ export function AIAgentsSettingsView({
                 <Plus className="h-4 w-4 mr-2" />
                 Criar Primeiro Agente
               </Button>
+            </div>
+          )}
+
+          {/* Warning: no default agent */}
+          {!isLoading && !error && hasAgentsButNoDefault && (
+            <div className="mb-4 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-400">
+                    Nenhum agente definido como padrão
+                  </p>
+                  <p className="text-xs text-amber-400/70 mt-1">
+                    Defina um agente como padrão para que ele seja usado automaticamente em novas conversas.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Warning: default agent is inactive */}
+          {!isLoading && !error && agents.length > 0 && !hasActiveDefaultAgent && !hasAgentsButNoDefault && (
+            <div className="mb-4 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-400">
+                    Agente padrão está desativado
+                  </p>
+                  <p className="text-xs text-amber-400/70 mt-1">
+                    Ative o agente padrão ou defina outro como padrão para habilitar o atendimento automático.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 

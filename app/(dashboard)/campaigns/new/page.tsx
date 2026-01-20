@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Braces, Calendar as CalendarIcon, Eye, Layers, MessageSquare, Plus, RefreshCw, Sparkles, Users, Wand2 } from 'lucide-react'
+import { Braces, Calendar as CalendarIcon, Eye, FolderIcon, Layers, MessageSquare, Plus, RefreshCw, Save, Sparkles, Users, Wand2 } from 'lucide-react'
 import { CustomFieldsSheet } from '@/components/features/contacts/CustomFieldsSheet'
 import {
   Sheet,
@@ -38,6 +38,7 @@ import { cn } from '@/lib/utils'
 import { ptBRLight as ptBR } from '@/lib/locale-pt-br-light'
 import { getPricingBreakdown } from '@/lib/whatsapp-pricing'
 import { useExchangeRate } from '@/hooks/useExchangeRate'
+import { useCampaignFolders } from '@/hooks/useCampaignFolders'
 
 const steps = [
   { id: 1, label: 'Configuração' },
@@ -183,6 +184,7 @@ export default function CampaignsNewRealPage() {
   const [isFieldsSheetOpen, setIsFieldsSheetOpen] = useState(false)
   const [scheduleDate, setScheduleDate] = useState(() => new Date().toLocaleDateString('en-CA'))
   const [scheduleTime, setScheduleTime] = useState(() => getDefaultScheduleTime())
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
   const userTimeZone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, [])
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
   const [templateVars, setTemplateVars] = useState<{ header: TemplateVar[]; body: TemplateVar[] }>({
@@ -224,6 +226,7 @@ export default function CampaignsNewRealPage() {
   const [showStatesPanel, setShowStatesPanel] = useState(false)
   const [stateSearch, setStateSearch] = useState('')
   const { rate: exchangeRate, hasRate } = useExchangeRate()
+  const { folders, isLoading: isFoldersLoading } = useCampaignFolders()
 
   useEffect(() => {
     if (combineMode !== 'and') return
@@ -765,6 +768,7 @@ export default function CampaignsNewRealPage() {
         templateVariables: buildTemplateVariables(),
         flowId,
         flowName,
+        folderId: selectedFolderId,
       })
 
       router.push(`/campaigns/${campaign.id}`)
@@ -772,6 +776,51 @@ export default function CampaignsNewRealPage() {
       setLaunchError((error as Error)?.message || 'Falha ao lancar campanha.')
     } finally {
       setIsLaunching(false)
+    }
+  }
+
+  // Salvar como rascunho (não dispara a campanha)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
+
+  const handleSaveDraft = async () => {
+    if (!selectedTemplate?.name) return
+    setIsSavingDraft(true)
+    setLaunchError(null)
+    try {
+      const contacts = await resolveAudienceContacts()
+      if (!contacts.length) {
+        setLaunchError('Nenhum contato válido para salvar.')
+        return
+      }
+
+      // Extrair Flow do template (se houver botão do tipo FLOW)
+      const { flowId, flowName } = extractFlowFromTemplate(selectedTemplate)
+
+      const campaign = await campaignService.create({
+        name: campaignName.trim(),
+        templateName: selectedTemplate.name,
+        selectedContacts: contacts.map((contact) => ({
+          contactId: contact.id,
+          id: contact.id,
+          name: contact.name,
+          phone: contact.phone,
+          email: contact.email || null,
+          custom_fields: contact.custom_fields || {},
+        })),
+        recipients: contacts.length,
+        templateVariables: buildTemplateVariables(),
+        flowId,
+        flowName,
+        folderId: selectedFolderId,
+        isDraft: true, // <-- Salva como rascunho
+      })
+
+      // Redireciona para a lista de campanhas (não para os detalhes)
+      router.push('/campaigns')
+    } catch (error) {
+      setLaunchError((error as Error)?.message || 'Falha ao salvar rascunho.')
+    } finally {
+      setIsSavingDraft(false)
     }
   }
 
@@ -2678,6 +2727,50 @@ export default function CampaignsNewRealPage() {
                   <p className="mt-3 text-xs text-gray-500">Fuso do navegador: {userTimeZone || 'Local'}.</p>
                 </div>
               </div>
+
+              {/* Organização - Seleção de Pasta */}
+              {folders.length > 0 && (
+                <div className="rounded-2xl border border-white/10 bg-zinc-900/60 p-6 shadow-[0_12px_30px_rgba(0,0,0,0.35)]">
+                  <div className="space-y-1">
+                    <h2 className="text-lg font-semibold text-white">Organização</h2>
+                    <p className="text-sm text-gray-500">Salve em uma pasta para organizar suas campanhas (opcional).</p>
+                  </div>
+                  <div className="mt-4">
+                    <label className="text-xs uppercase tracking-widest text-gray-500">Pasta</label>
+                    <div className="mt-2 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+                      {/* Opção "Nenhuma" */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFolderId(null)}
+                        className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-left text-sm transition ${
+                          selectedFolderId === null
+                            ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
+                            : 'border-white/10 bg-zinc-950/40 text-gray-400 hover:border-white/20'
+                        }`}
+                      >
+                        <FolderIcon size={16} className="text-gray-500" />
+                        <span>Nenhuma</span>
+                      </button>
+                      {/* Pastas disponíveis */}
+                      {folders.map((folder) => (
+                        <button
+                          key={folder.id}
+                          type="button"
+                          onClick={() => setSelectedFolderId(folder.id)}
+                          className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-left text-sm transition ${
+                            selectedFolderId === folder.id
+                              ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
+                              : 'border-white/10 bg-zinc-950/40 text-gray-400 hover:border-white/20'
+                          }`}
+                        >
+                          <FolderIcon size={16} style={{ color: folder.color }} />
+                          <span className="truncate">{folder.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -2741,41 +2834,60 @@ export default function CampaignsNewRealPage() {
                 {step === 4 && !isScheduleComplete && 'Defina data e horário do agendamento'}
                 {canContinue && footerSummary}
               </div>
-              <button
-                onClick={async () => {
-                  if (!canContinue || isLaunching) return
-                  if (step === 1) {
-                    setStep(2)
-                    return
-                  }
-                  if (step === 2) {
-                    const result = await runPrecheck()
-                    const totals = result?.totals
-                    const skipped = totals?.skipped ?? 0
-                    const valid = totals?.valid ?? 0
-                    if (!result || skipped > 0 || valid === 0) {
-                      setStep(3)
+              <div className="flex items-center gap-3">
+                {/* Botão Salvar Rascunho (só no step 4) */}
+                {step === 4 && (
+                  <button
+                    onClick={handleSaveDraft}
+                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
+                      canContinue && !isLaunching && !isSavingDraft
+                        ? 'border border-white/20 text-gray-300 hover:bg-white/5 hover:text-white'
+                        : 'cursor-not-allowed border border-white/10 text-gray-600'
+                    }`}
+                    disabled={!canContinue || isLaunching || isSavingDraft}
+                  >
+                    <Save size={16} />
+                    {isSavingDraft ? 'Salvando...' : 'Salvar Rascunho'}
+                  </button>
+                )}
+
+                {/* Botão Continuar / Lançar */}
+                <button
+                  onClick={async () => {
+                    if (!canContinue || isLaunching || isSavingDraft) return
+                    if (step === 1) {
+                      setStep(2)
                       return
                     }
-                    setStep(4)
-                    return
-                  }
-                  if (step === 3) {
-                    if (!isPrecheckOk) return
-                    setStep(4)
-                    return
-                  }
-                  handleLaunch()
-                }}
-                className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
-                  canContinue && !isLaunching
-                    ? 'bg-white text-black'
-                    : 'cursor-not-allowed border border-white/10 bg-white/10 text-gray-500'
-                }`}
-                disabled={!canContinue || isLaunching}
-              >
-                {step < 4 ? 'Continuar' : isLaunching ? 'Lancando...' : 'Lancar campanha'}
-              </button>
+                    if (step === 2) {
+                      const result = await runPrecheck()
+                      const totals = result?.totals
+                      const skipped = totals?.skipped ?? 0
+                      const valid = totals?.valid ?? 0
+                      if (!result || skipped > 0 || valid === 0) {
+                        setStep(3)
+                        return
+                      }
+                      setStep(4)
+                      return
+                    }
+                    if (step === 3) {
+                      if (!isPrecheckOk) return
+                      setStep(4)
+                      return
+                    }
+                    handleLaunch()
+                  }}
+                  className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                    canContinue && !isLaunching && !isSavingDraft
+                      ? 'bg-white text-black'
+                      : 'cursor-not-allowed border border-white/10 bg-white/10 text-gray-500'
+                  }`}
+                  disabled={!canContinue || isLaunching || isSavingDraft}
+                >
+                  {step < 4 ? 'Continuar' : isLaunching ? 'Lancando...' : 'Lancar campanha'}
+                </button>
+              </div>
             </div>
             {launchError && (
               <p className="mt-3 text-xs text-amber-300">{launchError}</p>

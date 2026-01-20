@@ -95,13 +95,13 @@ export function MetaAppPanel({
             <button
               type="button"
               onClick={() => refreshMetaApp?.()}
-              className="h-10 px-4 rounded-lg bg-white/5 text-white hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all text-sm font-medium inline-flex items-center gap-2 whitespace-nowrap"
+              className="h-10 px-4 rounded-lg bg-[var(--ds-bg-hover)] text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)] transition-all text-sm font-medium inline-flex items-center gap-2 whitespace-nowrap"
             >
               <RefreshCw size={14} /> Atualizar
             </button>
             <Link
               href="/settings/meta-diagnostics"
-              className="h-10 px-4 rounded-lg bg-white/5 text-white hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all text-sm font-medium inline-flex items-center gap-2 whitespace-nowrap"
+              className="h-10 px-4 rounded-lg bg-[var(--ds-bg-hover)] text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)] transition-all text-sm font-medium inline-flex items-center gap-2 whitespace-nowrap"
             >
               <ExternalLink size={14} /> Abrir diagnóstico
             </Link>
@@ -110,11 +110,11 @@ export function MetaAppPanel({
       />
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-white/10 bg-zinc-900/50 p-4">
-          <div className="text-xs text-gray-400">Status</div>
+        <div className="rounded-xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] p-4">
+          <div className="text-xs text-[var(--ds-text-secondary)]">Status</div>
           <div className="mt-2">
             {metaAppLoading ? (
-              <span className="text-sm text-gray-400">Carregando…</span>
+              <span className="text-sm text-[var(--ds-text-secondary)]">Carregando…</span>
             ) : metaApp?.isConfigured ? (
               <StatusBadge status="success">Configurado</StatusBadge>
             ) : (
@@ -122,15 +122,15 @@ export function MetaAppPanel({
             )}
           </div>
         </div>
-        <div className="rounded-xl border border-white/10 bg-zinc-900/50 p-4">
-          <div className="text-xs text-gray-400">App ID</div>
-          <div className="mt-1 text-sm text-white font-mono">
+        <div className="rounded-xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] p-4">
+          <div className="text-xs text-[var(--ds-text-secondary)]">App ID</div>
+          <div className="mt-1 text-sm text-[var(--ds-text-primary)] font-mono">
             {metaAppLoading ? '—' : metaApp?.appId || '—'}
           </div>
         </div>
-        <div className="rounded-xl border border-white/10 bg-zinc-900/50 p-4">
-          <div className="text-xs text-gray-400">Fonte</div>
-          <div className="mt-1 text-sm text-white">
+        <div className="rounded-xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] p-4">
+          <div className="text-xs text-[var(--ds-text-secondary)]">Fonte</div>
+          <div className="mt-1 text-sm text-[var(--ds-text-primary)]">
             {metaAppLoading ? '—' : metaApp?.source === 'db' ? 'Banco (Supabase)' : metaApp?.source === 'env' ? 'Env vars' : '—'}
           </div>
         </div>
@@ -142,7 +142,7 @@ export function MetaAppPanel({
             <button
               type="button"
               onClick={handleStartEdit}
-              className="h-10 px-4 rounded-xl bg-white/5 text-white hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all text-sm font-medium inline-flex items-center gap-2 whitespace-nowrap"
+              className="h-10 px-4 rounded-xl bg-[var(--ds-bg-hover)] text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)] transition-all text-sm font-medium inline-flex items-center gap-2 whitespace-nowrap"
             >
               <Edit2 size={14} /> Configurar App ID/Secret
             </button>
@@ -159,28 +159,28 @@ export function MetaAppPanel({
             )}
           </div>
         ) : (
-          <div className="rounded-2xl border border-white/10 bg-zinc-900/30 p-6">
+          <div className="rounded-2xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Meta App ID</label>
+                <label className="block text-sm font-medium text-[var(--ds-text-primary)] mb-2">Meta App ID</label>
                 <input
                   type="text"
                   value={appIdDraft}
                   onChange={(e) => setAppIdDraft(e.target.value)}
                   placeholder="ex: 123456789012345"
-                  className="w-full px-4 py-3 bg-zinc-900/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500/40 outline-none font-mono text-sm text-white transition-all"
+                  className="w-full px-4 py-3 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-xl focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500/40 outline-none font-mono text-sm text-[var(--ds-text-primary)] transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Meta App Secret</label>
+                <label className="block text-sm font-medium text-[var(--ds-text-primary)] mb-2">Meta App Secret</label>
                 <input
                   type="password"
                   value={appSecretDraft}
                   onChange={(e) => setAppSecretDraft(e.target.value)}
                   placeholder="••••••••••••••••"
-                  className="w-full px-4 py-3 bg-zinc-900/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500/40 outline-none font-mono text-sm text-white transition-all"
+                  className="w-full px-4 py-3 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-xl focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500/40 outline-none font-mono text-sm text-[var(--ds-text-primary)] transition-all"
                 />
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-[var(--ds-text-muted)] mt-2">
                   Por segurança, nunca mostramos o secret atual. Para trocar, cole um novo e salve.
                 </p>
               </div>
@@ -190,7 +190,7 @@ export function MetaAppPanel({
               <button
                 type="button"
                 onClick={handleCancel}
-                className="h-10 px-4 rounded-xl border border-white/10 text-gray-300 font-medium hover:bg-white/5 transition-colors"
+                className="h-10 px-4 rounded-xl border border-[var(--ds-border-default)] text-[var(--ds-text-primary)] font-medium hover:bg-[var(--ds-bg-hover)] transition-colors"
               >
                 Cancelar
               </button>

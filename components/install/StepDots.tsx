@@ -65,16 +65,9 @@ export function StepDots({
                 'w-2.5 h-2.5 rounded-full transition-colors duration-300 relative z-10',
                 isActive && 'bg-emerald-500',
                 isCompleted && !isActive && 'bg-emerald-500/50',
-                !isActive && !isCompleted && 'bg-zinc-700'
+                !isActive && !isCompleted && 'bg-neutral-300 dark:bg-zinc-700'
               )}
               initial={false}
-              animate={{
-                backgroundColor: isActive
-                  ? 'rgb(16 185 129)'
-                  : isCompleted
-                  ? 'rgb(16 185 129 / 0.5)'
-                  : 'rgb(63 63 70)',
-              }}
             />
           </motion.div>
         );

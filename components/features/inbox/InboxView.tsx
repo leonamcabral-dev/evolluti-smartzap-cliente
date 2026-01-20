@@ -77,9 +77,14 @@ export interface InboxViewProps {
   onHandoff?: (params?: { reason?: string; summary?: string; pauseMinutes?: number }) => void
   /** T050: Return to bot */
   onReturnToBot?: () => void
+  /** Delete conversation */
+  onDeleteConversation?: () => void
+  /** Configure AI agent */
+  onConfigureAgent?: () => void
   isUpdatingConversation: boolean
   isHandingOff?: boolean
   isReturningToBot?: boolean
+  isDeletingConversation?: boolean
 }
 
 export function InboxView({
@@ -115,9 +120,12 @@ export function InboxView({
   onLabelToggle,
   onHandoff,
   onReturnToBot,
+  onDeleteConversation,
+  onConfigureAgent,
   isUpdatingConversation,
   isHandingOff,
   isReturningToBot,
+  isDeletingConversation,
 }: InboxViewProps) {
   // Handle conversation selection
   const handleSelectConversation = useCallback(
@@ -129,14 +137,14 @@ export function InboxView({
 
   // T074: Panel-specific error fallbacks
   const ConversationListFallback = (
-    <div className="h-full flex flex-col items-center justify-center p-4 text-center bg-zinc-950">
+    <div className="h-full flex flex-col items-center justify-center p-4 text-center bg-[var(--ds-bg-base)]">
       <div className="w-12 h-12 mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
         <Users className="w-6 h-6 text-red-400" />
       </div>
-      <p className="text-sm text-zinc-400 mb-3">Erro ao carregar conversas</p>
+      <p className="text-sm text-[var(--ds-text-secondary)] mb-3">Erro ao carregar conversas</p>
       <button
         onClick={() => window.location.reload()}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[var(--ds-bg-elevated)] text-[var(--ds-text-primary)] rounded-lg hover:bg-zinc-700 transition-colors"
       >
         <RefreshCw className="w-3 h-3" />
         Recarregar
@@ -145,14 +153,14 @@ export function InboxView({
   )
 
   const MessagePanelFallback = (
-    <div className="h-full flex flex-col items-center justify-center p-4 text-center bg-zinc-950">
+    <div className="h-full flex flex-col items-center justify-center p-4 text-center bg-[var(--ds-bg-base)]">
       <div className="w-12 h-12 mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
         <MessageSquare className="w-6 h-6 text-red-400" />
       </div>
-      <p className="text-sm text-zinc-400 mb-3">Erro ao carregar mensagens</p>
+      <p className="text-sm text-[var(--ds-text-secondary)] mb-3">Erro ao carregar mensagens</p>
       <button
         onClick={() => window.location.reload()}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[var(--ds-bg-elevated)] text-[var(--ds-text-primary)] rounded-lg hover:bg-zinc-700 transition-colors"
       >
         <RefreshCw className="w-3 h-3" />
         Recarregar
@@ -162,14 +170,14 @@ export function InboxView({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="h-[calc(100vh-64px)] bg-zinc-950">
+      <div className="h-[calc(100vh-64px)] bg-[var(--ds-bg-base)]">
         <ResizablePanelGroup direction="horizontal">
           {/* Conversation list sidebar - T074: wrapped with ErrorBoundary */}
           <ResizablePanel
             defaultSize={30}
             minSize={20}
             maxSize={40}
-            className="border-r border-zinc-800"
+            className="border-r border-[var(--ds-border-default)]"
           >
             <ErrorBoundary fallback={ConversationListFallback}>
               <ConversationList
@@ -216,9 +224,12 @@ export function InboxView({
                 onLabelToggle={onLabelToggle}
                 onHandoff={onHandoff}
                 onReturnToBot={onReturnToBot}
+                onDelete={onDeleteConversation}
+                onConfigureAgent={onConfigureAgent}
                 isUpdating={isUpdatingConversation}
                 isHandingOff={isHandingOff}
                 isReturningToBot={isReturningToBot}
+                isDeleting={isDeletingConversation}
               />
             </ErrorBoundary>
           </ResizablePanel>

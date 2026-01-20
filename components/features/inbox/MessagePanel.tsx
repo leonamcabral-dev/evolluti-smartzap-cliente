@@ -50,9 +50,14 @@ export interface MessagePanelProps {
   onHandoff?: (params?: { reason?: string; summary?: string; pauseMinutes?: number }) => void
   /** T050: Return to bot mode */
   onReturnToBot?: () => void
+  /** Delete conversation */
+  onDelete?: () => void
+  /** Configure AI agent */
+  onConfigureAgent?: () => void
   isUpdating?: boolean
   isHandingOff?: boolean
   isReturningToBot?: boolean
+  isDeleting?: boolean
 }
 
 export function MessagePanel({
@@ -75,9 +80,12 @@ export function MessagePanel({
   onLabelToggle,
   onHandoff,
   onReturnToBot,
+  onDelete,
+  onConfigureAgent,
   isUpdating,
   isHandingOff,
   isReturningToBot,
+  isDeleting,
 }: MessagePanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const isAtBottomRef = useRef(true)
@@ -133,10 +141,10 @@ export function MessagePanel({
   // No conversation selected
   if (!conversation && !isLoadingConversation) {
     return (
-      <div className="flex flex-col h-full bg-zinc-950 items-center justify-center">
-        <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center mb-4">
+      <div className="flex flex-col h-full bg-[var(--ds-bg-base)] items-center justify-center">
+        <div className="w-16 h-16 rounded-full bg-[var(--ds-bg-elevated)] flex items-center justify-center mb-4">
           <svg
-            className="h-8 w-8 text-zinc-500"
+            className="h-8 w-8 text-[var(--ds-text-muted)]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -149,10 +157,10 @@ export function MessagePanel({
             />
           </svg>
         </div>
-        <h3 className="text-lg font-medium text-zinc-300">
+        <h3 className="text-lg font-medium text-[var(--ds-text-primary)]">
           Selecione uma conversa
         </h3>
-        <p className="text-sm text-zinc-500 mt-1">
+        <p className="text-sm text-[var(--ds-text-muted)] mt-1">
           Escolha uma conversa à esquerda para ver as mensagens
         </p>
       </div>
@@ -162,9 +170,9 @@ export function MessagePanel({
   // Loading state
   if (isLoadingConversation) {
     return (
-      <div className="flex flex-col h-full bg-zinc-950 items-center justify-center">
+      <div className="flex flex-col h-full bg-[var(--ds-bg-base)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
-        <p className="text-sm text-zinc-500 mt-2">Carregando...</p>
+        <p className="text-sm text-[var(--ds-text-muted)] mt-2">Carregando...</p>
       </div>
     )
   }
@@ -172,7 +180,7 @@ export function MessagePanel({
   const isOpen = conversation?.status === 'open'
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950">
+    <div className="flex flex-col h-full bg-[var(--ds-bg-base)]">
       {/* Header */}
       {conversation && (
         <ConversationHeader
@@ -185,9 +193,12 @@ export function MessagePanel({
           onLabelToggle={onLabelToggle}
           onHandoff={onHandoff}
           onReturnToBot={onReturnToBot}
+          onDelete={onDelete}
+          onConfigureAgent={onConfigureAgent}
           isUpdating={isUpdating}
           isHandingOff={isHandingOff}
           isReturningToBot={isReturningToBot}
+          isDeleting={isDeleting}
         />
       )}
 
@@ -200,7 +211,7 @@ export function MessagePanel({
         {/* Load more indicator */}
         {isLoadingMore && (
           <div className="flex justify-center py-2 mb-2">
-            <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+            <Loader2 className="h-5 w-5 animate-spin text-[var(--ds-text-muted)]" />
           </div>
         )}
 
@@ -211,7 +222,7 @@ export function MessagePanel({
               variant="ghost"
               size="sm"
               onClick={onLoadMore}
-              className="text-xs text-zinc-500"
+              className="text-xs text-[var(--ds-text-muted)]"
             >
               Carregar mensagens anteriores
             </Button>
@@ -226,22 +237,26 @@ export function MessagePanel({
                 key={i}
                 className={cn(
                   'animate-pulse rounded-2xl h-12 w-2/3',
-                  i % 2 === 0 ? 'self-end bg-primary-600/20' : 'self-start bg-zinc-800'
+                  i % 2 === 0 ? 'self-end bg-primary-600/20' : 'self-start bg-[var(--ds-bg-elevated)]'
                 )}
               />
             ))}
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <p className="text-sm text-zinc-500">Nenhuma mensagem ainda</p>
-            <p className="text-xs text-zinc-600 mt-1">
+            <p className="text-sm text-[var(--ds-text-muted)]">Nenhuma mensagem ainda</p>
+            <p className="text-xs text-[var(--ds-text-muted)] mt-1">
               Envie a primeira mensagem para iniciar a conversa
             </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
             {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+              <MessageBubble
+                key={message.id}
+                message={message}
+                agentName={conversation?.ai_agent?.name}
+              />
             ))}
           </div>
         )}
@@ -273,6 +288,8 @@ export function MessagePanel({
         }
         quickReplies={quickReplies}
         quickRepliesLoading={quickRepliesLoading}
+        conversationId={conversation?.id}
+        showAISuggest={isOpen && conversation?.mode === 'human'}
       />
     </div>
   )

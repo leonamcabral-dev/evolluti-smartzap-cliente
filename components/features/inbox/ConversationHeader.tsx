@@ -20,6 +20,8 @@ import {
   PauseCircle,
   PlayCircle,
   Clock,
+  Trash2,
+  Settings2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -43,6 +45,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import type {
   InboxConversation,
   InboxLabel,
@@ -66,16 +78,21 @@ export interface ConversationHeaderProps {
   onPause?: (params: { duration_minutes: number; reason?: string }) => void
   /** T067: Resume automation immediately */
   onResume?: () => void
+  /** Delete conversation permanently */
+  onDelete?: () => void
+  /** Configure the AI agent for this conversation */
+  onConfigureAgent?: () => void
   isUpdating?: boolean
   isHandingOff?: boolean
   isReturningToBot?: boolean
   isPausing?: boolean
   isResuming?: boolean
+  isDeleting?: boolean
 }
 
 const priorityLabels: Record<ConversationPriority, { label: string; color: string }> = {
-  low: { label: 'Baixa', color: 'text-zinc-400' },
-  normal: { label: 'Normal', color: 'text-zinc-300' },
+  low: { label: 'Baixa', color: 'text-[var(--ds-text-secondary)]' },
+  normal: { label: 'Normal', color: 'text-[var(--ds-text-primary)]' },
   high: { label: 'Alta', color: 'text-amber-400' },
   urgent: { label: 'Urgente', color: 'text-red-400' },
 }
@@ -104,15 +121,22 @@ export function ConversationHeader({
   onReturnToBot,
   onPause,
   onResume,
+  onDelete,
+  onConfigureAgent,
   isUpdating,
   isHandingOff,
   isReturningToBot,
   isPausing,
   isResuming,
+  isDeleting,
 }: ConversationHeaderProps) {
-  const { phone, contact, mode, status, priority, labels: conversationLabels, automation_paused_until } = conversation
+  const { phone, contact, mode, status, priority, labels: conversationLabels, automation_paused_until, ai_agent } = conversation
+
+  // Delete confirmation dialog state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   const displayName = contact?.name || phone
+  const agentName = ai_agent?.name
   const initials = displayName
     .split(' ')
     .map((n) => n[0])
@@ -146,17 +170,17 @@ export function ConversationHeader({
     conversationLabels?.some((l) => l.id === labelId) ?? false
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)]">
       {/* Contact info */}
       <div className="flex items-center gap-3">
         <Avatar className="h-10 w-10">
-          <AvatarFallback className="bg-zinc-700 text-zinc-300">
+          <AvatarFallback className="bg-[var(--ds-bg-surface)] text-[var(--ds-text-primary)]">
             {initials}
           </AvatarFallback>
         </Avatar>
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-white">{displayName}</h3>
+            <h3 className="text-sm font-medium text-[var(--ds-text-primary)]">{displayName}</h3>
             {!isOpen && (
               <Badge variant="secondary" className="text-[10px] h-4">
                 Fechada
@@ -189,7 +213,7 @@ export function ConversationHeader({
               </Tooltip>
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+          <div className="flex items-center gap-1.5 text-xs text-[var(--ds-text-muted)]">
             <Phone className="h-3 w-3" />
             <span>{phone}</span>
           </div>
@@ -216,7 +240,7 @@ export function ConversationHeader({
               {isBotMode ? (
                 <>
                   <Bot className="h-3.5 w-3.5" />
-                  <span className="text-xs">Bot</span>
+                  <span className="text-xs max-w-[80px] truncate">{agentName || 'Bot'}</span>
                 </>
               ) : (
                 <>
@@ -294,6 +318,14 @@ export function ConversationHeader({
               </DropdownMenuSub>
             )}
 
+            {/* Configure AI Agent */}
+            {ai_agent && onConfigureAgent && (
+              <DropdownMenuItem onClick={onConfigureAgent}>
+                <Settings2 className="h-4 w-4 mr-2" />
+                Configurar agente
+              </DropdownMenuItem>
+            )}
+
             <DropdownMenuSeparator />
 
             {/* Handoff / Return to bot */}
@@ -326,7 +358,7 @@ export function ConversationHeader({
                   {isPausing ? 'Pausando...' : 'Pausar automação'}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
-                  <DropdownMenuLabel className="text-xs text-zinc-500">
+                  <DropdownMenuLabel className="text-xs text-[var(--ds-text-muted)]">
                     <Clock className="h-3 w-3 inline mr-1" />
                     Por quanto tempo?
                   </DropdownMenuLabel>
@@ -373,8 +405,48 @@ export function ConversationHeader({
                 Reabrir conversa
               </DropdownMenuItem>
             )}
+
+            {/* Delete conversation */}
+            {onDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setShowDeleteDialog(true)}
+                  disabled={isDeleting}
+                  className="text-red-400 focus:text-red-400 focus:bg-red-500/10"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {isDeleting ? 'Excluindo...' : 'Excluir conversa'}
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir conversa?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação não pode ser desfeita. Todas as mensagens desta conversa
+                com <strong>{displayName}</strong> serão permanentemente removidas.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  onDelete?.()
+                  setShowDeleteDialog(false)
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   )

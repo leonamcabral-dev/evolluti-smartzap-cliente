@@ -19,6 +19,8 @@ import type { InboxMessage, DeliveryStatus, Sentiment } from '@/types'
 
 export interface MessageBubbleProps {
   message: InboxMessage
+  /** Name of the AI agent for displaying in AI responses */
+  agentName?: string
 }
 
 // Delivery status icon component
@@ -62,7 +64,7 @@ function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {
   )
 }
 
-export const MessageBubble = memo(function MessageBubble({ message }: MessageBubbleProps) {
+export const MessageBubble = memo(function MessageBubble({ message, agentName }: MessageBubbleProps) {
   const {
     direction,
     content,
@@ -98,11 +100,11 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
           isAIResponse && 'border border-blue-500/30'
         )}
       >
-        {/* AI badge */}
+        {/* AI badge - shows agent name if available */}
         {isAIResponse && (
           <div className="flex items-center gap-1 text-[10px] text-blue-300 mb-1">
             <Bot className="h-3 w-3" />
-            <span>Resposta IA</span>
+            <span>{agentName ? `${agentName}` : 'Resposta IA'}</span>
             {ai_sources && ai_sources.length > 0 && (
               <Tooltip>
                 <TooltipTrigger asChild>

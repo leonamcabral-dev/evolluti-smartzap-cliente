@@ -3,6 +3,22 @@ import { storage } from '../lib/storage';
 import { AppSettings, CalendarBookingConfig, WorkflowExecutionConfig } from '../types';
 
 // =============================================================================
+// OCR CONFIGURATION TYPES
+// =============================================================================
+
+export type OCRProviderType = 'gemini' | 'mistral'
+
+export interface OCRConfig {
+  provider: OCRProviderType
+  geminiModel: string
+  mistralStatus: {
+    isConfigured: boolean
+    source: 'database' | 'env' | 'none'
+    tokenPreview: string | null
+  }
+}
+
+// =============================================================================
 // CONSOLIDATED SETTINGS - Fetch all independent settings in one request
 // =============================================================================
 
@@ -305,7 +321,7 @@ export const settingsService = {
   },
 
   /**
-   * Save AI settings
+   * Save AI settings (including OCR configuration)
    */
   saveAIConfig: async (data: {
     apiKey?: string;
@@ -315,6 +331,10 @@ export const settingsService = {
     routes?: AiRoutesConfig;
     prompts?: AiPromptsConfig;
     fallback?: AiFallbackConfig;
+    // OCR fields
+    ocr_provider?: OCRProviderType;
+    ocr_gemini_model?: string;
+    mistral_api_key?: string;
   }) => {
     const response = await fetch('/api/settings/ai', {
       method: 'POST',
@@ -331,9 +351,9 @@ export const settingsService = {
   },
 
   /**
-   * Remove API key for a specific provider
+   * Remove API key for a specific provider (including mistral for OCR)
    */
-  removeAIKey: async (provider: 'google' | 'openai' | 'anthropic') => {
+  removeAIKey: async (provider: 'google' | 'openai' | 'anthropic' | 'mistral') => {
     const response = await fetch(`/api/settings/ai?provider=${provider}`, {
       method: 'DELETE',
     });

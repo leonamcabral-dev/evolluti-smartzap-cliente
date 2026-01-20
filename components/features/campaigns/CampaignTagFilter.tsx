@@ -62,11 +62,11 @@ export function CampaignTagFilter({
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex items-center gap-2 h-9 border-zinc-700 bg-zinc-800/50',
+          'flex items-center gap-2 h-9 border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)]',
           hasSelection && 'border-primary-500/50'
         )}
       >
-        <TagIcon className="h-4 w-4 text-zinc-400" />
+        <TagIcon className="h-4 w-4 text-[var(--ds-text-secondary)]" />
         {hasSelection ? (
           <span className="flex items-center gap-1">
             <span className="text-sm">Tags</span>
@@ -75,39 +75,39 @@ export function CampaignTagFilter({
             </span>
           </span>
         ) : (
-          <span className="text-sm text-zinc-400">Tags</span>
+          <span className="text-sm text-[var(--ds-text-secondary)]">Tags</span>
         )}
         <ChevronDownIcon
           className={cn(
-            'h-4 w-4 text-zinc-500 transition-transform',
+            'h-4 w-4 text-[var(--ds-text-muted)] transition-transform',
             isOpen && 'rotate-180'
           )}
         />
         {hasSelection && (
           <button
             onClick={clearAll}
-            className="ml-1 p-0.5 hover:bg-zinc-700 rounded"
+            className="ml-1 p-0.5 hover:bg-[var(--ds-bg-surface)] rounded"
             title="Limpar filtro"
           >
-            <XIcon className="h-3 w-3 text-zinc-400" />
+            <XIcon className="h-3 w-3 text-[var(--ds-text-secondary)]" />
           </button>
         )}
       </Button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-64 rounded-md border border-zinc-700 bg-zinc-800 shadow-xl z-[200]">
-          <div className="p-2 border-b border-zinc-700">
-            <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+        <div className="absolute top-full left-0 mt-1 w-64 rounded-md border border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] shadow-xl z-[200]">
+          <div className="p-2 border-b border-[var(--ds-border-default)]">
+            <span className="text-xs font-medium text-[var(--ds-text-secondary)] uppercase tracking-wider">
               Filtrar por tags
             </span>
           </div>
 
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-600 border-t-primary-500" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--ds-border-default)] border-t-primary-500" />
             </div>
           ) : tags.length === 0 ? (
-            <div className="p-4 text-center text-sm text-zinc-500">
+            <div className="p-4 text-center text-sm text-[var(--ds-text-muted)]">
               Nenhuma tag criada
             </div>
           ) : (
@@ -122,14 +122,14 @@ export function CampaignTagFilter({
                       'flex items-center w-full px-2 py-1.5 rounded text-sm transition-colors',
                       isSelected
                         ? 'bg-primary-500/10'
-                        : 'hover:bg-zinc-700/50'
+                        : 'hover:bg-[var(--ds-bg-surface)]/50'
                     )}
                   >
                     <div
                       className="w-3 h-3 rounded-full mr-2 flex-shrink-0"
                       style={{ backgroundColor: tag.color }}
                     />
-                    <span className="flex-1 text-left text-zinc-200 truncate">
+                    <span className="flex-1 text-left text-[var(--ds-text-primary)] truncate">
                       {tag.name}
                     </span>
                     {isSelected && (
@@ -142,7 +142,7 @@ export function CampaignTagFilter({
           )}
 
           {hasSelection && (
-            <div className="p-2 border-t border-zinc-700">
+            <div className="p-2 border-t border-[var(--ds-border-default)]">
               <div className="flex flex-wrap gap-1">
                 {selectedTags.map((tag) => (
                   <CampaignTagBadge

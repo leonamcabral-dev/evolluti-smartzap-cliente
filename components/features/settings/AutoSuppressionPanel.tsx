@@ -148,7 +148,7 @@ export function AutoSuppressionPanel({
             )}
             <button
               onClick={() => setIsEditing((v) => !v)}
-              className="h-10 px-4 rounded-xl bg-white/5 text-white hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all text-sm font-medium"
+              className="h-10 px-4 rounded-xl bg-[var(--ds-bg-hover)] text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)] transition-all text-sm font-medium"
             >
               {isEditing ? 'Fechar' : 'Configurar'}
             </button>
@@ -157,34 +157,34 @@ export function AutoSuppressionPanel({
       />
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-zinc-900/40 border border-white/10 rounded-xl p-4">
-          <div className="text-xs text-gray-500">Status</div>
+        <div className="bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-xl p-4">
+          <div className="text-xs text-[var(--ds-text-muted)]">Status</div>
           {autoSuppressionLoading ? (
-            <div className="mt-2 text-sm text-gray-400 flex items-center gap-2">
+            <div className="mt-2 text-sm text-[var(--ds-text-secondary)] flex items-center gap-2">
               <Loader2 size={14} className="animate-spin" /> Carregando…
             </div>
           ) : (
             <div className="mt-2">
-              <div className="text-sm text-white flex items-center gap-2 flex-wrap">
+              <div className="text-sm text-[var(--ds-text-primary)] flex items-center gap-2 flex-wrap">
                 {autoConfig?.enabled ? (
                   <StatusBadge status="success">Ativo</StatusBadge>
                 ) : (
                   <StatusBadge status="default">Inativo</StatusBadge>
                 )}
-                <span className="text-xs text-gray-400">fonte: {autoSuppression?.source || '—'}</span>
+                <span className="text-xs text-[var(--ds-text-secondary)]">fonte: {autoSuppression?.source || '—'}</span>
               </div>
-              <div className="mt-2 text-xs text-gray-400">
-                Regra 131026: <span className="font-mono text-white">{autoConfig?.undeliverable131026?.enabled ? 'on' : 'off'}</span>
-                <span className="text-gray-500"> · </span>
-                threshold: <span className="font-mono text-white">{autoConfig?.undeliverable131026?.threshold ?? '—'}</span>
+              <div className="mt-2 text-xs text-[var(--ds-text-secondary)]">
+                Regra 131026: <span className="font-mono text-[var(--ds-text-primary)]">{autoConfig?.undeliverable131026?.enabled ? 'on' : 'off'}</span>
+                <span className="text-[var(--ds-text-muted)]"> · </span>
+                threshold: <span className="font-mono text-[var(--ds-text-primary)]">{autoConfig?.undeliverable131026?.threshold ?? '—'}</span>
               </div>
             </div>
           )}
         </div>
 
-        <div className="bg-zinc-900/40 border border-white/10 rounded-xl p-4">
-          <div className="text-xs text-gray-500">Observação</div>
-          <div className="mt-2 text-xs text-gray-400 leading-relaxed">
+        <div className="bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-xl p-4">
+          <div className="text-xs text-[var(--ds-text-muted)]">Observação</div>
+          <div className="mt-2 text-xs text-[var(--ds-text-secondary)] leading-relaxed">
             Dica: com perfil agressivo, <span className="font-mono">threshold=1</span> já coloca em quarentena.
             Para "mais seguro", aumente o threshold.
           </div>
@@ -192,10 +192,10 @@ export function AutoSuppressionPanel({
       </div>
 
       {isEditing && (
-        <div className="mt-6 p-5 bg-zinc-900/30 border border-white/10 rounded-2xl">
+        <div className="mt-6 p-5 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-2xl">
           <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-medium text-white">Configurações</div>
-            <label className="flex items-center gap-2 text-sm text-gray-300">
+            <div className="text-sm font-medium text-[var(--ds-text-primary)]">Configurações</div>
+            <label className="flex items-center gap-2 text-sm text-[var(--ds-text-primary)]">
               <input
                 type="checkbox"
                 checked={!!draft.enabled}
@@ -206,13 +206,13 @@ export function AutoSuppressionPanel({
             </label>
           </div>
 
-          <div className="mt-4 p-4 bg-zinc-950/30 border border-white/10 rounded-xl">
+          <div className="mt-4 p-4 bg-[var(--ds-bg-base)] border border-[var(--ds-border-default)] rounded-xl">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-sm text-white font-medium">Regra: 131026 (undeliverable)</div>
-                <div className="text-[11px] text-gray-500">Cross-campaign: conta falhas por telefone na janela e aplica quarentena.</div>
+                <div className="text-sm text-[var(--ds-text-primary)] font-medium">Regra: 131026 (undeliverable)</div>
+                <div className="text-[11px] text-[var(--ds-text-muted)]">Cross-campaign: conta falhas por telefone na janela e aplica quarentena.</div>
               </div>
-              <label className="flex items-center gap-2 text-sm text-gray-300">
+              <label className="flex items-center gap-2 text-sm text-[var(--ds-text-primary)]">
                 <input
                   type="checkbox"
                   checked={!!draft.undeliverable131026.enabled}
@@ -230,7 +230,7 @@ export function AutoSuppressionPanel({
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">windowDays</label>
+                <label className="block text-xs font-medium text-[var(--ds-text-secondary)] mb-1">windowDays</label>
                 <input
                   type="number"
                   value={draft.undeliverable131026.windowDays}
@@ -240,15 +240,15 @@ export function AutoSuppressionPanel({
                       undeliverable131026: { ...s.undeliverable131026, windowDays: Number(e.target.value) },
                     }))
                   }
-                  className="w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg text-sm text-white font-mono"
+                  className="w-full px-3 py-2 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-lg text-sm text-[var(--ds-text-primary)] font-mono"
                   min={1}
                   max={365}
                 />
-                <p className="text-[11px] text-gray-500 mt-1">Janela (dias) para contar falhas.</p>
+                <p className="text-[11px] text-[var(--ds-text-muted)] mt-1">Janela (dias) para contar falhas.</p>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">threshold</label>
+                <label className="block text-xs font-medium text-[var(--ds-text-secondary)] mb-1">threshold</label>
                 <input
                   type="number"
                   value={draft.undeliverable131026.threshold}
@@ -258,15 +258,15 @@ export function AutoSuppressionPanel({
                       undeliverable131026: { ...s.undeliverable131026, threshold: Number(e.target.value) },
                     }))
                   }
-                  className="w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg text-sm text-white font-mono"
+                  className="w-full px-3 py-2 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-lg text-sm text-[var(--ds-text-primary)] font-mono"
                   min={1}
                   max={20}
                 />
-                <p className="text-[11px] text-gray-500 mt-1">Quantas falhas na janela para suprimir.</p>
+                <p className="text-[11px] text-[var(--ds-text-muted)] mt-1">Quantas falhas na janela para suprimir.</p>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">ttlBaseDays</label>
+                <label className="block text-xs font-medium text-[var(--ds-text-secondary)] mb-1">ttlBaseDays</label>
                 <input
                   type="number"
                   value={draft.undeliverable131026.ttlBaseDays}
@@ -276,17 +276,17 @@ export function AutoSuppressionPanel({
                       undeliverable131026: { ...s.undeliverable131026, ttlBaseDays: Number(e.target.value) },
                     }))
                   }
-                  className="w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg text-sm text-white font-mono"
+                  className="w-full px-3 py-2 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-lg text-sm text-[var(--ds-text-primary)] font-mono"
                   min={1}
                   max={3650}
                 />
-                <p className="text-[11px] text-gray-500 mt-1">Quarentena (dias) na 1ª ocorrência.</p>
+                <p className="text-[11px] text-[var(--ds-text-muted)] mt-1">Quarentena (dias) na 1ª ocorrência.</p>
               </div>
             </div>
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">ttl2Days</label>
+                <label className="block text-xs font-medium text-[var(--ds-text-secondary)] mb-1">ttl2Days</label>
                 <input
                   type="number"
                   value={draft.undeliverable131026.ttl2Days}
@@ -296,15 +296,15 @@ export function AutoSuppressionPanel({
                       undeliverable131026: { ...s.undeliverable131026, ttl2Days: Number(e.target.value) },
                     }))
                   }
-                  className="w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg text-sm text-white font-mono"
+                  className="w-full px-3 py-2 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-lg text-sm text-[var(--ds-text-primary)] font-mono"
                   min={1}
                   max={3650}
                 />
-                <p className="text-[11px] text-gray-500 mt-1">Quarentena (dias) na 2ª ocorrência.</p>
+                <p className="text-[11px] text-[var(--ds-text-muted)] mt-1">Quarentena (dias) na 2ª ocorrência.</p>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">ttl3Days</label>
+                <label className="block text-xs font-medium text-[var(--ds-text-secondary)] mb-1">ttl3Days</label>
                 <input
                   type="number"
                   value={draft.undeliverable131026.ttl3Days}
@@ -314,11 +314,11 @@ export function AutoSuppressionPanel({
                       undeliverable131026: { ...s.undeliverable131026, ttl3Days: Number(e.target.value) },
                     }))
                   }
-                  className="w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg text-sm text-white font-mono"
+                  className="w-full px-3 py-2 bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-lg text-sm text-[var(--ds-text-primary)] font-mono"
                   min={1}
                   max={3650}
                 />
-                <p className="text-[11px] text-gray-500 mt-1">Quarentena (dias) na 3ª+ ocorrência.</p>
+                <p className="text-[11px] text-[var(--ds-text-muted)] mt-1">Quarentena (dias) na 3ª+ ocorrência.</p>
               </div>
             </div>
           </div>

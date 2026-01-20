@@ -50,32 +50,32 @@ import { Container } from "./container"
 const colorStyles = {
   emerald: {
     iconBg: "bg-emerald-500/20",
-    iconColor: "text-emerald-400",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
     iconGlow: "shadow-emerald-500/20",
   },
   blue: {
     iconBg: "bg-blue-500/20",
-    iconColor: "text-blue-400",
+    iconColor: "text-blue-600 dark:text-blue-400",
     iconGlow: "shadow-blue-500/20",
   },
   purple: {
     iconBg: "bg-purple-500/20",
-    iconColor: "text-purple-400",
+    iconColor: "text-purple-600 dark:text-purple-400",
     iconGlow: "shadow-purple-500/20",
   },
   red: {
     iconBg: "bg-red-500/20",
-    iconColor: "text-red-400",
+    iconColor: "text-red-600 dark:text-red-400",
     iconGlow: "shadow-red-500/20",
   },
   amber: {
     iconBg: "bg-amber-500/20",
-    iconColor: "text-amber-400",
+    iconColor: "text-amber-600 dark:text-amber-400",
     iconGlow: "shadow-amber-500/20",
   },
   zinc: {
     iconBg: "bg-zinc-500/20",
-    iconColor: "text-zinc-400",
+    iconColor: "text-zinc-600 dark:text-zinc-400",
     iconGlow: "shadow-zinc-500/20",
   },
 } as const
@@ -139,7 +139,7 @@ function StatCard({
           {/* Icon */}
           <div
             className={cn(
-              "relative p-3 rounded-xl border border-white/10",
+              "relative p-3 rounded-xl border border-[var(--ds-border-default)]",
               styles.iconBg
             )}
           >
@@ -172,16 +172,16 @@ function StatCard({
           <div className="flex items-center gap-3">
             <div
               className={cn(
-                "p-2 rounded-lg border border-white/10",
+                "p-2 rounded-lg border border-[var(--ds-border-default)]",
                 styles.iconBg
               )}
             >
               <Icon size={16} className={styles.iconColor} />
             </div>
-            <p className="text-sm text-zinc-400">{title}</p>
+            <p className="text-sm text-[var(--ds-text-secondary)]">{title}</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold text-white">{value}</span>
+            <span className="text-lg font-semibold text-[var(--ds-text-primary)]">{value}</span>
             {trend && <TrendIndicator {...trend} size="sm" />}
           </div>
         </div>
@@ -202,7 +202,7 @@ function StatCard({
       <div className="flex items-start justify-between mb-6">
         <div
           className={cn(
-            "relative p-3 rounded-xl border border-white/10",
+            "relative p-3 rounded-xl border border-[var(--ds-border-default)]",
             styles.iconBg
           )}
         >
@@ -242,9 +242,9 @@ function TrendIndicator({ value, direction, size = "md" }: TrendIndicatorProps) 
       className={cn(
         "inline-flex items-center gap-0.5 rounded-full font-medium",
         size === "sm" ? "text-xs px-1.5 py-0.5" : "text-xs px-2 py-1",
-        isPositive && "text-emerald-400 bg-emerald-500/10",
-        isNegative && "text-red-400 bg-red-500/10",
-        !isPositive && !isNegative && "text-zinc-400 bg-zinc-500/10"
+        isPositive && "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
+        isNegative && "text-red-600 dark:text-red-400 bg-red-500/10",
+        !isPositive && !isNegative && "text-[var(--ds-text-muted)] bg-[var(--ds-bg-surface)]"
       )}
     >
       {isPositive && "↑"}
@@ -258,10 +258,10 @@ function StatCardSkeleton({ layout }: { layout: string }) {
   if (layout === "horizontal") {
     return (
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-zinc-700/50 animate-pulse" />
+        <div className="w-12 h-12 rounded-xl bg-[var(--ds-bg-surface)] animate-pulse" />
         <div className="flex-1">
-          <div className="w-24 h-4 bg-zinc-700/50 rounded animate-pulse mb-2" />
-          <div className="w-16 h-8 bg-zinc-700/50 rounded animate-pulse" />
+          <div className="w-24 h-4 bg-[var(--ds-bg-surface)] rounded animate-pulse mb-2" />
+          <div className="w-16 h-8 bg-[var(--ds-bg-surface)] rounded animate-pulse" />
         </div>
       </div>
     )
@@ -270,11 +270,11 @@ function StatCardSkeleton({ layout }: { layout: string }) {
   return (
     <>
       <div className="flex items-start justify-between mb-6">
-        <div className="w-12 h-12 rounded-xl bg-zinc-700/50 animate-pulse" />
+        <div className="w-12 h-12 rounded-xl bg-[var(--ds-bg-surface)] animate-pulse" />
       </div>
       <div>
-        <div className="w-20 h-9 bg-zinc-700/50 rounded mb-2 animate-pulse" />
-        <div className="w-28 h-4 bg-zinc-700/50 rounded animate-pulse" />
+        <div className="w-20 h-9 bg-[var(--ds-bg-surface)] rounded mb-2 animate-pulse" />
+        <div className="w-28 h-4 bg-[var(--ds-bg-surface)] rounded animate-pulse" />
       </div>
     </>
   )

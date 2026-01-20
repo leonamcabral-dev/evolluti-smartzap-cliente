@@ -37,25 +37,25 @@ export function TurboStatusCard({
   source,
 }: TurboStatusCardProps) {
   return (
-    <div className="bg-zinc-900/40 border border-white/10 rounded-xl p-4">
-      <div className="text-xs text-gray-500">Status</div>
+    <div className="bg-[var(--ds-bg-elevated)] border border-[var(--ds-border-default)] rounded-xl p-4">
+      <div className="text-xs text-[var(--ds-text-muted)]">Status</div>
       {loading ? (
-        <div className="mt-2 text-sm text-gray-400 flex items-center gap-2">
+        <div className="mt-2 text-sm text-[var(--ds-text-secondary)] flex items-center gap-2">
           <Loader2 size={14} className="animate-spin" /> Carregando...
         </div>
       ) : (
         <div className="mt-2">
-          <div className="text-sm text-white">
+          <div className="text-sm text-[var(--ds-text-primary)]">
             {config?.enabled ? (
               <span className="text-emerald-300 font-medium">Ativo</span>
             ) : (
-              <span className="text-gray-300 font-medium">Inativo</span>
+              <span className="text-[var(--ds-text-secondary)] font-medium">Inativo</span>
             )}
-            <span className="text-gray-500"> . </span>
-            <span className="text-xs text-gray-400">fonte: {source || '-'}</span>
+            <span className="text-[var(--ds-text-muted)]"> . </span>
+            <span className="text-xs text-[var(--ds-text-secondary)]">fonte: {source || '-'}</span>
           </div>
-          <div className="mt-2 text-xs text-gray-400">
-            Target atual: <span className="font-mono text-white">{typeof state?.targetMps === 'number' ? state.targetMps : '-'}</span> mps
+          <div className="mt-2 text-xs text-[var(--ds-text-secondary)]">
+            Target atual: <span className="font-mono text-[var(--ds-text-primary)]">{typeof state?.targetMps === 'number' ? state.targetMps : '-'}</span> mps
           </div>
           {state?.cooldownUntil && (
             <div className="mt-1 text-xs text-amber-300">

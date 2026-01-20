@@ -303,36 +303,36 @@ export default function InstallWizardPage() {
               <Terminal className="w-8 h-8 text-emerald-500" />
             </motion.div>
 
-            <h2 className="mt-4 text-xl font-semibold text-zinc-100">
+            <h2 className="mt-4 text-xl font-semibold text-[var(--ds-text-primary)]">
               A escolha é sua, {firstName}.
             </h2>
-            <p className="mt-2 text-sm text-zinc-400 max-w-sm">
+            <p className="mt-2 text-sm text-[var(--ds-text-secondary)] max-w-sm">
               Pílula azul: voltar para onde estava. Pílula verde: descobrir até onde vai a toca do coelho.
             </p>
 
             {/* Summary */}
-            <div className="w-full mt-6 p-4 rounded-xl bg-zinc-800/50 border border-zinc-700 text-left">
-              <h3 className="text-sm font-medium text-zinc-300 mb-3">
+            <div className="w-full mt-6 p-4 rounded-xl bg-[var(--ds-bg-surface)]/50 border border-[var(--ds-border-default)] text-left">
+              <h3 className="text-sm font-medium text-[var(--ds-text-secondary)] mb-3">
                 Resumo da configuração:
               </h3>
               <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2 text-zinc-400">
+                <li className="flex items-center gap-2 text-[var(--ds-text-secondary)]">
                   <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                   <span className="truncate">Email: {data?.email}</span>
                 </li>
-                <li className="flex items-center gap-2 text-zinc-400">
+                <li className="flex items-center gap-2 text-[var(--ds-text-secondary)]">
                   <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                   <span className="truncate">Projeto Vercel: {data?.vercelProject?.name || 'Detectado'}</span>
                 </li>
-                <li className="flex items-center gap-2 text-zinc-400">
+                <li className="flex items-center gap-2 text-[var(--ds-text-secondary)]">
                   <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                   Supabase PAT: Configurado
                 </li>
-                <li className="flex items-center gap-2 text-zinc-400">
+                <li className="flex items-center gap-2 text-[var(--ds-text-secondary)]">
                   <CheckCircle className="w-4 h-4 text-orange-500 flex-shrink-0" />
                   QStash: Token + Signing Key
                 </li>
-                <li className="flex items-center gap-2 text-zinc-400">
+                <li className="flex items-center gap-2 text-[var(--ds-text-secondary)]">
                   <CheckCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                   Redis: URL + Token REST
                 </li>
@@ -396,7 +396,7 @@ export default function InstallWizardPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="mt-6 text-xl font-semibold text-zinc-100"
+                className="mt-6 text-xl font-semibold text-[var(--ds-text-primary)]"
               >
                 {provisioningTitle}
               </motion.h2>
@@ -408,7 +408,7 @@ export default function InstallWizardPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="mt-2 text-sm text-zinc-400 h-5"
+                className="mt-2 text-sm text-[var(--ds-text-secondary)] h-5"
               >
                 {provisioningSubtitle}
               </motion.p>
@@ -416,7 +416,7 @@ export default function InstallWizardPage() {
 
             {/* Progress bar */}
             <div className="w-full mt-8">
-              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div className="h-2 bg-[var(--ds-bg-surface)] rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full"
                   initial={{ width: '0%' }}
@@ -424,7 +424,7 @@ export default function InstallWizardPage() {
                   transition={{ duration: 0.5, ease: 'easeOut' }}
                 />
               </div>
-              <div className="flex justify-between mt-2 text-xs text-zinc-500">
+              <div className="flex justify-between mt-2 text-xs text-[var(--ds-text-muted)]">
                 <span>Progresso</span>
                 <span>{provisioningProgress}%</span>
               </div>
@@ -441,7 +441,7 @@ export default function InstallWizardPage() {
               </motion.p>
             )}
 
-            <p className="mt-6 text-xs text-zinc-500">
+            <p className="mt-6 text-xs text-[var(--ds-text-muted)]">
               Não feche esta página
             </p>
           </div>
@@ -469,7 +469,7 @@ export default function InstallWizardPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="mt-6 text-xl font-semibold text-zinc-100"
+              className="mt-6 text-xl font-semibold text-[var(--ds-text-primary)]"
             >
               Bem-vindo à realidade, {firstName}.
             </motion.h2>
@@ -477,7 +477,7 @@ export default function InstallWizardPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="mt-2 text-sm text-zinc-400"
+              className="mt-2 text-sm text-[var(--ds-text-secondary)]"
             >
               Você é o Escolhido.
             </motion.p>
@@ -502,7 +502,7 @@ export default function InstallWizardPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="mt-4 text-xs text-zinc-500"
+              className="mt-4 text-xs text-[var(--ds-text-muted)]"
             >
               Não há colher. Configure o WhatsApp em Configurações.
             </motion.p>
@@ -522,7 +522,7 @@ export default function InstallWizardPage() {
               <AlertCircle className="w-10 h-10 text-red-500" />
             </div>
 
-            <h2 className="mt-6 text-xl font-semibold text-zinc-100">
+            <h2 className="mt-6 text-xl font-semibold text-[var(--ds-text-primary)]">
               Glitch na Matrix
             </h2>
             <p className="mt-2 text-sm text-red-400 max-w-sm">

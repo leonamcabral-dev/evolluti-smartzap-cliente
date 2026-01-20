@@ -94,6 +94,44 @@ function convertToAIMessages(
     }))
 }
 
+/**
+ * Format conversation history as text for inclusion in prompt
+ * This is needed because File Search works better with `prompt` (string)
+ * but we need to maintain conversation context
+ */
+function formatConversationHistory(messages: InboxMessage[]): string {
+  const filtered = messages
+    .filter((m) => m.message_type !== 'internal_note')
+    .slice(-10) // Last 10 messages for context
+
+  if (filtered.length <= 1) {
+    return '' // No history needed if only 1 message
+  }
+
+  // All messages except the last one (which will be the current prompt)
+  const history = filtered.slice(0, -1)
+
+  if (history.length === 0) {
+    return ''
+  }
+
+  const formattedHistory = history
+    .map((m) => {
+      const role = m.direction === 'inbound' ? 'Cliente' : 'Assistente'
+      return `${role}: ${m.content}`
+    })
+    .join('\n')
+
+  // Format to make it clear this is context from the current conversation
+  // This helps the model understand it should use this for personalization
+  return `---
+HISTÓRICO DA CONVERSA ATUAL (use para contexto e personalização):
+${formattedHistory}
+---
+
+Pergunta atual do cliente:`
+}
+
 async function persistAILog(data: {
   conversationId: string
   agentId: string
@@ -190,6 +228,12 @@ export async function processSupportAgentV2(
   const messageIds = messages.map((m) => m.id)
   const aiMessages = convertToAIMessages(messages.slice(-10))
 
+  // Build prompt with conversation history for File Search
+  const conversationHistory = formatConversationHistory(messages)
+  const promptWithHistory = conversationHistory
+    ? `${conversationHistory} ${inputText}`
+    : inputText
+
   const google = createGoogleGenerativeAI({ apiKey })
   const modelId = agent.model || DEFAULT_MODEL_ID
   const baseModel = google(modelId)
@@ -198,6 +242,12 @@ export async function processSupportAgentV2(
   const hasKnowledgeBase = !!agent.file_search_store_id
 
   console.log(`[support-agent] Processing: model=${modelId}, hasKnowledgeBase=${hasKnowledgeBase}`)
+  console.log(`[support-agent] Total messages received: ${messages.length}`)
+  console.log(`[support-agent] Last user message: "${inputText.slice(0, 100)}..."`)
+  console.log(`[support-agent] Conversation history length: ${conversationHistory.length} chars`)
+  if (conversationHistory) {
+    console.log(`[support-agent] History preview: "${conversationHistory.slice(0, 200)}..."`)
+  }
 
   let response: SupportResponse | undefined
   let error: string | null = null
@@ -208,18 +258,17 @@ export async function processSupportAgentV2(
       // WITH KNOWLEDGE BASE: Use file_search (returns plain text)
       // =======================================================================
       console.log(`[support-agent] Using File Search with store: ${agent.file_search_store_id}`)
-      console.log(`[support-agent] Calling Gemini API with prompt: "${inputText.slice(0, 50)}..."`)
-      console.log(`[support-agent] System prompt length: ${agent.system_prompt?.length || 0} chars`)
 
       const fileSearchStartTime = Date.now()
+      console.log(`[support-agent] Full prompt being sent: "${promptWithHistory.slice(0, 500)}${promptWithHistory.length > 500 ? '...' : ''}"`)
       console.log(`[support-agent] Starting File Search at ${new Date().toISOString()}`)
 
-      // File Search funciona melhor com prompt único (mesmo padrão do teste)
-      // O histórico da conversa é incluído no system prompt se necessário
+      // File Search works better with prompt (string) instead of messages (array)
+      // We include conversation history in the prompt to maintain context
       const result = await generateText({
         model,
         system: agent.system_prompt,
-        prompt: inputText, // Usar prompt único ao invés de messages array
+        prompt: promptWithHistory, // Include conversation history + current message
         tools: {
           file_search: google.tools.fileSearch({
             fileSearchStoreNames: [agent.file_search_store_id],

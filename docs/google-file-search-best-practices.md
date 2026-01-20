@@ -198,6 +198,52 @@ const result = await generateText({
 
 > ⚠️ **Descoberto em Jan 2026**: O File Search tem problemas de performance/timeout quando usado com array de mensagens (`messages`). Sempre usar `prompt` (string única) para evitar timeouts.
 
+### 5. Incluir histórico de conversa com File Search
+
+Como não podemos usar `messages` array, o histórico da conversa deve ser incluído no `prompt` como texto:
+
+```typescript
+// Formatar histórico como texto
+function formatConversationHistory(messages: InboxMessage[]): string {
+  const filtered = messages
+    .filter((m) => m.message_type !== 'internal_note')
+    .slice(-10) // Últimas 10 mensagens
+
+  if (filtered.length <= 1) return ''
+
+  const history = filtered.slice(0, -1) // Todas menos a última (atual)
+
+  const formattedHistory = history
+    .map((m) => {
+      const role = m.direction === 'inbound' ? 'Cliente' : 'Assistente'
+      return `${role}: ${m.content}`
+    })
+    .join('\n')
+
+  return `---
+HISTÓRICO DA CONVERSA ATUAL (use para contexto e personalização):
+${formattedHistory}
+---
+
+Pergunta atual do cliente:`
+}
+
+// Usar no prompt
+const conversationHistory = formatConversationHistory(messages)
+const promptWithHistory = conversationHistory
+  ? `${conversationHistory} ${inputText}`
+  : inputText
+
+const result = await generateText({
+  model,
+  system: agent.system_prompt,
+  prompt: promptWithHistory, // Histórico + mensagem atual
+  tools: { file_search: google.tools.fileSearch(...) },
+})
+```
+
+> O formato com `---` delimitadores e "HISTÓRICO DA CONVERSA ATUAL" ajuda o modelo a distinguir entre contexto da conversa e contexto do File Search (documentos).
+
 ## System Prompt
 
 **Use EXATAMENTE o que está configurado na UI.** Não adicione instruções extras.

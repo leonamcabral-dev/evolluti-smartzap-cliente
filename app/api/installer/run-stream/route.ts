@@ -12,6 +12,15 @@ import {
 export const maxDuration = 300;
 export const runtime = 'nodejs';
 
+// Health check result schema (do /api/installer/health-check)
+const HealthCheckResultSchema = z.object({
+  skipWaitProject: z.boolean().default(false),
+  skipWaitStorage: z.boolean().default(false),
+  skipMigrations: z.boolean().default(false),
+  skipBootstrap: z.boolean().default(false),
+  estimatedSeconds: z.number().default(120),
+}).optional();
+
 const RunSchema = z
   .object({
     vercel: z.object({
@@ -34,6 +43,8 @@ const RunSchema = z
       email: z.string().email(),
       passwordHash: z.string().min(1),
     }),
+    // Health check result para pular etapas
+    healthCheck: HealthCheckResultSchema,
   })
   .strict();
 
@@ -46,10 +57,11 @@ interface Step {
 }
 
 const ALL_STEPS: Step[] = [
-  { id: 'resolve_keys', phase: 'coordinates', weight: 15, skippable: false },
-  { id: 'setup_envs', phase: 'coordinates', weight: 15, skippable: false },
+  { id: 'resolve_keys', phase: 'coordinates', weight: 10, skippable: false },
+  { id: 'setup_envs', phase: 'coordinates', weight: 10, skippable: false },
   { id: 'wait_project', phase: 'signal', weight: 20, skippable: true },
-  { id: 'migrations', phase: 'station', weight: 20, skippable: true },
+  { id: 'wait_storage', phase: 'station', weight: 15, skippable: true },
+  { id: 'migrations', phase: 'station', weight: 15, skippable: true },
   { id: 'bootstrap', phase: 'contact', weight: 10, skippable: true },
   { id: 'redeploy', phase: 'landing', weight: 10, skippable: false },
   { id: 'wait_vercel_deploy', phase: 'landing', weight: 10, skippable: false },
@@ -188,11 +200,15 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ error: 'Payload inválido', details: parsed.error.flatten() }), { status: 400 });
   }
 
-  const { vercel, supabase, upstash, admin } = parsed.data;
+  const { vercel, supabase, upstash, admin, healthCheck } = parsed.data;
   const envTargets = vercel.targets;
 
-  // Determine which steps to skip
+  // Determine which steps to skip based on health check
   const skippedSteps: string[] = [];
+  if (healthCheck?.skipWaitProject) skippedSteps.push('wait_project');
+  if (healthCheck?.skipWaitStorage) skippedSteps.push('wait_storage');
+  if (healthCheck?.skipMigrations) skippedSteps.push('migrations');
+  if (healthCheck?.skipBootstrap) skippedSteps.push('bootstrap');
 
   // Extract first name for personalization
   const firstName = admin.email.split('@')[0] || 'você';
@@ -334,52 +350,71 @@ export async function POST(req: Request) {
         await sendPhase('wait_project');
       }
 
-      // Step: migrations
-      if (!skippedSteps.includes('migrations')) {
-        await sendPhase('migrations', 0);
+      // Step: wait_storage + migrations (combined in station phase)
+      const skipStorage = skippedSteps.includes('wait_storage');
+      const skipMigrations = skippedSteps.includes('migrations');
 
-        // Verifica se schema já foi aplicado
-        const schemaExists = await checkSchemaApplied(resolvedDbUrl);
-        if (schemaExists) {
-          console.log('[run-stream] Schema já aplicado, pulando migrations');
-          skippedSteps.push('migrations');
-        } else {
-          await withRetry(
-            'migrations',
-            async () => {
-              await runSchemaMigration(resolvedDbUrl, async (migrationProgress) => {
-                // Envia progresso detalhado das migrations
-                const stageMessages: Record<string, string> = {
-                  connecting: 'Conectando ao banco...',
-                  applying: migrationProgress.current
-                    ? `Migration ${migrationProgress.current}/${migrationProgress.total}`
-                    : 'Aplicando migrations...',
-                  done: 'Migrations concluídas!',
-                };
-
-                await sendEvent({
-                  type: 'phase',
-                  phase: 'station',
-                  title: 'Instalando conhecimento',
-                  subtitle: stageMessages[migrationProgress.stage] || migrationProgress.message,
-                  progress: progress.partialProgress('migrations',
-                    migrationProgress.stage === 'connecting' ? 0.1 :
-                    migrationProgress.stage === 'applying' && migrationProgress.current && migrationProgress.total
-                      ? 0.1 + (0.8 * (migrationProgress.current / migrationProgress.total))
-                      : 0.95
-                  ),
-                });
-              });
-            },
-            sendEvent,
-            (err) => {
-              const msg = err instanceof Error ? err.message : '';
-              return !msg.includes('already exists');
-            }
-          );
+      if (!skipStorage || !skipMigrations) {
+        if (!skipStorage) {
+          await sendPhase('wait_storage', 0);
         }
 
-        await sendPhase('migrations');
+        if (!skipMigrations) {
+          await sendPhase('migrations', 0);
+
+          // Verifica se schema já foi aplicado
+          const schemaExists = await checkSchemaApplied(resolvedDbUrl);
+          if (schemaExists) {
+            console.log('[run-stream] Schema já aplicado, pulando migrations');
+            skippedSteps.push('migrations');
+          } else {
+            await withRetry(
+              'migrations',
+              async () => {
+                await runSchemaMigration(resolvedDbUrl, {
+                  skipWaitStorage: skipStorage,
+                  onProgress: async (migrationProgress) => {
+                    // Envia progresso detalhado das migrations
+                    const stageMessages: Record<string, string> = {
+                      connecting: 'Conectando ao banco...',
+                      waiting_storage: 'Aguardando Storage...',
+                      applying: migrationProgress.current
+                        ? `Migration ${migrationProgress.current}/${migrationProgress.total}`
+                        : 'Aplicando migrations...',
+                      done: 'Migrations concluídas!',
+                    };
+
+                    await sendEvent({
+                      type: 'phase',
+                      phase: 'station',
+                      title: 'Instalando conhecimento',
+                      subtitle: stageMessages[migrationProgress.stage] || migrationProgress.message,
+                      progress: progress.partialProgress(
+                        migrationProgress.stage === 'waiting_storage' ? 'wait_storage' : 'migrations',
+                        migrationProgress.stage === 'connecting' ? 0.1 :
+                        migrationProgress.stage === 'waiting_storage' ? 0.5 :
+                        migrationProgress.stage === 'applying' && migrationProgress.current && migrationProgress.total
+                          ? 0.1 + (0.8 * (migrationProgress.current / migrationProgress.total))
+                          : 0.95
+                      ),
+                    });
+                  },
+                });
+              },
+              sendEvent,
+              (err) => {
+                const msg = err instanceof Error ? err.message : '';
+                return !msg.includes('already exists');
+              }
+            );
+          }
+
+          await sendPhase('migrations');
+        }
+
+        if (!skipStorage) {
+          await sendPhase('wait_storage'); // Complete (done as part of migrations)
+        }
       }
 
       // Step: bootstrap

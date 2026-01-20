@@ -107,7 +107,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Import AI dependencies dynamically
     const { createGoogleGenerativeAI } = await import('@ai-sdk/google')
     const { streamText, tool } = await import('ai')
-    const { withDevTools } = await import('@/lib/ai/devtools')
+    // const { withDevTools } = await import('@/lib/ai/devtools') // Disabled for debugging
 
     // Get Gemini API key
     const { data: geminiSetting } = await supabase
@@ -125,11 +125,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
       )
     }
 
-    // Create Google provider with DevTools support
+    // Create Google provider (DevTools disabled temporarily for debugging)
     const google = createGoogleGenerativeAI({ apiKey })
     const modelId = agent.model || DEFAULT_MODEL_ID
-    const baseModel = google(modelId)
-    const model = await withDevTools(baseModel, { name: `agent-test:${agent.name}` })
+    const model = google(modelId)
+    // const model = await withDevTools(baseModel, { name: `agent-test:${agent.name}` })
 
     console.log(`[ai-agents/test] Using model: ${modelId}`)
 

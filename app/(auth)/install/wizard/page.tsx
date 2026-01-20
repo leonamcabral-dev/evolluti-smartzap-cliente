@@ -213,6 +213,59 @@ export default function InstallWizardPage() {
         );
       }
 
+      // 🧠 Health Check Inteligente - detecta o que pode ser pulado
+      let healthCheck: {
+        skipWaitProject?: boolean;
+        skipWaitStorage?: boolean;
+        skipMigrations?: boolean;
+        skipBootstrap?: boolean;
+        estimatedSeconds?: number;
+      } | undefined;
+
+      try {
+        const healthRes = await fetch('/api/installer/health-check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            supabase: {
+              url: data.supabaseUrl,
+              accessToken: data.supabasePat,
+            },
+          }),
+        });
+
+        if (healthRes.ok) {
+          const healthData = await healthRes.json();
+          if (healthData.ok) {
+            healthCheck = {
+              skipWaitProject: healthData.skipWaitProject,
+              skipWaitStorage: healthData.skipWaitStorage,
+              skipMigrations: healthData.skipMigrations,
+              skipBootstrap: healthData.skipBootstrap,
+              estimatedSeconds: healthData.estimatedSeconds,
+            };
+            console.log('[wizard] Health check result:', healthCheck);
+
+            // Mensagem personalizada baseada no que foi detectado
+            const skippedCount = [
+              healthCheck.skipWaitProject,
+              healthCheck.skipWaitStorage,
+              healthCheck.skipMigrations,
+              healthCheck.skipBootstrap,
+            ].filter(Boolean).length;
+
+            if (skippedCount >= 3) {
+              setProvisioningSubtitle('Projeto detectado! Instalação rápida...');
+            } else if (skippedCount >= 1) {
+              setProvisioningSubtitle('Otimizando rota de instalação...');
+            }
+          }
+        }
+      } catch (healthErr) {
+        // Health check é opcional - continua sem ele
+        console.log('[wizard] Health check falhou (continuando sem otimização):', healthErr);
+      }
+
       const payload = {
         vercel: {
           token: data.vercelToken,
@@ -233,6 +286,7 @@ export default function InstallWizardPage() {
           email: data.email,
           passwordHash: data.passwordHash,
         },
+        healthCheck, // Passa o resultado do health check para pular etapas
       };
 
       const response = await fetch('/api/installer/run-stream', {

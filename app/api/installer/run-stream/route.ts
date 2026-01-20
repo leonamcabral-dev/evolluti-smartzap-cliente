@@ -373,12 +373,9 @@ export async function POST(req: Request) {
               'migrations',
               async () => {
                 await runSchemaMigration(resolvedDbUrl, {
-                  skipWaitStorage: skipStorage,
                   onProgress: async (migrationProgress) => {
-                    // Envia progresso detalhado das migrations
                     const stageMessages: Record<string, string> = {
                       connecting: 'Conectando ao banco...',
-                      waiting_storage: 'Aguardando Storage...',
                       applying: migrationProgress.current
                         ? `Migration ${migrationProgress.current}/${migrationProgress.total}`
                         : 'Aplicando migrations...',
@@ -391,9 +388,8 @@ export async function POST(req: Request) {
                       title: 'Instalando conhecimento',
                       subtitle: stageMessages[migrationProgress.stage] || migrationProgress.message,
                       progress: progress.partialProgress(
-                        migrationProgress.stage === 'waiting_storage' ? 'wait_storage' : 'migrations',
+                        'migrations',
                         migrationProgress.stage === 'connecting' ? 0.1 :
-                        migrationProgress.stage === 'waiting_storage' ? 0.5 :
                         migrationProgress.stage === 'applying' && migrationProgress.current && migrationProgress.total
                           ? 0.1 + (0.8 * (migrationProgress.current / migrationProgress.total))
                           : 0.95

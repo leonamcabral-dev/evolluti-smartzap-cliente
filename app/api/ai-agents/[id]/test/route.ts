@@ -148,30 +148,8 @@ IMPORTANTE: Você DEVE usar a ferramenta "respond" para enviar sua resposta.`
     // Generate response
     const startTime = Date.now()
 
-    // Configure tools - validate File Search store before using
-    const { validateFileSearchStore } = await import('@/lib/ai/file-search-store')
-    const { supportsFileSearch } = await import('@/lib/ai/model')
-
-    let hasFileSearch = false
-    let storeValidationMessage = ''
-
-    // Only validate if agent has a store configured and model supports it
-    if (agent.file_search_store_id && supportsFileSearch(modelId)) {
-      console.log(`[ai-agents/test] Validating File Search Store: ${agent.file_search_store_id}`)
-      const validation = await validateFileSearchStore(apiKey, agent.file_search_store_id)
-
-      if (validation.isValid) {
-        hasFileSearch = true
-        storeValidationMessage = validation.message
-        console.log(`[ai-agents/test] Store validated: ${validation.message}`)
-      } else {
-        console.log(`[ai-agents/test] Store validation failed: ${validation.status} - ${validation.message}`)
-        storeValidationMessage = `Store inválido: ${validation.message}`
-      }
-    } else if (agent.file_search_store_id && !supportsFileSearch(modelId)) {
-      storeValidationMessage = `Modelo ${modelId} não suporta File Search`
-      console.log(`[ai-agents/test] ${storeValidationMessage}`)
-    }
+    // Check if agent has knowledge base
+    const hasFileSearch = !!agent.file_search_store_id
 
     // Capture structured response from tool
     let structuredResponse: TestResponse | undefined
@@ -224,7 +202,6 @@ IMPORTANTE: Você DEVE usar a ferramenta "respond" para enviar sua resposta.`
       model: modelId,
       knowledge_files_used: indexedFilesCount ?? 0,
       file_search_enabled: hasFileSearch,
-      file_search_status: storeValidationMessage || undefined,
       // Structured output fields
       sentiment: structuredResponse.sentiment,
       confidence: structuredResponse.confidence,

@@ -41,8 +41,20 @@ function TelegramLayoutInner({ children }: { children: ReactNode }) {
     );
   }
 
+  // Calcular padding-top:
+  // - Mock mode: 24px (6 * 4) para o banner de simulador
+  // - Telegram real: ~56px para compensar o header nativo do Telegram
+  // - Também usar safe-area-inset-top para notch/dynamic island
+  const contentPadding = isMock ? 'pt-6' : 'pt-14'; // pt-14 = 56px
+
   return (
-    <div className="min-h-screen bg-[var(--tg-theme-bg-color)] text-[var(--tg-theme-text-color)]">
+    <div
+      className="min-h-screen bg-[var(--tg-theme-bg-color)] text-[var(--tg-theme-text-color)]"
+      style={{
+        // Usar safe-area para dispositivos com notch
+        paddingTop: !isMock ? 'max(env(safe-area-inset-top, 0px), 0px)' : undefined,
+      }}
+    >
       {/* Mock indicator */}
       {isMock && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500/90 text-black text-xs text-center py-1 font-medium">
@@ -50,8 +62,8 @@ function TelegramLayoutInner({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {/* Content with padding for mock indicator */}
-      <div className={isMock ? 'pt-6' : ''}>
+      {/* Content with padding for header */}
+      <div className={contentPadding}>
         {children}
       </div>
     </div>

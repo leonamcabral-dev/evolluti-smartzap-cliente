@@ -168,7 +168,9 @@ import {
     Loader2,
     Check,
     Save,
-    AlertCircle
+    AlertCircle,
+    Eye,
+    X
 } from 'lucide-react';
 import { GeneratedTemplate } from '@/lib/ai/services/template-agent';
 import { templateService } from '@/lib/whatsapp/template.service';
@@ -279,7 +281,7 @@ export default function NewTemplateProjectPage() {
             <PageHeader>
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => router.back()}
+                        onClick={() => router.push('/templates?tab=projects')}
                         className="p-2 rounded-full border border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-hover)]"
                     >
                         <ArrowLeft className="w-5 h-5" />
@@ -299,7 +301,7 @@ export default function NewTemplateProjectPage() {
             <StrategySelectorModal
                 isOpen={!strategy}
                 onSelect={setStrategy}
-                onClose={() => router.push('/templates')}
+                onClose={() => router.push('/templates?tab=projects')}
             />
 
 

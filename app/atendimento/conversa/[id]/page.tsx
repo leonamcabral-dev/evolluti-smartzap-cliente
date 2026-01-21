@@ -1,17 +1,36 @@
 'use client'
 
+/**
+ * Conversa Page - Geist Design System
+ *
+ * Interface de chat minimalista seguindo os princípios do Geist:
+ * - Hierarquia visual clara
+ * - Espaçamento consistente
+ * - Cores de alto contraste
+ * - Transições suaves
+ */
+
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, MoreVertical, Send, Bot, User, Phone, Info, Loader2, AlertCircle } from 'lucide-react'
-import { useAttendant } from '@/components/attendant/AttendantProvider'
-import { toast } from 'sonner'
 import {
-  getStatusEmoji,
-  getStatusLabel,
-  getStatusColor,
-  type TelegramConversationStatus,
-} from '@/hooks/telegram'
+  ArrowLeft,
+  Send,
+  Bot,
+  User,
+  Loader2,
+  AlertCircle,
+  Check,
+  CheckCheck,
+  Clock,
+  XCircle,
+  Sparkles,
+  Sun,
+  Moon,
+} from 'lucide-react'
+import { useAttendant } from '@/components/attendant/AttendantProvider'
+import { useTheme } from '../../layout'
+import { toast } from 'sonner'
 
 // =============================================================================
 // TYPES
@@ -29,17 +48,25 @@ interface Message {
   created_at: string
 }
 
+interface Contact {
+  id: string
+  name: string | null
+  phone: string
+}
+
 interface Conversation {
   id: string
-  contact_name: string
-  contact_phone: string
+  phone: string
   status: string
   mode: 'bot' | 'human'
   priority: string | null
   ai_agent_id: string | null
-  ai_agent_name: string | null
+  contact?: Contact | null
+  ai_agent?: { name: string } | null
   last_message_at: string
 }
+
+type ConversationStatus = 'ai_active' | 'human_active' | 'handoff_requested'
 
 // =============================================================================
 // API FUNCTIONS
@@ -71,28 +98,40 @@ async function sendMessage(conversationId: string, content: string): Promise<Mes
 }
 
 async function takeoverConversation(id: string): Promise<void> {
-  const res = await fetch(`/api/inbox/conversations/${id}/takeover`, {
-    method: 'POST',
-  })
+  const res = await fetch(`/api/inbox/conversations/${id}/takeover`, { method: 'POST' })
   if (!res.ok) throw new Error('Erro ao assumir conversa')
 }
 
 async function returnToBot(id: string): Promise<void> {
-  const res = await fetch(`/api/inbox/conversations/${id}/return-to-bot`, {
-    method: 'POST',
-  })
+  const res = await fetch(`/api/inbox/conversations/${id}/return-to-bot`, { method: 'POST' })
   if (!res.ok) throw new Error('Erro ao devolver para IA')
 }
 
 // =============================================================================
-// HELPER: Map status
+// HELPERS
 // =============================================================================
 
-function mapConversationStatus(conv: Conversation): TelegramConversationStatus {
+function mapConversationStatus(conv: Conversation): ConversationStatus {
   if (conv.priority === 'urgent') return 'handoff_requested'
   if (conv.mode === 'human') return 'human_active'
-  if (conv.mode === 'bot') return 'ai_active'
-  return 'resolved'
+  return 'ai_active'
+}
+
+function formatTime(date: string) {
+  return new Date(date).toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function getInitials(name: string | null): string {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
 }
 
 // =============================================================================
@@ -102,50 +141,55 @@ function mapConversationStatus(conv: Conversation): TelegramConversationStatus {
 function MessageBubble({ message }: { message: Message }) {
   const isOutbound = message.direction === 'outbound'
 
-  const formatTime = (date: string) => {
-    return new Date(date).toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
-
-  const getStatusIcon = (status: Message['delivery_status']) => {
-    switch (status) {
+  const StatusIcon = () => {
+    switch (message.delivery_status) {
       case 'read':
-        return '✓✓'
+        return <CheckCheck size={14} className="text-[var(--chat-status-read)]" />
       case 'delivered':
-        return '✓✓'
+        return <CheckCheck size={14} />
       case 'sent':
-        return '✓'
+        return <Check size={14} />
       case 'pending':
-        return '⏳'
+        return <Clock size={14} />
       case 'failed':
-        return '❌'
+        return <XCircle size={14} className="text-[var(--geist-error)]" />
       default:
-        return ''
+        return null
     }
   }
 
   return (
-    <div className={`flex ${isOutbound ? 'justify-end' : 'justify-start'} mb-2`}>
+    <div className={`flex ${isOutbound ? 'justify-end' : 'justify-start'} mb-3`}>
       <div
         className={`
-          max-w-[80%] px-3 py-2 rounded-2xl
+          relative max-w-[75%] px-4 py-2.5 rounded-2xl
           ${isOutbound
-            ? 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] rounded-br-md'
-            : 'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] rounded-bl-md'
+            ? 'bg-[var(--chat-bubble-outbound)] text-[var(--chat-bubble-outbound-text)] rounded-br-sm'
+            : 'bg-[var(--chat-bubble-inbound)] text-[var(--chat-bubble-inbound-text)] rounded-bl-sm border border-[var(--geist-border)]'
           }
         `}
       >
-        <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-        <div className={`flex items-center gap-1 mt-1 ${isOutbound ? 'justify-end' : 'justify-start'}`}>
-          {message.is_ai_generated && (
-            <Bot size={12} className="opacity-60" />
-          )}
-          <span className="text-[10px] opacity-60">{formatTime(message.created_at)}</span>
+        {/* AI Badge */}
+        {message.is_ai_generated && (
+          <div className="flex items-center gap-1 mb-1.5 -mt-0.5">
+            <Sparkles size={12} className="text-[var(--geist-success)]" />
+            <span className="text-[10px] font-medium text-[var(--geist-success)]">IA</span>
+          </div>
+        )}
+
+        {/* Content */}
+        <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">
+          {message.content}
+        </p>
+
+        {/* Footer: Time + Status */}
+        <div className={`flex items-center gap-1.5 mt-1.5 ${isOutbound ? 'justify-end' : 'justify-start'}`}>
+          <span className="text-[11px] text-[var(--chat-timestamp)]">
+            {formatTime(message.created_at)}
+          </span>
           {isOutbound && (
-            <span className={`text-[10px] ${message.delivery_status === 'read' ? 'text-blue-300' : 'opacity-60'}`}>
-              {getStatusIcon(message.delivery_status)}
+            <span className="text-[var(--chat-timestamp)]">
+              <StatusIcon />
             </span>
           )}
         </div>
@@ -154,30 +198,71 @@ function MessageBubble({ message }: { message: Message }) {
   )
 }
 
-function StatusBanner({ status }: { status: TelegramConversationStatus }) {
-  const isUrgent = status === 'handoff_requested'
-  const isHuman = status === 'human_active'
-
-  if (status === 'resolved') return null
+function Header({
+  conversation,
+  onBack,
+  resolvedTheme,
+  onToggleTheme,
+}: {
+  conversation: Conversation
+  onBack: () => void
+  resolvedTheme: 'light' | 'dark'
+  onToggleTheme: () => void
+}) {
+  // Avatar color based on mode - simplified palette
+  const getAvatarColor = () => {
+    if (conversation.priority === 'urgent') return 'var(--geist-red)'
+    if (conversation.mode === 'bot') return 'var(--geist-foreground-secondary)'
+    return '#00a884' // Verde WhatsApp para modo humano
+  }
 
   return (
-    <div className={`
-      px-4 py-2 flex items-center justify-between
-      ${isUrgent ? 'bg-red-500/10' : isHuman ? 'bg-green-500/10' : 'bg-blue-500/10'}
-    `}>
-      <div className="flex items-center gap-2">
-        <span className={`text-sm ${getStatusColor(status)}`}>
-          {getStatusEmoji(status)} {getStatusLabel(status)}
-        </span>
+    <header className="shrink-0 h-16 px-4 flex items-center gap-3 border-b border-[var(--geist-border)] bg-[var(--geist-background)]">
+      <button
+        onClick={onBack}
+        className="p-2 -ml-2 rounded-lg hover:bg-[var(--geist-component-bg)] transition-colors"
+        aria-label="Voltar"
+      >
+        <ArrowLeft size={20} className="text-[var(--geist-foreground-secondary)]" />
+      </button>
+
+      {/* Avatar colorido */}
+      <div
+        className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 shadow-sm"
+        style={{
+          backgroundColor: getAvatarColor(),
+          color: '#ffffff',
+        }}
+      >
+        {getInitials(conversation.contact?.name)}
       </div>
-      {isUrgent && (
-        <span className="text-xs text-red-400">Cliente aguardando</span>
-      )}
-    </div>
+
+      <div className="flex-1 min-w-0">
+        <h1 className="font-semibold text-[15px] truncate">
+          {conversation.contact?.name || 'Desconhecido'}
+        </h1>
+        <p className="text-[13px] text-[var(--geist-foreground-tertiary)] truncate">
+          {conversation.contact?.phone || conversation.phone}
+        </p>
+      </div>
+
+      {/* Theme toggle with amber color */}
+      <button
+        onClick={onToggleTheme}
+        className="p-2 rounded-lg hover:bg-[var(--geist-component-bg)] transition-colors"
+        aria-label={resolvedTheme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+      >
+        {resolvedTheme === 'dark' ? (
+          <Sun size={18} style={{ color: 'var(--geist-amber)' }} />
+        ) : (
+          <Moon size={18} style={{ color: 'var(--geist-purple)' }} />
+        )}
+      </button>
+    </header>
   )
 }
 
-function ActionButtons({
+function StatusBar({
   status,
   onTakeOver,
   onReturnToAI,
@@ -185,57 +270,168 @@ function ActionButtons({
   canReply,
   canHandoff,
 }: {
-  status: TelegramConversationStatus
+  status: ConversationStatus
   onTakeOver: () => void
   onReturnToAI: () => void
   isLoading: boolean
   canReply: boolean
   canHandoff: boolean
 }) {
-  const isAIActive = status === 'ai_active' || status === 'handoff_requested'
-
-  // Sem permissão de responder, não mostra botões
   if (!canReply) return null
 
+  const isAIActive = status === 'ai_active' || status === 'handoff_requested'
+  const isUrgent = status === 'handoff_requested'
+  const isHuman = status === 'human_active'
+
+  // Colors based on status - simplified palette (green, red, neutral)
+  const getStatusStyles = () => {
+    if (isUrgent) return {
+      bg: 'var(--geist-error-light)',
+      iconColor: 'var(--geist-red)',
+      textColor: 'var(--geist-red)',
+    }
+    if (isAIActive) return {
+      bg: 'var(--geist-component-bg)',
+      iconColor: 'var(--geist-foreground-secondary)',
+      textColor: 'var(--geist-foreground-secondary)',
+    }
+    // Modo humano - verde WhatsApp
+    return {
+      bg: 'rgba(0, 168, 132, 0.1)',
+      iconColor: '#00a884',
+      textColor: '#00a884',
+    }
+  }
+  const statusStyles = getStatusStyles()
+
   return (
-    <div className="flex gap-2 px-4 py-2 border-b border-[var(--tg-theme-secondary-bg-color)]">
+    <div
+      className="shrink-0 px-4 py-3 flex items-center justify-between border-b border-[var(--geist-border)]"
+      style={{ backgroundColor: statusStyles.bg }}
+    >
+      <div className="flex items-center gap-2">
+        {isUrgent ? (
+          <>
+            <AlertCircle size={16} style={{ color: statusStyles.iconColor }} />
+            <span className="text-[13px] font-medium" style={{ color: statusStyles.textColor }}>
+              Cliente aguardando atendimento
+            </span>
+          </>
+        ) : isAIActive ? (
+          <>
+            <Sparkles size={16} style={{ color: statusStyles.iconColor }} />
+            <span className="text-[13px] font-medium" style={{ color: statusStyles.textColor }}>
+              IA está atendendo
+            </span>
+          </>
+        ) : (
+          <>
+            <User size={16} style={{ color: statusStyles.iconColor }} />
+            <span className="text-[13px] font-medium" style={{ color: statusStyles.textColor }}>
+              Você está atendendo
+            </span>
+          </>
+        )}
+      </div>
+
       {isAIActive ? (
         <button
           onClick={onTakeOver}
           disabled={isLoading}
-          className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-green-500/20 text-green-400 text-sm font-medium hover:bg-green-500/30 transition-colors disabled:opacity-50"
+          className="px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all disabled:opacity-50 hover:brightness-110"
+          style={{
+            backgroundColor: isUrgent ? 'var(--geist-red)' : '#00a884',
+            color: '#ffffff',
+          }}
         >
-          {isLoading ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <User size={16} />
-          )}
-          Assumir Atendimento
+          {isLoading ? <Loader2 size={14} className="animate-spin" /> : 'Assumir'}
         </button>
       ) : canHandoff ? (
         <button
           onClick={onReturnToAI}
           disabled={isLoading}
-          className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-blue-500/20 text-blue-400 text-sm font-medium hover:bg-blue-500/30 transition-colors disabled:opacity-50"
+          className="px-4 py-1.5 rounded-full text-[13px] font-medium transition-all disabled:opacity-50 hover:brightness-110"
+          style={{
+            backgroundColor: '#00a884',
+            color: '#ffffff',
+          }}
+        >
+          {isLoading ? <Loader2 size={14} className="animate-spin" /> : 'Devolver para IA'}
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
+function MessageInput({
+  value,
+  onChange,
+  onSend,
+  isLoading,
+  disabled,
+}: {
+  value: string
+  onChange: (value: string) => void
+  onSend: () => void
+  isLoading: boolean
+  disabled: boolean
+}) {
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto'
+      inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`
+    }
+  }, [value])
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      onSend()
+    }
+  }
+
+  return (
+    <div className="shrink-0 px-4 py-3 border-t border-[var(--geist-border)] bg-[var(--geist-background)]">
+      <div className="flex items-end gap-3">
+        <textarea
+          ref={inputRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Digite uma mensagem..."
+          rows={1}
+          disabled={disabled}
+          className="flex-1 px-4 py-2.5 rounded-xl bg-[var(--geist-component-bg)] text-[var(--geist-foreground)] placeholder:text-[var(--geist-foreground-tertiary)] text-[14px] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--geist-blue)] max-h-[120px] disabled:opacity-50 border border-[var(--geist-border)] focus:border-[var(--geist-blue)]"
+        />
+        <button
+          onClick={onSend}
+          disabled={!value.trim() || isLoading || disabled}
+          className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 disabled:opacity-30 hover:scale-105 transition-all shadow-lg"
+          style={{
+            backgroundColor: 'var(--geist-blue)',
+            color: '#ffffff',
+          }}
+          aria-label="Enviar"
         >
           {isLoading ? (
-            <Loader2 size={16} className="animate-spin" />
+            <Loader2 size={18} className="animate-spin" />
           ) : (
-            <Bot size={16} />
+            <Send size={18} />
           )}
-          Devolver para IA
         </button>
-      ) : (
-        <div className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-green-500/10 text-green-400 text-sm">
-          <User size={16} />
-          Você está atendendo
-        </div>
-      )}
-      <button
-        className="px-3 py-2 rounded-lg bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)] transition-colors"
-      >
-        <Info size={16} />
-      </button>
+      </div>
+    </div>
+  )
+}
+
+function DisabledInputNotice({ message }: { message: string }) {
+  return (
+    <div className="shrink-0 px-4 py-4 border-t border-[var(--geist-border)] bg-[var(--geist-background-secondary)]">
+      <p className="text-[13px] text-[var(--geist-foreground-tertiary)] text-center">
+        {message}
+      </p>
     </div>
   )
 }
@@ -247,75 +443,60 @@ function ActionButtons({
 export default function ConversaPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const queryClient = useQueryClient()
-  const { isAuthenticated, attendant, canReply, canHandoff } = useAttendant()
+  const { isAuthenticated, canReply, canHandoff } = useAttendant()
+  const { resolvedTheme, setTheme } = useTheme()
 
   const conversationId = params.id as string
+  const token = searchParams.get('token')
   const [newMessage, setNewMessage] = useState('')
-
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  // Fetch conversation
-  const {
-    data: conversation,
-    isLoading: convLoading,
-    error: convError,
-  } = useQuery({
+  // Queries
+  const { data: conversation, isLoading: convLoading, error: convError } = useQuery({
     queryKey: ['conversation', conversationId],
     queryFn: () => fetchConversation(conversationId),
     enabled: isAuthenticated,
-    refetchInterval: 5000, // Poll every 5s
+    refetchInterval: 5000,
   })
 
-  // Fetch messages
-  const {
-    data: messagesData,
-    isLoading: msgsLoading,
-  } = useQuery({
+  const { data: messagesData, isLoading: msgsLoading } = useQuery({
     queryKey: ['messages', conversationId],
     queryFn: () => fetchMessages(conversationId, 100),
     enabled: isAuthenticated,
-    refetchInterval: 3000, // Poll every 3s
+    refetchInterval: 3000,
   })
 
   const messages = messagesData?.messages ?? []
   const status = conversation ? mapConversationStatus(conversation) : 'ai_active'
 
-  // Send message mutation
+  // Mutations
   const sendMutation = useMutation({
     mutationFn: (content: string) => sendMessage(conversationId, content),
     onSuccess: () => {
       setNewMessage('')
       queryClient.invalidateQueries({ queryKey: ['messages', conversationId] })
     },
-    onError: (error: Error) => {
-      toast.error(error.message)
-    },
+    onError: (error: Error) => toast.error(error.message),
   })
 
-  // Takeover mutation
   const takeoverMutation = useMutation({
     mutationFn: () => takeoverConversation(conversationId),
     onSuccess: () => {
-      toast.success('Você assumiu o atendimento!')
+      toast.success('Você assumiu o atendimento')
       queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] })
     },
-    onError: (error: Error) => {
-      toast.error(error.message)
-    },
+    onError: (error: Error) => toast.error(error.message),
   })
 
-  // Return to bot mutation
   const returnMutation = useMutation({
     mutationFn: () => returnToBot(conversationId),
     onSuccess: () => {
       toast.success('Conversa devolvida para IA')
       queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] })
     },
-    onError: (error: Error) => {
-      toast.error(error.message)
-    },
+    onError: (error: Error) => toast.error(error.message),
   })
 
   // Scroll to bottom on new messages
@@ -323,37 +504,34 @@ export default function ConversaPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
 
-  // Auto-resize textarea
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.style.height = 'auto'
-      inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`
-    }
-  }, [newMessage])
-
   const handleSend = useCallback(() => {
     if (!newMessage.trim() || sendMutation.isPending) return
     sendMutation.mutate(newMessage.trim())
   }, [newMessage, sendMutation])
 
-  // Loading state
+  const handleBack = () => {
+    const backUrl = token ? `/atendimento?token=${token}` : '/atendimento'
+    router.push(backUrl)
+  }
+
+  // Loading
   if (convLoading || msgsLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[var(--tg-theme-button-color)]" />
+      <div className="min-h-screen flex items-center justify-center bg-[var(--geist-background)]">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--geist-foreground-tertiary)]" />
       </div>
     )
   }
 
-  // Error state
+  // Error
   if (convError || !conversation) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4">
-        <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-        <h2 className="text-lg font-medium mb-2">Conversa não encontrada</h2>
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-[var(--geist-background)]">
+        <AlertCircle className="w-12 h-12 text-[var(--geist-error)] mb-4" />
+        <h2 className="text-lg font-semibold mb-2">Conversa não encontrada</h2>
         <button
-          onClick={() => router.push('/atendimento')}
-          className="text-[var(--tg-theme-link-color)] text-sm"
+          onClick={handleBack}
+          className="text-[var(--geist-success)] text-sm hover:underline"
         >
           Voltar para lista
         </button>
@@ -361,43 +539,18 @@ export default function ConversaPage() {
     )
   }
 
+  const canSendMessages = canReply && status === 'human_active'
+
   return (
-    <div className="flex flex-col h-screen">
-      {/* Header */}
-      <header className="shrink-0 px-2 py-3 border-b border-[var(--tg-theme-secondary-bg-color)] bg-[var(--tg-theme-bg-color)]">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => router.push('/atendimento')}
-            className="p-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)] transition-colors"
-          >
-            <ArrowLeft size={22} />
-          </button>
+    <div className="flex flex-col h-screen bg-[var(--geist-background)]">
+      <Header
+        conversation={conversation}
+        onBack={handleBack}
+        resolvedTheme={resolvedTheme}
+        onToggleTheme={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+      />
 
-          <div className="w-10 h-10 rounded-full bg-[var(--tg-theme-secondary-bg-color)] flex items-center justify-center text-sm font-medium shrink-0">
-            {conversation.contact_name?.charAt(0).toUpperCase() || '?'}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <h1 className="font-medium truncate">{conversation.contact_name || 'Desconhecido'}</h1>
-            <p className="text-xs text-[var(--tg-theme-hint-color)] truncate">
-              {conversation.contact_phone}
-            </p>
-          </div>
-
-          <button className="p-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)] transition-colors">
-            <Phone size={20} className="text-[var(--tg-theme-hint-color)]" />
-          </button>
-          <button className="p-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)] transition-colors">
-            <MoreVertical size={20} className="text-[var(--tg-theme-hint-color)]" />
-          </button>
-        </div>
-      </header>
-
-      {/* Status banner */}
-      <StatusBanner status={status} />
-
-      {/* Action buttons */}
-      <ActionButtons
+      <StatusBar
         status={status}
         onTakeOver={() => takeoverMutation.mutate()}
         onReturnToAI={() => returnMutation.mutate()}
@@ -407,69 +560,34 @@ export default function ConversaPage() {
       />
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 bg-[var(--geist-background)]">
         {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-[var(--tg-theme-hint-color)]">
-            <p className="text-sm">Nenhuma mensagem ainda</p>
+          <div className="flex items-center justify-center h-full">
+            <p className="text-[14px] text-[var(--geist-foreground-tertiary)]">
+              Nenhuma mensagem ainda
+            </p>
           </div>
         ) : (
-          // Mostrar mensagens do mais antigo para o mais novo
-          [...messages].reverse().map((message) => (
+          messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input area */}
-      {canReply && status === 'human_active' && (
-        <div className="shrink-0 px-4 py-3 border-t border-[var(--tg-theme-secondary-bg-color)] bg-[var(--tg-theme-bg-color)]">
-          <div className="flex items-end gap-2">
-            <textarea
-              ref={inputRef}
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSend()
-                }
-              }}
-              placeholder="Digite uma mensagem..."
-              rows={1}
-              className="flex-1 px-4 py-2.5 rounded-2xl bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] placeholder:text-[var(--tg-theme-hint-color)] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]/50 max-h-[120px]"
-            />
-            <button
-              onClick={handleSend}
-              disabled={!newMessage.trim() || sendMutation.isPending}
-              className="w-10 h-10 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] flex items-center justify-center shrink-0 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-            >
-              {sendMutation.isPending ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <Send size={18} />
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Read-only notice */}
-      {!canReply && (
-        <div className="shrink-0 px-4 py-3 border-t border-[var(--tg-theme-secondary-bg-color)] bg-[var(--tg-theme-secondary-bg-color)]/50 text-center">
-          <p className="text-sm text-[var(--tg-theme-hint-color)]">
-            Você tem permissão apenas para visualizar
-          </p>
-        </div>
-      )}
-
-      {/* Waiting for human notice */}
-      {canReply && status !== 'human_active' && (
-        <div className="shrink-0 px-4 py-3 border-t border-[var(--tg-theme-secondary-bg-color)] bg-[var(--tg-theme-secondary-bg-color)]/50 text-center">
-          <p className="text-sm text-[var(--tg-theme-hint-color)]">
-            Assuma o atendimento para enviar mensagens
-          </p>
-        </div>
+      {/* Input Area */}
+      {canSendMessages ? (
+        <MessageInput
+          value={newMessage}
+          onChange={setNewMessage}
+          onSend={handleSend}
+          isLoading={sendMutation.isPending}
+          disabled={false}
+        />
+      ) : !canReply ? (
+        <DisabledInputNotice message="Você tem permissão apenas para visualizar" />
+      ) : (
+        <DisabledInputNotice message="Assuma o atendimento para enviar mensagens" />
       )}
     </div>
   )

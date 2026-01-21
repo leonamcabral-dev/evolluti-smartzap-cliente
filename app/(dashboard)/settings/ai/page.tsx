@@ -10,7 +10,6 @@ import {
   FormInput,
   Info,
   Megaphone,
-  MessageSquareText,
   ShieldCheck,
   Sparkles,
   Trash2,
@@ -110,38 +109,6 @@ const EMPTY_PROVIDER_STATUS: ProviderStatus = {
 }
 
 const PROMPTS: PromptItem[] = [
-  {
-    id: 'template-short',
-    valueKey: 'templateShort',
-    routeKey: 'generateTemplate',
-    title: 'Mensagem curta (WhatsApp)',
-    description: 'Usado para gerar textos rápidos de campanha.',
-    path: '/lib/ai/prompts/template-short.ts',
-    variables: ['{{prompt}}', '{{1}}'],
-    rows: 7,
-    Icon: MessageSquareText,
-  },
-  {
-    id: 'utility-templates',
-    valueKey: 'utilityGenerationTemplate',
-    routeKey: 'generateUtilityTemplates',
-    title: 'Templates UTILITY (geração)',
-    description: 'Gera templates aprováveis pela Meta usando variáveis.',
-    path: '/lib/ai/prompts/utility-generator.ts',
-    variables: ['{{prompt}}', '{{quantity}}', '{{language}}', '{{primaryUrl}}'],
-    rows: 18,
-    Icon: Wand2,
-  },
-  {
-    id: 'ai-judge',
-    valueKey: 'utilityJudgeTemplate',
-    title: 'AI Judge (classificação)',
-    description: 'Analisa se o template é UTILITY ou MARKETING e sugere correções.',
-    path: '/lib/ai/prompts/utility-judge.ts',
-    variables: ['{{header}}', '{{body}}'],
-    rows: 18,
-    Icon: ShieldCheck,
-  },
   {
     id: 'flow-form',
     valueKey: 'flowFormTemplate',
@@ -1312,6 +1279,34 @@ export default function AICenterPage() {
                       }
                     />
                   ))}
+                </div>
+
+                {/* AI Judge Card - Componente de validação */}
+                <div className="mt-6">
+                  <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-widest text-[var(--ds-text-muted)]">
+                    <div className="h-px flex-1 bg-[var(--ds-border-subtle)]" />
+                    <span>Validação</span>
+                    <div className="h-px flex-1 bg-[var(--ds-border-subtle)]" />
+                  </div>
+                  <PromptCard
+                    item={{
+                      id: 'ai-judge',
+                      valueKey: 'utilityJudgeTemplate',
+                      title: 'AI Judge (classificação)',
+                      description: 'Analisa se o template é UTILITY ou MARKETING e sugere correções automáticas.',
+                      path: '/lib/ai/prompts/utility-judge.ts',
+                      variables: ['{{header}}', '{{body}}'],
+                      rows: 18,
+                      Icon: ShieldCheck,
+                    }}
+                    value={prompts.utilityJudgeTemplate ?? ''}
+                    onChange={(nextValue) =>
+                      setPrompts((current) => ({
+                        ...current,
+                        utilityJudgeTemplate: nextValue,
+                      }))
+                    }
+                  />
                 </div>
 
                 {/* Info note */}

@@ -1,14 +1,13 @@
 'use client';
 
 import React from 'react';
-import { RefreshCw, Sparkles, Zap } from 'lucide-react';
+import { RefreshCw, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export interface TemplateListHeaderProps {
   templateCount: number;
   isSyncing: boolean;
   onSync: () => void;
-  onOpenAiModal: () => void;
   onOpenBulkModal: () => void;
 }
 
@@ -16,7 +15,6 @@ export const TemplateListHeader: React.FC<TemplateListHeaderProps> = ({
   templateCount,
   isSyncing,
   onSync,
-  onOpenAiModal,
   onOpenBulkModal,
 }) => {
   return (
@@ -55,14 +53,6 @@ export const TemplateListHeader: React.FC<TemplateListHeaderProps> = ({
         >
           <Zap size={18} aria-hidden="true" />
           Gerar UTILIDADE em Massa
-        </Button>
-        <Button
-          variant="outline"
-          onClick={onOpenAiModal}
-          aria-label="Criar novo template usando inteligencia artificial"
-        >
-          <Sparkles size={18} aria-hidden="true" />
-          Criar com IA
         </Button>
         <Button
           variant="outline"

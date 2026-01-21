@@ -85,10 +85,10 @@ function InboxConversationPageContent({ conversationId }: { conversationId: stri
 
 function LoadingFallback() {
   return (
-    <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-zinc-950">
+    <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-[var(--ds-bg-base)]">
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
-        <p className="text-sm text-zinc-500">Carregando conversa...</p>
+        <p className="text-sm text-[var(--ds-text-muted)]">Carregando conversa...</p>
       </div>
     </div>
   )

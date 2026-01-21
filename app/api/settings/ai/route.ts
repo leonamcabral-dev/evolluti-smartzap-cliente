@@ -366,7 +366,6 @@ export async function POST(request: NextRequest) {
 
             // Salva prompts base no JSON ai_prompts
             const normalizedBasePrompts = {
-                templateShort: basePrompts.templateShort || '',
                 utilityGenerationTemplate: basePrompts.utilityGenerationTemplate || '',
                 utilityJudgeTemplate: basePrompts.utilityJudgeTemplate || '',
                 flowFormTemplate: basePrompts.flowFormTemplate || '',

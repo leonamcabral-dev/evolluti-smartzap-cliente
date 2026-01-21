@@ -47,19 +47,6 @@ export interface TemplateListViewProps {
   onSelectAllManualDrafts: () => void;
   onClearManualDraftSelection: () => void;
 
-  // Single AI Modal
-  isAiModalOpen: boolean;
-  setIsAiModalOpen: (open: boolean) => void;
-  aiPrompt: string;
-  setAiPrompt: (prompt: string) => void;
-  aiResult: string;
-  isAiGenerating: boolean;
-  onGenerateAi: () => void;
-  newTemplateName: string;
-  setNewTemplateName: (name: string) => void;
-  onSaveAiTemplate: () => void;
-  isSaving: boolean;
-
   // Bulk Utility Modal
   isBulkModalOpen: boolean;
   setIsBulkModalOpen: (open: boolean) => void;

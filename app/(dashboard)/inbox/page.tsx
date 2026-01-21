@@ -95,10 +95,10 @@ function InboxPageContent() {
 
 function LoadingFallback() {
   return (
-    <div className="h-full flex items-center justify-center bg-zinc-950">
+    <div className="h-full flex items-center justify-center bg-[var(--ds-bg-base)]">
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
-        <p className="text-sm text-zinc-500">Carregando inbox...</p>
+        <p className="text-sm text-[var(--ds-text-muted)]">Carregando inbox...</p>
       </div>
     </div>
   )
@@ -111,7 +111,7 @@ function InboxErrorFallback() {
   const handleReload = () => window.location.reload()
 
   return (
-    <div className="h-full flex items-center justify-center bg-zinc-950">
+    <div className="h-full flex items-center justify-center bg-[var(--ds-bg-base)]">
       <div className="max-w-md text-center px-4">
         {/* Icon */}
         <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 flex items-center justify-center">
@@ -119,10 +119,10 @@ function InboxErrorFallback() {
         </div>
 
         {/* Content */}
-        <h2 className="text-xl font-semibold text-white mb-2">
+        <h2 className="text-xl font-semibold text-[var(--ds-text-primary)] mb-2">
           Erro ao carregar o Inbox
         </h2>
-        <p className="text-zinc-400 mb-6">
+        <p className="text-[var(--ds-text-secondary)] mb-6">
           Não foi possível carregar as conversas. Isso pode ser um problema temporário.
         </p>
 

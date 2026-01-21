@@ -338,14 +338,16 @@ export default function NewTemplateProjectPage() {
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div className="flex items-center gap-2 group">
-                        <input
-                            type="text"
-                            value={projectTitle}
-                            onChange={(e) => setProjectTitle(e.target.value)}
-                            placeholder="Nome do Projeto..."
-                            className="text-2xl font-bold bg-transparent border-none outline-none text-[var(--ds-text-primary)] placeholder:text-[var(--ds-text-muted)] min-w-[200px] focus:ring-0"
-                        />
-                        <Pencil className="w-4 h-4 text-[var(--ds-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] hover:border-emerald-500/50 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500/30 transition-all">
+                            <input
+                                type="text"
+                                value={projectTitle}
+                                onChange={(e) => setProjectTitle(e.target.value)}
+                                placeholder="Digite o nome do projeto..."
+                                className="text-xl font-semibold bg-transparent border-none outline-none text-[var(--ds-text-primary)] placeholder:text-[var(--ds-text-muted)] min-w-[250px] focus:ring-0"
+                            />
+                            <Pencil className="w-4 h-4 text-[var(--ds-text-muted)] opacity-50 group-hover:opacity-100 transition-opacity shrink-0" />
+                        </div>
                     </div>
                     {strategy && (
                         <Badge variant="outline" className="ml-2 gap-2 py-1 px-3 border-[var(--ds-border-default)] text-[var(--ds-text-secondary)]">

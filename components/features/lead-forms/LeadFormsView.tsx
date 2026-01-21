@@ -121,6 +121,7 @@ export function LeadFormsView(props: LeadFormsViewProps) {
           createError={createError}
           publicBaseUrl={publicBaseUrl}
           sortedTags={sortedTags}
+          hideTrigger
         />
       )}
 

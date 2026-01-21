@@ -13,6 +13,5 @@ export { TemplateHoverPreview, type TemplateHoverPreviewProps } from './Template
 // Modals
 export { TemplateDetailsModal, type TemplateDetailsModalProps } from './TemplateDetailsModal';
 export { DeleteConfirmModal, type DeleteConfirmModalProps } from './DeleteConfirmModal';
-export { AiGeneratorModal, type AiGeneratorModalProps } from './AiGeneratorModal';
 export { BulkDeleteModal, type BulkDeleteModalProps } from './BulkDeleteModal';
 export { BulkDeleteDraftsModal, type BulkDeleteDraftsModalProps } from './BulkDeleteDraftsModal';

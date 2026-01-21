@@ -36,7 +36,6 @@ function parseJsonSetting<T>(value: string | null, fallback: T): T {
 function normalizeRoutes(input?: Partial<AiRoutesConfig> | null): AiRoutesConfig {
   const next = { ...DEFAULT_AI_ROUTES, ...(input || {}) }
   return {
-    generateTemplate: !!next.generateTemplate,
     generateUtilityTemplates: !!next.generateUtilityTemplates,
     generateFlowForm: !!next.generateFlowForm,
   }
@@ -74,7 +73,6 @@ function normalizeFallback(input?: Partial<AiFallbackConfig> | null): AiFallback
 function normalizeBasePrompts(input?: Partial<AiPromptsConfig> | null): Omit<AiPromptsConfig, 'strategyMarketing' | 'strategyUtility' | 'strategyBypass'> {
   const next = { ...DEFAULT_AI_PROMPTS, ...(input || {}) }
   return {
-    templateShort: next.templateShort || DEFAULT_AI_PROMPTS.templateShort,
     utilityGenerationTemplate: next.utilityGenerationTemplate || DEFAULT_AI_PROMPTS.utilityGenerationTemplate,
     utilityJudgeTemplate: next.utilityJudgeTemplate || DEFAULT_AI_PROMPTS.utilityJudgeTemplate,
     flowFormTemplate: next.flowFormTemplate || DEFAULT_AI_PROMPTS.flowFormTemplate,
@@ -99,7 +97,6 @@ function normalizeStrategyPrompts(strategies: {
 function normalizePrompts(input?: Partial<AiPromptsConfig> | null): AiPromptsConfig {
   const next = { ...DEFAULT_AI_PROMPTS, ...(input || {}) }
   return {
-    templateShort: next.templateShort || DEFAULT_AI_PROMPTS.templateShort,
     utilityGenerationTemplate: next.utilityGenerationTemplate || DEFAULT_AI_PROMPTS.utilityGenerationTemplate,
     utilityJudgeTemplate: next.utilityJudgeTemplate || DEFAULT_AI_PROMPTS.utilityJudgeTemplate,
     flowFormTemplate: next.flowFormTemplate || DEFAULT_AI_PROMPTS.flowFormTemplate,

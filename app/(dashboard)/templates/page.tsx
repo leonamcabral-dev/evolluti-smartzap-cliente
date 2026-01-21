@@ -6,10 +6,22 @@ import { useTemplatesController } from '@/hooks/useTemplates';
 import { useLeadFormsController } from '@/hooks/useLeadForms'
 import { TemplateListView } from '@/components/features/templates/TemplateListView';
 import { useTemplateProjectsQuery, useTemplateProjectMutations } from '@/hooks/useTemplateProjects';
-import { Loader2, Plus, Folder, Search, RefreshCw, CheckCircle, AlertTriangle, Trash2, LayoutGrid, Sparkles, Workflow, FileText, ClipboardList } from 'lucide-react';
+import { Loader2, Plus, Folder, Search, RefreshCw, CheckCircle, AlertTriangle, Trash2, Pencil, LayoutGrid, Workflow, FileText, ClipboardList, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Page, PageActions, PageDescription, PageHeader, PageTitle } from '@/components/ui/page';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 import { FlowPublishPanel } from '@/components/features/flows/FlowPublishPanel'
 import { flowsService } from '@/services/flowsService'
@@ -48,29 +60,24 @@ const StatusBadge = ({ status, approvedCount, totalCount }: { status: string; ap
   );
 };
 
-const AIFeatureWarningBanner = () => (
-  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 flex items-start sm:items-center gap-3">
-    <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
-    <div className="min-w-0">
-      <p className="text-amber-200 font-medium text-sm">
-        Funcionalidade em desenvolvimento
-      </p>
-      <p className="text-amber-300/70 text-sm mt-0.5">
-        Criação de templates com I.A ainda não está funcionando. Aguarde um pouco mais.
-      </p>
-    </div>
-  </div>
-);
-
 export default function TemplatesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const controller = useTemplatesController();
   const { data: projects, isLoading: isLoadingProjects, refetch } = useTemplateProjectsQuery();
-  const { deleteProject } = useTemplateProjectMutations();
+  const { deleteProject, updateProjectTitle, isDeleting, isUpdating } = useTemplateProjectMutations();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [activeTab, setActiveTab] = React.useState<'projects' | 'meta' | 'flows' | 'forms'>('meta');
+
+  // Estado do modal de confirmação de exclusão
+  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
+  const [projectToDelete, setProjectToDelete] = React.useState<{ id: string; title: string; approvedCount: number } | null>(null);
+  const [deleteMetaTemplates, setDeleteMetaTemplates] = React.useState(false);
   const [isCreatingFlow, setIsCreatingFlow] = React.useState(false);
+
+  // Estado de edição inline do nome
+  const [editingProjectId, setEditingProjectId] = React.useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = React.useState('');
   const leadFormsController = useLeadFormsController()
 
   const handleCreateManualTemplate = async () => {
@@ -135,9 +142,38 @@ export default function TemplatesPage() {
     router.replace(`/templates?tab=${encodeURIComponent(tab)}`)
   }
 
-  const handleDeleteProject = async (e: React.MouseEvent, id: string) => {
+  const handleDeleteProject = (e: React.MouseEvent, project: { id: string; title: string; approved_count: number }) => {
     e.stopPropagation();
-    await deleteProject(id);
+    setProjectToDelete({ id: project.id, title: project.title, approvedCount: project.approved_count });
+    setDeleteMetaTemplates(false);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!projectToDelete) return;
+    await deleteProject(projectToDelete.id, deleteMetaTemplates);
+    setDeleteModalOpen(false);
+    setProjectToDelete(null);
+  };
+
+  const handleStartEdit = (e: React.MouseEvent, project: { id: string; title: string }) => {
+    e.stopPropagation();
+    setEditingProjectId(project.id);
+    setEditingTitle(project.title);
+  };
+
+  const handleCancelEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingProjectId(null);
+    setEditingTitle('');
+  };
+
+  const handleSaveEdit = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!editingProjectId || !editingTitle.trim()) return;
+    await updateProjectTitle(editingProjectId, editingTitle.trim());
+    setEditingProjectId(null);
+    setEditingTitle('');
   };
 
   const filteredProjects = React.useMemo(() => {
@@ -150,9 +186,6 @@ export default function TemplatesPage() {
 
   return (
     <Page>
-      {/* Aviso (topo): fica acima do título */}
-      {activeTab === 'projects' && <AIFeatureWarningBanner />}
-
       <PageHeader>
         <div>
           <PageTitle>Templates</PageTitle>
@@ -167,18 +200,14 @@ export default function TemplatesPage() {
         <PageActions>
           {activeTab === 'meta' && (
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleCreateManualTemplate}>
-                <FileText className="w-4 h-4" />
+              <Button variant="brand" className="min-w-[160px]" onClick={handleCreateManualTemplate}>
+                <Plus className="w-4 h-4" />
                 Criar template
-              </Button>
-
-              <Button variant="outline" onClick={() => controller.setIsAiModalOpen(true)}>
-                <Sparkles className="w-4 h-4" />
-                Criar com IA
               </Button>
 
               <Button
                 variant="outline"
+                className="min-w-[160px]"
                 onClick={controller.onSync}
                 disabled={controller.isSyncing}
               >
@@ -197,13 +226,13 @@ export default function TemplatesPage() {
 
           {activeTab === 'flows' && (
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => router.push('/submissions')}>
-                <ClipboardList className="w-4 h-4" />
-                Ver Submissões
-              </Button>
               <Button variant="brand" onClick={handleQuickCreateFlow} disabled={isCreatingFlow}>
                 <Plus className="w-4 h-4" />
                 {isCreatingFlow ? 'Criando...' : 'Criar MiniApp'}
+              </Button>
+              <Button variant="outline" onClick={() => router.push('/submissions')}>
+                <ClipboardList className="w-4 h-4" />
+                Ver Submissões
               </Button>
             </div>
           )}
@@ -391,11 +420,42 @@ export default function TemplatesPage() {
                               <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
                                 <Folder size={16} />
                               </div>
-                              <div>
-                                <p className="font-medium text-[var(--ds-text-primary)] group-hover:text-[var(--ds-status-success-text)] transition-colors">
-                                  {project.title}
-                                </p>
-                              </div>
+                              {editingProjectId === project.id ? (
+                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                  <input
+                                    type="text"
+                                    value={editingTitle}
+                                    onChange={(e) => setEditingTitle(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleSaveEdit(e as unknown as React.MouseEvent);
+                                      if (e.key === 'Escape') handleCancelEdit(e as unknown as React.MouseEvent);
+                                    }}
+                                    autoFocus
+                                    className="px-2 py-1 rounded-lg border border-emerald-500 bg-[var(--ds-bg-elevated)] text-[var(--ds-text-primary)] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                                  />
+                                  <button
+                                    onClick={handleSaveEdit}
+                                    disabled={isUpdating}
+                                    className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50"
+                                    title="Salvar"
+                                  >
+                                    {isUpdating ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                                  </button>
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    className="p-1.5 rounded-lg text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg-hover)]"
+                                    title="Cancelar"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div>
+                                  <p className="font-medium text-[var(--ds-text-primary)] group-hover:text-[var(--ds-status-success-text)] transition-colors">
+                                    {project.title}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="px-6 py-4">
@@ -427,7 +487,14 @@ export default function TemplatesPage() {
                           <td className="px-6 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <button
-                                onClick={(e) => handleDeleteProject(e, project.id)}
+                                onClick={(e) => handleStartEdit(e, project)}
+                                title="Renomear"
+                                className="p-2 rounded-lg text-[var(--ds-text-secondary)] hover:text-emerald-400 hover:bg-emerald-500/10"
+                              >
+                                <Pencil size={16} />
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteProject(e, project)}
                                 title="Excluir"
                                 className="p-2 rounded-lg text-[var(--ds-text-secondary)] hover:text-amber-300 hover:bg-amber-500/10"
                               >
@@ -445,6 +512,69 @@ export default function TemplatesPage() {
           </div>
         </>
       )}
+
+      {/* Modal de confirmação de exclusão */}
+      <AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <AlertDialogContent className="bg-[var(--ds-bg-elevated)] border-[var(--ds-border-default)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[var(--ds-text-primary)]">
+              Excluir projeto
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[var(--ds-text-secondary)]">
+              Tem certeza que deseja excluir o projeto{' '}
+              <span className="font-medium text-[var(--ds-text-primary)]">
+                "{projectToDelete?.title}"
+              </span>
+              ?
+              {projectToDelete && projectToDelete.approvedCount > 0 && (
+                <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-amber-200 font-medium text-sm">
+                        Este projeto tem {projectToDelete.approvedCount} template(s) aprovado(s) na Meta
+                      </p>
+                      <div className="mt-3 flex items-center gap-2">
+                        <Checkbox
+                          id="delete-meta"
+                          checked={deleteMetaTemplates}
+                          onCheckedChange={(checked) => setDeleteMetaTemplates(checked === true)}
+                          className="border-amber-500/50 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                        />
+                        <Label
+                          htmlFor="delete-meta"
+                          className="text-sm text-amber-300 cursor-pointer"
+                        >
+                          Também excluir os templates da Meta
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-[var(--ds-bg-surface)] border-[var(--ds-border-default)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-hover)]">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Page>
   );
 }

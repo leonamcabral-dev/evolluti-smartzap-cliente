@@ -58,10 +58,27 @@ export const useTemplateProjectMutations = () => {
         }
     });
 
-    const deleteProjectMutation = useMutation({
-        mutationFn: templateProjectService.delete,
+    const updateProjectMutation = useMutation({
+        mutationFn: ({ id, title }: { id: string; title: string }) =>
+            templateProjectService.update(id, { title }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['template_projects'] });
+            toast.success('Nome atualizado');
+        },
+        onError: (error) => {
+            console.error('Error updating project:', error);
+            toast.error('Erro ao atualizar nome');
+        }
+    });
+
+    const deleteProjectMutation = useMutation({
+        mutationFn: ({ id, deleteMetaTemplates }: { id: string; deleteMetaTemplates: boolean }) =>
+            templateProjectService.delete(id, deleteMetaTemplates),
+        onSuccess: (_, { deleteMetaTemplates }) => {
+            queryClient.invalidateQueries({ queryKey: ['template_projects'] });
+            if (deleteMetaTemplates) {
+                queryClient.invalidateQueries({ queryKey: ['templates'] });
+            }
             toast.success('Projeto excluído');
             router.push('/templates');
         },
@@ -71,10 +88,20 @@ export const useTemplateProjectMutations = () => {
         }
     });
 
+    const deleteProject = async (id: string, deleteMetaTemplates: boolean = false) => {
+        return deleteProjectMutation.mutateAsync({ id, deleteMetaTemplates });
+    };
+
+    const updateProjectTitle = async (id: string, title: string) => {
+        return updateProjectMutation.mutateAsync({ id, title });
+    };
+
     return {
         createProject: createProjectMutation.mutateAsync,
-        deleteProject: deleteProjectMutation.mutateAsync,
+        updateProjectTitle,
+        deleteProject,
         isCreating,
+        isUpdating: updateProjectMutation.isPending,
         isDeleting: deleteProjectMutation.isPending
     };
 };

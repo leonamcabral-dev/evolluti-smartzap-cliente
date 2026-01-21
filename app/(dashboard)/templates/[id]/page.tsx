@@ -97,7 +97,8 @@ export default function TemplateProjectDetailsPage() {
     const bulkSubmitMutation = useMutation({
         mutationFn: async (itemIds: string[]) => {
             const itemsToSubmit = (project?.items || []).filter((i: any) => itemIds.includes(i.id));
-            const results = [];
+            const successes: string[] = [];
+            const errors: Array<{ name: string; error: string }> = [];
 
             for (const item of itemsToSubmit) {
                 try {
@@ -110,7 +111,9 @@ export default function TemplateProjectDetailsPage() {
                         content: item.content,
                         header: item.header,
                         footer: item.footer,
-                        buttons: item.buttons
+                        buttons: item.buttons,
+                        // Inclui variáveis de exemplo do item (necessário para Meta API)
+                        exampleVariables: item.sample_variables || []
                     };
 
                     const response = await fetch('/api/templates/create', {
@@ -119,28 +122,58 @@ export default function TemplateProjectDetailsPage() {
                         body: JSON.stringify(payload)
                     });
 
-                    if (!response.ok) throw new Error('Falha na API');
-
                     const result = await response.json();
 
-                    if (result.results && result.results[0] && result.results[0].success) {
-                        results.push(item.id);
-                    } else {
-                        throw new Error(result.results?.[0]?.error || 'Erro desconhecido');
+                    // A API retorna erro com status 400/500 ou sucesso com objeto direto
+                    if (!response.ok) {
+                        // Erro retornado pela API (pode ter details ou error)
+                        const errorMsg = result.details?.[0]?.error || result.error || 'Erro desconhecido';
+                        throw new Error(errorMsg);
                     }
-                } catch (e) {
+
+                    // Sucesso: API retorna objeto com success: true ou o template criado
+                    if (result.success || result.id) {
+                        successes.push(item.id);
+                    } else {
+                        throw new Error('Resposta inesperada da API');
+                    }
+                } catch (e: any) {
                     console.error(`Erro ao enviar item ${item.name}`, e);
+                    errors.push({ name: item.name, error: e.message || 'Erro desconhecido' });
                 }
             }
-            return results;
+            return { successes, errors };
         },
-        onSuccess: (results) => {
+        onSuccess: ({ successes, errors }) => {
             queryClient.invalidateQueries({ queryKey: ['template_projects', id] });
-            toast.success(`${results.length} templates enviados com sucesso para a Meta!`);
             setSelectedItems([]);
+
+            if (errors.length > 0 && successes.length === 0) {
+                // Todos falharam
+                const errorDetails = errors.map(e => `• ${e.name}: ${e.error}`).join('\n');
+                toast.error(`Falha ao enviar ${errors.length} template(s)`, {
+                    description: errorDetails,
+                    duration: 8000
+                });
+            } else if (errors.length > 0) {
+                // Parcialmente sucesso
+                const errorDetails = errors.map(e => `• ${e.name}: ${e.error}`).join('\n');
+                toast.warning(`${successes.length} enviado(s), ${errors.length} falha(s)`, {
+                    description: errorDetails,
+                    duration: 8000
+                });
+            } else if (successes.length > 0) {
+                // Todos sucesso
+                toast.success(`${successes.length} template(s) enviado(s) com sucesso para a Meta!`);
+            } else {
+                // Nenhum item para enviar (edge case)
+                toast.info('Nenhum template selecionado para envio.');
+            }
         },
-        onError: () => {
-            toast.error('Erro ao enviar alguns templates. Verifique e tente novamente.');
+        onError: (error: any) => {
+            toast.error('Erro inesperado ao enviar templates', {
+                description: error.message || 'Verifique e tente novamente.'
+            });
         }
     });
 
@@ -212,7 +245,7 @@ export default function TemplateProjectDetailsPage() {
                     <span>Erro ao carregar projeto ou projeto não encontrado.</span>
                 </div>
                 <button
-                    onClick={() => router.push('/templates')}
+                    onClick={() => router.push('/templates?tab=projects')}
                     className="flex items-center gap-2 text-gray-400 hover:text-white"
                 >
                     <ArrowLeft className="w-4 h-4" />
@@ -228,9 +261,9 @@ export default function TemplateProjectDetailsPage() {
                 <div className="min-w-0">
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={() => router.push('/templates')}
+                            onClick={() => router.push('/templates?tab=projects')}
                             className="p-2 -ml-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors border border-white/10 bg-zinc-950/40"
-                            aria-label="Voltar para templates"
+                            aria-label="Voltar para projetos"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </button>

@@ -339,25 +339,6 @@ export const storage = {
     }
   },
 
-  // AI - Real Backend Connection (no fallbacks)
-  ai: {
-    generateTemplate: async (prompt: string): Promise<string> => {
-      const response = await fetch('/api/ai/generate-template', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || 'Falha ao gerar conteúdo com IA');
-      }
-
-      const data = await response.json();
-      return data.content;
-    }
-  },
-
   settings: {
     get: (): AppSettings => get<AppSettings>(KEYS.SETTINGS, {
       phoneNumberId: '',

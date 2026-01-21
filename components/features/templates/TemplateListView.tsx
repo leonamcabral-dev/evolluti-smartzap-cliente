@@ -19,7 +19,6 @@ import {
   TemplateHoverPreview,
   TemplateDetailsModal,
   DeleteConfirmModal,
-  AiGeneratorModal,
   BulkDeleteModal,
   BulkDeleteDraftsModal,
 } from './list';
@@ -48,17 +47,6 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
   onToggleManualDraft,
   onSelectAllManualDrafts,
   onClearManualDraftSelection,
-  isAiModalOpen,
-  setIsAiModalOpen,
-  aiPrompt,
-  setAiPrompt,
-  aiResult,
-  isAiGenerating,
-  onGenerateAi,
-  newTemplateName,
-  setNewTemplateName,
-  onSaveAiTemplate,
-  isSaving,
   // Bulk props
   isBulkModalOpen,
   setIsBulkModalOpen,
@@ -201,7 +189,6 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
           templateCount={templates.length}
           isSyncing={isSyncing}
           onSync={onSync}
-          onOpenAiModal={() => setIsAiModalOpen(true)}
           onOpenBulkModal={() => setIsBulkModalOpen(true)}
         />
       )}
@@ -279,21 +266,6 @@ export const TemplateListView: React.FC<TemplateListViewProps> = ({
         isDeleting={isDeleting}
         onConfirm={onConfirmDelete}
         onCancel={onCancelDelete}
-      />
-
-      {/* AI Generator Modal */}
-      <AiGeneratorModal
-        isOpen={isAiModalOpen}
-        prompt={aiPrompt}
-        setPrompt={setAiPrompt}
-        result={aiResult}
-        isGenerating={isAiGenerating}
-        onGenerate={onGenerateAi}
-        templateName={newTemplateName}
-        setTemplateName={setNewTemplateName}
-        onSave={onSaveAiTemplate}
-        isSaving={isSaving}
-        onClose={() => setIsAiModalOpen(false)}
       />
 
       {/* Bulk Generation Modal */}

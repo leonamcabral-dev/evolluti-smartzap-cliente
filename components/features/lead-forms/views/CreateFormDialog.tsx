@@ -21,6 +21,7 @@ export interface CreateFormDialogProps {
   createError?: string
   publicBaseUrl: string
   sortedTags: string[]
+  hideTrigger?: boolean
 }
 
 export function CreateFormDialog({
@@ -33,6 +34,7 @@ export function CreateFormDialog({
   createError,
   publicBaseUrl,
   sortedTags,
+  hideTrigger = false,
 }: CreateFormDialogProps) {
   const fields = draft.fields || []
 
@@ -63,9 +65,11 @@ export function CreateFormDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>Criar formulario</Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button>Criar formulario</Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="border-zinc-800 bg-zinc-950 text-zinc-100 sm:max-w-275 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo formulario</DialogTitle>

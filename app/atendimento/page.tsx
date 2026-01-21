@@ -1,15 +1,20 @@
 'use client'
 
+/**
+ * Atendimento Page - Lista de Conversas
+ *
+ * Implementa Geist Design System com visual clean e minimalista.
+ * Filtros por status: Todos, Urgente, IA, Humano
+ */
+
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, RefreshCw, LogOut, ShieldAlert, Loader2 } from 'lucide-react'
+import { Search, RefreshCw, LogOut, ShieldAlert, Loader2, Sparkles, User, AlertCircle, Sun, Moon } from 'lucide-react'
 import { useAttendant } from '@/components/attendant/AttendantProvider'
+import { useTheme } from './layout'
 import {
   useTelegramConversations,
   formatRelativeTime,
-  getStatusEmoji,
-  getStatusLabel,
-  getStatusColor,
   type TelegramConversation,
 } from '@/hooks/telegram'
 
@@ -20,8 +25,17 @@ import {
 type FilterTab = 'all' | 'urgent' | 'ai' | 'human'
 
 // =============================================================================
-// COMPONENTES
+// COMPONENTES - Filter Tabs
 // =============================================================================
+
+// Tab color mapping - Simplified palette: green, red, neutral
+const WHATSAPP_GREEN = '#00a884'
+const TAB_COLORS: Record<FilterTab, { active: string; activeText: string; icon: string }> = {
+  all: { active: 'var(--geist-foreground)', activeText: 'var(--geist-background)', icon: 'var(--geist-foreground-secondary)' },
+  urgent: { active: 'var(--geist-red)', activeText: '#ffffff', icon: 'var(--geist-red)' },
+  ai: { active: 'var(--geist-foreground-secondary)', activeText: 'var(--geist-background)', icon: 'var(--geist-foreground-tertiary)' },
+  human: { active: WHATSAPP_GREEN, activeText: '#ffffff', icon: WHATSAPP_GREEN },
+}
 
 function FilterTabs({
   activeTab,
@@ -32,38 +46,46 @@ function FilterTabs({
   onTabChange: (tab: FilterTab) => void
   counts: Record<FilterTab, number>
 }) {
-  const tabs: { id: FilterTab; label: string; emoji?: string }[] = [
+  const tabs: { id: FilterTab; label: string; icon?: React.ReactNode }[] = [
     { id: 'all', label: 'Todos' },
-    { id: 'urgent', label: 'Urgente', emoji: '🚨' },
-    { id: 'ai', label: 'IA', emoji: '🤖' },
-    { id: 'human', label: 'Humano', emoji: '👤' },
+    { id: 'urgent', label: 'Urgente', icon: <AlertCircle size={14} /> },
+    { id: 'ai', label: 'IA', icon: <Sparkles size={14} /> },
+    { id: 'human', label: 'Humano', icon: <User size={14} /> },
   ]
 
   return (
-    <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
+    <div
+      className="flex gap-1.5 px-4 py-3"
+      style={{ borderBottom: '1px solid var(--geist-border)' }}
+    >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id
         const count = counts[tab.id]
+        const colors = TAB_COLORS[tab.id]
 
         return (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`
-              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all
-              ${isActive
-                ? 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]'
-                : 'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]'
-              }
-            `}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all"
+            style={{
+              backgroundColor: isActive ? colors.active : 'transparent',
+              color: isActive ? colors.activeText : colors.icon,
+              border: isActive ? 'none' : `1px solid var(--geist-border)`,
+            }}
           >
-            {tab.emoji && <span>{tab.emoji}</span>}
+            {tab.icon}
             {tab.label}
             {count > 0 && (
-              <span className={`
-                text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center
-                ${isActive ? 'bg-white/20' : 'bg-[var(--tg-theme-bg-color)]'}
-              `}>
+              <span
+                className="text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center font-semibold"
+                style={{
+                  backgroundColor: isActive
+                    ? 'rgba(0,0,0,0.2)'
+                    : 'var(--geist-component-bg)',
+                  color: isActive ? colors.activeText : 'var(--geist-foreground)',
+                }}
+              >
                 {count}
               </span>
             )}
@@ -74,6 +96,10 @@ function FilterTabs({
   )
 }
 
+// =============================================================================
+// COMPONENTES - Conversation Item
+// =============================================================================
+
 function ConversationItem({
   conversation,
   onClick,
@@ -82,71 +108,119 @@ function ConversationItem({
   onClick: () => void
 }) {
   const isUrgent = conversation.status === 'handoff_requested'
+  const isAI = conversation.status === 'ai_active'
+
+  // Avatar color based on status - simplified palette
+  const getAvatarStyle = () => {
+    if (isUrgent) return { bg: 'var(--geist-red)', color: '#ffffff' }
+    if (isAI) return { bg: 'var(--geist-foreground-secondary)', color: 'var(--geist-background)' }
+    return { bg: WHATSAPP_GREEN, color: '#ffffff' }
+  }
+  const avatarStyle = getAvatarStyle()
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`
-        w-full text-left p-4 border-b border-[var(--tg-theme-secondary-bg-color)]
-        hover:bg-[var(--tg-theme-secondary-bg-color)]/50 transition-colors
-        active:bg-[var(--tg-theme-secondary-bg-color)]
-        ${isUrgent ? 'bg-red-500/5' : ''}
-      `}
+      className="w-full text-left p-4 transition-all"
+      style={{
+        borderBottom: '1px solid var(--geist-border)',
+        backgroundColor: isUrgent ? 'var(--geist-error-light)' : 'transparent',
+      }}
+      onMouseEnter={(e) => {
+        if (!isUrgent) {
+          e.currentTarget.style.backgroundColor = 'var(--geist-component-bg)'
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = isUrgent ? 'var(--geist-error-light)' : 'transparent'
+      }}
     >
       <div className="flex gap-3">
-        {/* Avatar */}
-        <div className={`
-          w-12 h-12 rounded-full flex items-center justify-center text-lg font-medium shrink-0
-          ${isUrgent
-            ? 'bg-red-500/20 text-red-400'
-            : 'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-hint-color)]'
-          }
-        `}>
+        {/* Avatar - colorido por status */}
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 shadow-sm"
+          style={{
+            backgroundColor: avatarStyle.bg,
+            color: avatarStyle.color,
+          }}
+        >
           {conversation.contactAvatar || conversation.contactName.charAt(0).toUpperCase()}
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <span className="font-medium truncate">
+          <div className="flex items-center justify-between gap-2 mb-0.5">
+            <span
+              className="font-semibold truncate"
+              style={{ color: 'var(--geist-foreground)' }}
+            >
               {conversation.contactName}
             </span>
-            <span className="text-xs text-[var(--tg-theme-hint-color)] shrink-0">
+            <span
+              className="text-xs shrink-0"
+              style={{ color: 'var(--geist-foreground-tertiary)' }}
+            >
               {formatRelativeTime(conversation.lastMessageAt)}
             </span>
           </div>
 
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm text-[var(--tg-theme-hint-color)] truncate">
+            <p
+              className="text-sm truncate"
+              style={{ color: 'var(--geist-foreground-secondary)' }}
+            >
               {conversation.isTyping ? (
-                <span className="text-[var(--tg-theme-link-color)]">Digitando...</span>
+                <span style={{ color: 'var(--geist-green)' }}>Digitando...</span>
               ) : (
                 conversation.lastMessage
               )}
             </p>
 
             {conversation.unreadCount > 0 && (
-              <span className={`
-                text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center shrink-0
-                ${isUrgent
-                  ? 'bg-red-500 text-white'
-                  : 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]'
-                }
-              `}>
+              <span
+                className="text-xs px-2 py-0.5 rounded-full min-w-[22px] text-center shrink-0 font-bold"
+                style={{
+                  backgroundColor: isUrgent ? 'var(--geist-red)' : 'var(--geist-blue)',
+                  color: '#ffffff',
+                }}
+              >
                 {conversation.unreadCount}
               </span>
             )}
           </div>
 
-          {/* Status badge + AI Agent name */}
-          <div className="mt-1.5 flex items-center gap-1.5">
-            <span className={`text-xs ${getStatusColor(conversation.status)}`}>
-              {getStatusEmoji(conversation.status)} {getStatusLabel(conversation.status)}
+          {/* Status badge + AI Agent name - simplified palette */}
+          <div className="mt-2 flex items-center gap-2">
+            <span
+              className="text-xs flex items-center gap-1 px-2 py-0.5 rounded-full font-medium"
+              style={{
+                backgroundColor: isUrgent
+                  ? 'var(--geist-error-light)'
+                  : isAI
+                    ? 'var(--geist-component-bg)'
+                    : 'rgba(0, 168, 132, 0.15)',
+                color: isUrgent
+                  ? 'var(--geist-red)'
+                  : isAI
+                    ? 'var(--geist-foreground-secondary)'
+                    : WHATSAPP_GREEN,
+              }}
+            >
+              {isUrgent && <AlertCircle size={12} />}
+              {isAI && <Sparkles size={12} />}
+              {!isUrgent && !isAI && <User size={12} />}
+              {isUrgent ? 'Aguardando humano' : isAI ? 'IA ativa' : 'Atendimento humano'}
             </span>
-            {conversation.aiAgentName && conversation.status === 'ai_active' && (
-              <span className="text-xs text-[var(--tg-theme-hint-color)]">
-                • {conversation.aiAgentName}
+            {conversation.aiAgentName && isAI && (
+              <span
+                className="text-xs px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: 'var(--geist-component-bg)',
+                  color: 'var(--geist-foreground-secondary)'
+                }}
+              >
+                {conversation.aiAgentName}
               </span>
             )}
           </div>
@@ -156,25 +230,29 @@ function ConversationItem({
   )
 }
 
+// =============================================================================
+// COMPONENTES - Empty State
+// =============================================================================
+
 function EmptyState({ filter }: { filter: FilterTab }) {
-  const messages: Record<FilterTab, { emoji: string; title: string; description: string }> = {
+  const messages: Record<FilterTab, { icon: React.ReactNode; title: string; description: string }> = {
     all: {
-      emoji: '💬',
+      icon: <Search size={32} style={{ color: 'var(--geist-foreground-tertiary)' }} />,
       title: 'Nenhuma conversa',
       description: 'Suas conversas aparecerão aqui',
     },
     urgent: {
-      emoji: '✨',
+      icon: <AlertCircle size={32} style={{ color: 'var(--geist-foreground-tertiary)' }} />,
       title: 'Nenhuma urgência',
       description: 'Nenhum cliente pedindo atendente humano',
     },
     ai: {
-      emoji: '🤖',
+      icon: <Sparkles size={32} style={{ color: 'var(--geist-foreground-tertiary)' }} />,
       title: 'Nenhuma IA ativa',
       description: 'Conversas com IA aparecerão aqui',
     },
     human: {
-      emoji: '👤',
+      icon: <User size={32} style={{ color: 'var(--geist-foreground-tertiary)' }} />,
       title: 'Nenhum atendimento',
       description: 'Conversas com humanos aparecerão aqui',
     },
@@ -184,43 +262,77 @@ function EmptyState({ filter }: { filter: FilterTab }) {
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <span className="text-5xl mb-4">{msg.emoji}</span>
-      <h3 className="text-lg font-medium mb-1">{msg.title}</h3>
-      <p className="text-sm text-[var(--tg-theme-hint-color)]">{msg.description}</p>
+      <div
+        className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+        style={{ backgroundColor: 'var(--geist-component-bg)' }}
+      >
+        {msg.icon}
+      </div>
+      <h3
+        className="text-base font-medium mb-1"
+        style={{ color: 'var(--geist-foreground)' }}
+      >
+        {msg.title}
+      </h3>
+      <p
+        className="text-sm"
+        style={{ color: 'var(--geist-foreground-tertiary)' }}
+      >
+        {msg.description}
+      </p>
     </div>
   )
 }
 
 // =============================================================================
-// PÁGINA DE ERRO
+// PÁGINAS DE ESTADO
 // =============================================================================
 
 function ErrorPage({ error }: { error: string }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center">
-      <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
-        <ShieldAlert className="w-8 h-8 text-red-400" />
+    <div
+      className="flex flex-col items-center justify-center min-h-screen px-4 text-center"
+      style={{ backgroundColor: 'var(--geist-background)' }}
+    >
+      <div
+        className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+        style={{ backgroundColor: 'var(--geist-error-light)' }}
+      >
+        <ShieldAlert size={32} style={{ color: 'var(--geist-error)' }} />
       </div>
-      <h1 className="text-xl font-bold mb-2">Acesso Negado</h1>
-      <p className="text-[var(--tg-theme-hint-color)] mb-6 max-w-sm">
+      <h1
+        className="text-xl font-semibold mb-2"
+        style={{ color: 'var(--geist-foreground)' }}
+      >
+        Acesso Negado
+      </h1>
+      <p
+        className="mb-6 max-w-sm"
+        style={{ color: 'var(--geist-foreground-secondary)' }}
+      >
         {error}
       </p>
-      <p className="text-sm text-zinc-500">
+      <p
+        className="text-sm"
+        style={{ color: 'var(--geist-foreground-tertiary)' }}
+      >
         Se você é um atendente, solicite um novo link de acesso ao administrador.
       </p>
     </div>
   )
 }
 
-// =============================================================================
-// PÁGINA DE LOADING
-// =============================================================================
-
 function LoadingPage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <Loader2 className="w-8 h-8 animate-spin text-[var(--tg-theme-button-color)] mb-4" />
-      <p className="text-[var(--tg-theme-hint-color)]">Validando acesso...</p>
+    <div
+      className="flex flex-col items-center justify-center min-h-screen"
+      style={{ backgroundColor: 'var(--geist-background)' }}
+    >
+      <Loader2
+        className="w-8 h-8 animate-spin mb-4"
+        style={{ color: 'var(--geist-foreground-tertiary)' }}
+      />
+      <p style={{ color: 'var(--geist-foreground-secondary)' }}>Validando acesso...</p>
     </div>
   )
 }
@@ -231,7 +343,8 @@ function LoadingPage() {
 
 export default function AtendimentoPage() {
   const router = useRouter()
-  const { isReady, isValidating, isAuthenticated, error, attendant } = useAttendant()
+  const { isReady, isValidating, isAuthenticated, error, attendant, token } = useAttendant()
+  const { resolvedTheme, setTheme } = useTheme()
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -290,31 +403,68 @@ export default function AtendimentoPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div
+      className="flex flex-col h-screen"
+      style={{ backgroundColor: 'var(--geist-background)' }}
+    >
       {/* Header */}
-      <header className="shrink-0 px-4 pt-4 pb-2">
-        <div className="flex items-center justify-between mb-4">
+      <header
+        className="shrink-0 px-4 pt-4 pb-3"
+        style={{ borderBottom: '1px solid var(--geist-border)' }}
+      >
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <h1 className="text-xl font-bold">SmartZap</h1>
-            <p className="text-xs text-[var(--tg-theme-hint-color)]">
-              Olá, {attendant?.name}!
+            <h1
+              className="text-lg font-semibold"
+              style={{ color: 'var(--geist-foreground)' }}
+            >
+              Atendimento
+            </h1>
+            <p
+              className="text-xs"
+              style={{ color: 'var(--geist-foreground-tertiary)' }}
+            >
+              Olá, {attendant?.name}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {/* Theme toggle - cores vibrantes */}
+            <button
+              type="button"
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              className="p-2 rounded-md transition-all hover:scale-110"
+              title={resolvedTheme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--geist-component-bg)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+            >
+              {resolvedTheme === 'dark' ? (
+                <Sun size={18} style={{ color: 'var(--geist-amber)' }} />
+              ) : (
+                <Moon size={18} style={{ color: 'var(--geist-purple)' }} />
+              )}
+            </button>
             {/* Refresh button */}
             <button
               type="button"
               onClick={() => refetch()}
               disabled={isRefetching}
-              className="p-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)] transition-colors disabled:opacity-50"
+              className="p-2 rounded-md transition-colors disabled:opacity-50"
               title="Atualizar"
+              style={{ color: 'var(--geist-foreground-secondary)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--geist-component-bg)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
             >
-              <RefreshCw
-                size={20}
-                className={`text-[var(--tg-theme-hint-color)] ${isRefetching ? 'animate-spin' : ''}`}
-              />
+              <RefreshCw size={18} className={isRefetching ? 'animate-spin' : ''} />
             </button>
-            {/* Logout button (just refreshes page, clears state) */}
+            {/* Logout button */}
             <button
               type="button"
               onClick={() => {
@@ -322,10 +472,17 @@ export default function AtendimentoPage() {
                   window.location.href = '/atendimento'
                 }
               }}
-              className="p-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)] transition-colors"
+              className="p-2 rounded-md transition-colors"
               title="Sair"
+              style={{ color: 'var(--geist-foreground-secondary)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--geist-component-bg)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
             >
-              <LogOut size={20} className="text-[var(--tg-theme-hint-color)]" />
+              <LogOut size={18} />
             </button>
           </div>
         </div>
@@ -333,15 +490,21 @@ export default function AtendimentoPage() {
         {/* Search */}
         <div className="relative">
           <Search
-            size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--tg-theme-hint-color)]"
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2"
+            style={{ color: 'var(--geist-foreground-tertiary)' }}
           />
           <input
             type="text"
             placeholder="Buscar conversa..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-10 pl-10 pr-4 rounded-xl bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] placeholder:text-[var(--tg-theme-hint-color)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]/50"
+            className="w-full h-9 pl-9 pr-4 rounded-md text-sm focus:outline-none"
+            style={{
+              backgroundColor: 'var(--geist-component-bg)',
+              color: 'var(--geist-foreground)',
+              border: '1px solid var(--geist-border)',
+            }}
           />
         </div>
       </header>
@@ -353,14 +516,30 @@ export default function AtendimentoPage() {
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           // Loading skeleton
-          <div className="space-y-4 p-4">
+          <div className="space-y-0">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex gap-3 animate-pulse">
-                <div className="w-12 h-12 rounded-full bg-[var(--tg-theme-secondary-bg-color)]" />
+              <div
+                key={i}
+                className="flex gap-3 p-4 animate-pulse"
+                style={{ borderBottom: '1px solid var(--geist-border)' }}
+              >
+                <div
+                  className="w-10 h-10 rounded-full"
+                  style={{ backgroundColor: 'var(--geist-component-bg)' }}
+                />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-[var(--tg-theme-secondary-bg-color)] rounded w-1/3" />
-                  <div className="h-3 bg-[var(--tg-theme-secondary-bg-color)] rounded w-2/3" />
-                  <div className="h-3 bg-[var(--tg-theme-secondary-bg-color)] rounded w-1/4" />
+                  <div
+                    className="h-4 rounded w-1/3"
+                    style={{ backgroundColor: 'var(--geist-component-bg)' }}
+                  />
+                  <div
+                    className="h-3 rounded w-2/3"
+                    style={{ backgroundColor: 'var(--geist-component-bg)' }}
+                  />
+                  <div
+                    className="h-3 rounded w-1/4"
+                    style={{ backgroundColor: 'var(--geist-component-bg)' }}
+                  />
                 </div>
               </div>
             ))}
@@ -372,30 +551,83 @@ export default function AtendimentoPage() {
             <ConversationItem
               key={conversation.id}
               conversation={conversation}
-              onClick={() => router.push(`/atendimento/conversa/${conversation.id}`)}
+              onClick={() => router.push(`/atendimento/conversa/${conversation.id}${token ? `?token=${token}` : ''}`)}
             />
           ))
         )}
       </div>
 
-      {/* Stats bar */}
-      <div className="shrink-0 px-4 py-3 bg-[var(--tg-theme-secondary-bg-color)]/50 border-t border-[var(--tg-theme-secondary-bg-color)]">
-        <div className="flex items-center justify-around text-center">
-          <div>
-            <p className="text-lg font-bold">{counts.all}</p>
-            <p className="text-xs text-[var(--tg-theme-hint-color)]">Total</p>
+      {/* Stats bar - Geist vibrant colors */}
+      <div
+        className="shrink-0 px-4 py-4"
+        style={{
+          backgroundColor: 'var(--geist-background-secondary)',
+          borderTop: '1px solid var(--geist-border)',
+        }}
+      >
+        <div className="flex items-center justify-around">
+          {/* Total */}
+          <div className="flex flex-col items-center gap-1">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
+              style={{
+                backgroundColor: 'var(--geist-component-bg)',
+                color: 'var(--geist-foreground)',
+              }}
+            >
+              {counts.all}
+            </div>
+            <span className="text-xs" style={{ color: 'var(--geist-foreground-tertiary)' }}>
+              Total
+            </span>
           </div>
-          <div>
-            <p className="text-lg font-bold text-red-400">{counts.urgent}</p>
-            <p className="text-xs text-[var(--tg-theme-hint-color)]">Urgente</p>
+
+          {/* Urgente */}
+          <div className="flex flex-col items-center gap-1">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
+              style={{
+                backgroundColor: counts.urgent > 0 ? 'var(--geist-red)' : 'var(--geist-component-bg)',
+                color: counts.urgent > 0 ? '#ffffff' : 'var(--geist-foreground-tertiary)',
+              }}
+            >
+              {counts.urgent}
+            </div>
+            <span className="text-xs" style={{ color: 'var(--geist-red)' }}>
+              Urgente
+            </span>
           </div>
-          <div>
-            <p className="text-lg font-bold text-blue-400">{counts.ai}</p>
-            <p className="text-xs text-[var(--tg-theme-hint-color)]">IA</p>
+
+          {/* IA */}
+          <div className="flex flex-col items-center gap-1">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
+              style={{
+                backgroundColor: counts.ai > 0 ? 'var(--geist-foreground-secondary)' : 'var(--geist-component-bg)',
+                color: counts.ai > 0 ? 'var(--geist-background)' : 'var(--geist-foreground-tertiary)',
+              }}
+            >
+              {counts.ai}
+            </div>
+            <span className="text-xs" style={{ color: 'var(--geist-foreground-secondary)' }}>
+              IA
+            </span>
           </div>
-          <div>
-            <p className="text-lg font-bold text-green-400">{counts.human}</p>
-            <p className="text-xs text-[var(--tg-theme-hint-color)]">Humano</p>
+
+          {/* Humano */}
+          <div className="flex flex-col items-center gap-1">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
+              style={{
+                backgroundColor: counts.human > 0 ? WHATSAPP_GREEN : 'var(--geist-component-bg)',
+                color: counts.human > 0 ? '#ffffff' : 'var(--geist-foreground-tertiary)',
+              }}
+            >
+              {counts.human}
+            </div>
+            <span className="text-xs" style={{ color: WHATSAPP_GREEN }}>
+              Humano
+            </span>
           </div>
         </div>
       </div>

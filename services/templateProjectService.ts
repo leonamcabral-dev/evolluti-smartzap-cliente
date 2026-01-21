@@ -37,13 +37,26 @@ export const templateProjectService = {
     },
 
     update: async (id: string, updates: Partial<TemplateProject>): Promise<TemplateProject> => {
-        // Not implemented in API yet, but leaving placeholder if needed
-        // For now MVP only needs create/read/delete
-        throw new Error('Update not implemented yet');
+        const response = await fetch(`/api/template-projects/${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updates),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to update project');
+        }
+        return response.json();
     },
 
-    delete: async (id: string): Promise<void> => {
-        const response = await fetch(`/api/template-projects/${id}`, {
+    delete: async (id: string, deleteMetaTemplates: boolean = false): Promise<void> => {
+        const url = deleteMetaTemplates
+            ? `/api/template-projects/${id}?deleteMetaTemplates=true`
+            : `/api/template-projects/${id}`;
+
+        const response = await fetch(url, {
             method: 'DELETE',
         });
 

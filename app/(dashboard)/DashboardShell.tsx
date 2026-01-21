@@ -648,7 +648,7 @@ export function DashboardShell({
     if (isInboxRoute) {
         return (
             <PageLayoutProvider>
-                <div className="min-h-screen text-[var(--ds-text-primary)] flex font-sans selection:bg-primary-500/30">
+                <div className="min-h-screen bg-[var(--ds-bg-base)] text-[var(--ds-text-primary)] flex font-sans selection:bg-primary-500/30">
                     {/* Mobile Overlay */}
                     {isMobileMenuOpen && (
                         <div
@@ -698,7 +698,7 @@ export function DashboardShell({
 
     return (
         <PageLayoutProvider>
-            <div className="min-h-screen text-[var(--ds-text-primary)] flex font-sans selection:bg-primary-500/30">
+            <div className="min-h-screen bg-[var(--ds-bg-base)] text-[var(--ds-text-primary)] flex font-sans selection:bg-primary-500/30">
             {/* Mobile Overlay */}
             {isMobileMenuOpen && (
                 <div

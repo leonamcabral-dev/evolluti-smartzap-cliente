@@ -53,9 +53,9 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         // Nova variante brand com glow emerald
         brand: [
-          "bg-emerald-600 text-white",
+          "bg-emerald-600 text-white border border-emerald-600",
           "[box-shadow:var(--ds-shadow-button-primary)]",
-          "hover:bg-emerald-500 hover:[box-shadow:var(--ds-shadow-button-primary-hover)]",
+          "hover:bg-emerald-500 hover:border-emerald-500 hover:[box-shadow:var(--ds-shadow-button-primary-hover)]",
           "[transition:var(--ds-transition-fast)]",
         ].join(" "),
       },

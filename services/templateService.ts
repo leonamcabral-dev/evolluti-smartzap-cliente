@@ -136,18 +136,6 @@ export const templateService = {
     throw new Error('Templates devem ser criados no Meta Business Manager');
   },
 
-  generateAiContent: async (prompt: string): Promise<string> => {
-    const response = await fetch('/api/ai/generate-template', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
-    });
-
-    if (!response.ok) throw new Error('Failed to generate AI content');
-    const data = await response.json();
-    return data.content;
-  },
-
   generateUtilityTemplates: async (params: GenerateUtilityParams): Promise<GenerateUtilityResponse> => {
     const response = await fetch('/api/ai/generate-utility-templates', {
       method: 'POST',

@@ -16,7 +16,9 @@ import { Slider } from '@/components/ui/slider'
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
@@ -35,7 +37,7 @@ import {
 } from '@/components/ui/collapsible'
 import type { AIAgent, EmbeddingProvider, RerankProvider } from '@/types'
 import type { CreateAIAgentParams, UpdateAIAgentParams } from '@/services/aiAgentService'
-import { AI_AGENT_MODELS, DEFAULT_MODEL_ID } from '@/lib/ai/model'
+import { AI_AGENT_MODELS, DEFAULT_MODEL_ID, getModelsByProvider, MODEL_PROVIDERS, type ModelProvider } from '@/lib/ai/model'
 import { EMBEDDING_PROVIDERS, DEFAULT_EMBEDDING_CONFIG } from '@/lib/ai/embeddings'
 import { RERANK_PROVIDERS } from '@/lib/ai/reranking'
 
@@ -305,18 +307,30 @@ export function AIAgentForm({
                     <SelectValue placeholder="Selecione um modelo" />
                   </SelectTrigger>
                   <SelectContent>
-                    {AI_AGENT_MODELS.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{m.name}</span>
-                          {m.id === DEFAULT_MODEL_ID && (
-                            <span className="rounded bg-primary-500/20 px-1.5 py-0.5 text-[10px] font-medium text-primary-400">
-                              Recomendado
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {(Object.keys(MODEL_PROVIDERS) as ModelProvider[]).map((provider) => {
+                      const providerModels = getModelsByProvider()[provider]
+                      if (!providerModels?.length) return null
+                      return (
+                        <SelectGroup key={provider}>
+                          <SelectLabel className="flex items-center gap-2 text-xs font-semibold text-zinc-400">
+                            <span>{MODEL_PROVIDERS[provider].icon}</span>
+                            <span>{MODEL_PROVIDERS[provider].name}</span>
+                          </SelectLabel>
+                          {providerModels.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>
+                              <div className="flex items-center gap-2">
+                                <span>{m.name}</span>
+                                {m.recommended && (
+                                  <span className="rounded bg-primary-500/20 px-1.5 py-0.5 text-[10px] font-medium text-primary-400">
+                                    Recomendado
+                                  </span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )
+                    })}
                   </SelectContent>
                 </Select>
                 {selectedModel && (

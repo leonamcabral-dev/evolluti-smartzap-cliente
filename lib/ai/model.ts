@@ -32,63 +32,133 @@ export type CallOptions = z.infer<typeof callOptionsSchema>
 
 /**
  * Default model for AI agents
- * gemini-3-flash-preview is the latest generation
  */
-export const DEFAULT_MODEL_ID = 'gemini-3-flash-preview'
+export const DEFAULT_MODEL_ID = 'gemini-2.5-flash'
+
+/**
+ * Model provider type
+ */
+export type ModelProvider = 'google' | 'openai' | 'anthropic'
+
+/**
+ * Model definition
+ */
+export interface AIModel {
+  id: string
+  name: string
+  description: string
+  provider: ModelProvider
+  recommended?: boolean
+}
+
+/**
+ * Provider info for grouping in UI
+ */
+export const MODEL_PROVIDERS: Record<ModelProvider, { name: string; icon: string }> = {
+  google: { name: 'Google (Gemini)', icon: '🔷' },
+  openai: { name: 'OpenAI', icon: '🟢' },
+  anthropic: { name: 'Anthropic', icon: '🟠' },
+}
 
 /**
  * Available models for AI agents
- * Organized by generation (newest first)
+ * Organized by provider, supports Google, OpenAI, and Anthropic
  *
  * Todos os modelos funcionam com RAG próprio (pgvector)
  */
-export const AI_AGENT_MODELS = [
-  // Gemini 3 - Latest generation
-  {
-    id: 'gemini-3-flash-preview',
-    name: 'Gemini 3 Flash',
-    description: 'Mais recente, rápido e inteligente (recomendado)',
-    generation: 3,
-  },
-  {
-    id: 'gemini-3-pro-preview',
-    name: 'Gemini 3 Pro',
-    description: 'Máxima qualidade, melhor raciocínio',
-    generation: 3,
-  },
-  // Gemini 2.5 - Current stable generation
+export const AI_AGENT_MODELS: AIModel[] = [
+  // ==========================================================================
+  // Google (Gemini)
+  // ==========================================================================
   {
     id: 'gemini-2.5-flash',
     name: 'Gemini 2.5 Flash',
-    description: 'Estável, rápido e eficiente',
-    generation: 2.5,
+    description: 'Rápido e eficiente',
+    provider: 'google',
+    recommended: true,
   },
   {
     id: 'gemini-2.5-pro',
     name: 'Gemini 2.5 Pro',
     description: 'Alta qualidade, raciocínio avançado',
-    generation: 2.5,
+    provider: 'google',
   },
-  // Gemini 2.5 Lite - Ultra-fast, low cost
   {
     id: 'gemini-2.5-flash-lite',
     name: 'Gemini 2.5 Flash Lite',
     description: 'Ultra-rápido, baixo custo',
-    generation: 2.5,
+    provider: 'google',
   },
-] as const
+
+  // ==========================================================================
+  // OpenAI
+  // ==========================================================================
+  {
+    id: 'gpt-4o',
+    name: 'GPT-4o',
+    description: 'Mais inteligente da OpenAI',
+    provider: 'openai',
+  },
+  {
+    id: 'gpt-4o-mini',
+    name: 'GPT-4o Mini',
+    description: 'Rápido e econômico',
+    provider: 'openai',
+  },
+  {
+    id: 'gpt-4-turbo',
+    name: 'GPT-4 Turbo',
+    description: 'Alta capacidade, contexto longo',
+    provider: 'openai',
+  },
+
+  // ==========================================================================
+  // Anthropic
+  // ==========================================================================
+  {
+    id: 'claude-sonnet-4-20250514',
+    name: 'Claude Sonnet 4',
+    description: 'Mais recente, excelente raciocínio',
+    provider: 'anthropic',
+  },
+  {
+    id: 'claude-3-5-haiku-20241022',
+    name: 'Claude 3.5 Haiku',
+    description: 'Rápido e econômico',
+    provider: 'anthropic',
+  },
+  {
+    id: 'claude-3-5-sonnet-20241022',
+    name: 'Claude 3.5 Sonnet',
+    description: 'Equilíbrio entre velocidade e qualidade',
+    provider: 'anthropic',
+  },
+]
+
+/**
+ * Get models grouped by provider
+ */
+export function getModelsByProvider(): Record<ModelProvider, AIModel[]> {
+  return AI_AGENT_MODELS.reduce((acc, model) => {
+    if (!acc[model.provider]) {
+      acc[model.provider] = []
+    }
+    acc[model.provider].push(model)
+    return acc
+  }, {} as Record<ModelProvider, AIModel[]>)
+}
+
+/**
+ * Get model info by ID
+ */
+export function getModelInfo(modelId: string): AIModel | undefined {
+  return AI_AGENT_MODELS.find(m => m.id === modelId)
+}
 
 /**
  * @deprecated Use AI_AGENT_MODELS instead
  */
 export const SUPPORT_AGENT_MODELS = AI_AGENT_MODELS
-
-/**
- * Get model info by ID
- */
-export function getModelInfo(modelId: string) {
-  return AI_AGENT_MODELS.find(m => m.id === modelId)
-}
 
 // =============================================================================
 // Response Schema

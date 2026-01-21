@@ -80,12 +80,12 @@ interface TelegramSDKProviderProps {
 
 export function TelegramSDKProvider({ children }: TelegramSDKProviderProps) {
   const [isReady, setIsReady] = useState(false);
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(true); // Sempre dark mode
   const [isLinked, setIsLinked] = useState(MOCK_TELEGRAM_USER.isLinked);
   const [isMock, setIsMock] = useState(true);
 
-  // Theme baseado no modo dark/light
-  const themeParams = isDark ? DARK_THEME : LIGHT_THEME;
+  // Sempre usar dark theme (UI foi desenhada para isso)
+  const themeParams = DARK_THEME;
 
   // Inicialização
   useEffect(() => {
@@ -96,49 +96,68 @@ export function TelegramSDKProvider({ children }: TelegramSDKProviderProps) {
 
     if (tg) {
       setIsMock(false);
+      console.log('📱 Telegram WebApp detected, version:', tg.version, 'platform:', tg.platform);
 
       // Sinalizar que estamos prontos
       tg.ready();
 
-      // Expandir para altura máxima
-      tg.expand();
+      // Função para expandir e tentar fullscreen
+      const setupViewport = () => {
+        // Expandir para altura máxima
+        tg.expand();
 
-      // Tentar fullscreen (Bot API 8.0+)
-      try {
-        if (typeof tg.requestFullscreen === 'function') {
-          tg.requestFullscreen();
+        // Configurar cores do header e background para dark
+        try {
+          tg.setHeaderColor('#18181b'); // zinc-900
+          tg.setBackgroundColor('#18181b'); // zinc-900
+        } catch (e) {
+          console.log('setHeaderColor/setBackgroundColor not supported');
         }
-      } catch (e) {
-        console.log('Fullscreen not supported');
-      }
 
-      // Desabilitar swipe para fechar (Bot API 7.7+)
-      try {
-        if (typeof tg.disableVerticalSwipes === 'function') {
-          tg.disableVerticalSwipes();
+        // Tentar fullscreen (Bot API 8.0+)
+        try {
+          if (typeof tg.requestFullscreen === 'function') {
+            tg.requestFullscreen();
+            console.log('📱 Fullscreen requested');
+          } else {
+            console.log('📱 Fullscreen not available in this version');
+          }
+        } catch (e) {
+          console.log('Fullscreen error:', e);
         }
-      } catch (e) {
-        console.log('disableVerticalSwipes not supported');
-      }
 
-      // Configurar tema
-      setIsDark(tg.colorScheme === 'dark');
+        // Desabilitar swipe para fechar (Bot API 7.7+)
+        try {
+          if (typeof tg.disableVerticalSwipes === 'function') {
+            tg.disableVerticalSwipes();
+          }
+        } catch (e) {
+          console.log('disableVerticalSwipes not supported');
+        }
+      };
 
-      // Aplicar theme params do Telegram se disponível
-      if (tg.themeParams) {
-        const root = document.documentElement;
-        const tp = tg.themeParams;
-        if (tp.bg_color) root.style.setProperty('--tg-theme-bg-color', tp.bg_color);
-        if (tp.text_color) root.style.setProperty('--tg-theme-text-color', tp.text_color);
-        if (tp.hint_color) root.style.setProperty('--tg-theme-hint-color', tp.hint_color);
-        if (tp.link_color) root.style.setProperty('--tg-theme-link-color', tp.link_color);
-        if (tp.button_color) root.style.setProperty('--tg-theme-button-color', tp.button_color);
-        if (tp.button_text_color) root.style.setProperty('--tg-theme-button-text-color', tp.button_text_color);
-        if (tp.secondary_bg_color) root.style.setProperty('--tg-theme-secondary-bg-color', tp.secondary_bg_color);
-      }
+      // Executar imediatamente
+      setupViewport();
+
+      // Tentar novamente após 500ms (às vezes precisa de delay)
+      setTimeout(setupViewport, 500);
+
+      // Forçar dark mode independente do Telegram
+      setIsDark(true);
+
+      // Aplicar SEMPRE o dark theme (ignorar themeParams do Telegram)
+      const root = document.documentElement;
+      root.style.setProperty('--tg-theme-bg-color', DARK_THEME.backgroundColor);
+      root.style.setProperty('--tg-theme-text-color', DARK_THEME.textColor);
+      root.style.setProperty('--tg-theme-hint-color', DARK_THEME.hintColor);
+      root.style.setProperty('--tg-theme-link-color', DARK_THEME.linkColor);
+      root.style.setProperty('--tg-theme-button-color', DARK_THEME.buttonColor);
+      root.style.setProperty('--tg-theme-button-text-color', DARK_THEME.buttonTextColor);
+      root.style.setProperty('--tg-theme-secondary-bg-color', DARK_THEME.secondaryBackgroundColor);
+      root.classList.add('dark');
 
       setIsReady(true);
-      console.log('📱 Telegram Mini App initialized');
+      console.log('📱 Telegram Mini App initialized (forced dark mode)');
       return;
     }
 
@@ -154,25 +173,20 @@ export function TelegramSDKProvider({ children }: TelegramSDKProviderProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  // Aplicar CSS variables do theme (mock mode)
+  // Aplicar CSS variables do theme (mock mode) - sempre dark
   useEffect(() => {
     if (typeof window === 'undefined' || !isMock) return;
 
     const root = document.documentElement;
-    root.style.setProperty('--tg-theme-bg-color', themeParams.backgroundColor);
-    root.style.setProperty('--tg-theme-text-color', themeParams.textColor);
-    root.style.setProperty('--tg-theme-hint-color', themeParams.hintColor);
-    root.style.setProperty('--tg-theme-link-color', themeParams.linkColor);
-    root.style.setProperty('--tg-theme-button-color', themeParams.buttonColor);
-    root.style.setProperty('--tg-theme-button-text-color', themeParams.buttonTextColor);
-    root.style.setProperty('--tg-theme-secondary-bg-color', themeParams.secondaryBackgroundColor);
-
-    if (isDark) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  }, [themeParams, isDark, isMock]);
+    root.style.setProperty('--tg-theme-bg-color', DARK_THEME.backgroundColor);
+    root.style.setProperty('--tg-theme-text-color', DARK_THEME.textColor);
+    root.style.setProperty('--tg-theme-hint-color', DARK_THEME.hintColor);
+    root.style.setProperty('--tg-theme-link-color', DARK_THEME.linkColor);
+    root.style.setProperty('--tg-theme-button-color', DARK_THEME.buttonColor);
+    root.style.setProperty('--tg-theme-button-text-color', DARK_THEME.buttonTextColor);
+    root.style.setProperty('--tg-theme-secondary-bg-color', DARK_THEME.secondaryBackgroundColor);
+    root.classList.add('dark');
+  }, [isMock]);
 
   // Actions
   const showAlert = (message: string) => {

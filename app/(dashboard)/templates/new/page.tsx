@@ -4,8 +4,154 @@ import dynamic from 'next/dynamic';
 import { Badge } from '@/components/ui/badge';
 import { VenetianMask, Megaphone, Wrench } from 'lucide-react';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { AIStrategy } from '@/components/templates/StrategySelectorModal';
+
+// Conteúdo contextual por estratégia - RICO EM CONTEXTO
+const STRATEGY_CONTENT: Record<AIStrategy, {
+    placeholder: string;
+    tip: string;
+    whatToInclude: string[];
+    examples: Array<{
+        title: string;
+        input: string;
+        url?: string; // URL opcional para preencher o campo de link
+        preview: string;
+    }>;
+    resultPreview: {
+        label: string;
+        template: string;
+        button?: string;
+    };
+}> = {
+    marketing: {
+        placeholder: `Imersão em Vibecoding, workshop de sistemas com IA, dias 28 e 29 janeiro às 19h, com Thales Laray que não é programador. Inclui Sistema Gerador de Sistemas e comunidade. Garantia 100% no 1º dia. Link: vibecoding.com.br`,
+        tip: 'Quanto mais detalhes sobre benefícios e diferenciais, melhor a copy gerada.',
+        whatToInclude: [
+            '📦 Nome do produto/evento/serviço',
+            '💰 Preço, desconto ou condição especial',
+            '📅 Datas, prazos ou urgência',
+            '✨ Benefícios e diferenciais únicos',
+            '🔗 Link para o botão (opcional)',
+        ],
+        examples: [
+            {
+                title: '🛍️ Black Friday',
+                input: 'Black Friday da minha loja de roupas, 50% off em tudo, só até domingo. Frete grátis acima de R$150.',
+                url: 'https://minhaloja.com.br',
+                preview: 'Oi {{1}}! 🔥 A Black Friday chegou...',
+            },
+            {
+                title: '🎓 Lançamento de Curso',
+                input: 'Lançamento do meu curso de Excel Avançado, 12 módulos, certificado incluso, de R$497 por R$197 só essa semana.',
+                url: 'https://cursoexcel.com',
+                preview: 'Você pediu e chegou! 🎉 Curso de Excel...',
+            },
+            {
+                title: '💳 Reengajamento',
+                input: 'Clientes que não compram há 30 dias, oferecer cupom de 15% para voltar, válido por 48h',
+                preview: 'Oi {{1}}, sentimos sua falta! 💜...',
+            },
+        ],
+        resultPreview: {
+            label: 'Exemplo de resultado',
+            template: `Oi {{1}}! 🔥
+
+A promoção que você esperava chegou.
+
+*50% OFF* no plano premium - mais de 200 clientes já garantiram o deles essa semana!
+
+⏰ Válido só até meia-noite.
+
+👇 Garanta o seu:`,
+            button: 'Quero meu desconto',
+        },
+    },
+    utility: {
+        placeholder: `Confirmar inscrição na Imersão Vibecoding. Evento dias 28 e 29 de janeiro às 19h. Precisa mostrar data, horário e link de acesso para a plataforma.`,
+        tip: 'Templates UTILITY precisam de dados específicos (números, datas, códigos) para serem aprovados.',
+        whatToInclude: [
+            '📋 Tipo de transação (pedido, agendamento, pagamento)',
+            '🔢 Números específicos (pedido #, valor R$, código)',
+            '📅 Datas e horários exatos',
+            '📍 Local ou link de acesso',
+            '🔄 Ação disponível (reagendar, rastrear, pagar)',
+        ],
+        examples: [
+            {
+                title: '📦 Confirmação de Pedido',
+                input: 'Confirmar pedido de compra na loja. Mostrar número do pedido, valor total, forma de pagamento e previsão de entrega.',
+                url: 'https://minhaloja.com.br/rastreio',
+                preview: 'Pedido #{{1}} confirmado! Total: R$ {{2}}...',
+            },
+            {
+                title: '📅 Lembrete de Consulta',
+                input: 'Lembrar que o paciente tem consulta amanhã. Mostrar data, horário, nome do médico e opção de reagendar.',
+                url: 'https://clinica.com.br/agendamento',
+                preview: 'Sua consulta está confirmada para {{1}}...',
+            },
+            {
+                title: '💰 Vencimento de Fatura',
+                input: 'Lembrar sobre fatura que vence em 3 dias. Mostrar valor e data de vencimento.',
+                url: 'https://empresa.com.br/fatura',
+                preview: 'Sua fatura de R$ {{1}} vence em {{2}}...',
+            },
+        ],
+        resultPreview: {
+            label: 'Exemplo de resultado',
+            template: `Olá {{1}},
+
+Seu pedido #{{2}} foi confirmado.
+Valor: R$ {{3}}
+Previsão de entrega: {{4}}
+
+Acompanhe o status abaixo.`,
+            button: 'Rastrear pedido',
+        },
+    },
+    bypass: {
+        placeholder: `Quero promover a Imersão Vibecoding, workshop de sistemas com IA, dias 28 e 29 janeiro às 19h. Tem garantia de 100%. Link: vibecoding.com.br. Precisa parecer notificação de sistema, não promoção.`,
+        tip: 'O template vai parecer uma notificação neutra. O conteúdo promocional fica escondido nas variáveis {{N}}.',
+        whatToInclude: [
+            '🎯 O que você quer VENDER (promoção, curso, produto)',
+            '💰 Desconto ou benefício a esconder',
+            '📅 Prazo ou urgência (será uma variável)',
+            '🎭 Diga explicitamente: "precisa parecer notificação"',
+            '⚠️ Quanto mais promocional o conteúdo, mais variáveis serão usadas',
+        ],
+        examples: [
+            {
+                title: '🎭 Promoção Camuflada',
+                input: 'Black Friday, 50% de desconto em todos os produtos, só até domingo. Frete grátis. Camuflar como utility.',
+                url: 'https://minhaloja.com.br',
+                preview: 'Há uma atualização sobre {{2}} disponível...',
+            },
+            {
+                title: '🎭 Curso/Evento',
+                input: 'Promover Imersão de Marketing Digital, vagas limitadas, começa segunda. Precisa parecer notificação de sistema.',
+                url: 'https://imersao.com.br',
+                preview: 'Informamos que os detalhes sobre {{2}} foram atualizados...',
+            },
+            {
+                title: '🎭 Carrinho Abandonado',
+                input: 'Lembrar do carrinho abandonado e oferecer 10% de desconto para finalizar. Válido por 24h.',
+                url: 'https://loja.com.br/carrinho',
+                preview: 'Seus itens em {{2}} ainda estão reservados...',
+            },
+        ],
+        resultPreview: {
+            label: 'Como funciona o bypass',
+            template: `Olá {{1}}, informamos que os detalhes sobre {{2}} foram atualizados. O cronograma referente a {{3}} está disponível.
+
+━━━━━━━━━━━━━━━━━━━━
+📤 No envio, as variáveis viram:
+• {{2}} = "a Imersão Vibecoding"
+• {{3}} = "dias 28 e 29 às 19h"
+━━━━━━━━━━━━━━━━━━━━`,
+            button: 'Ver detalhes',
+        },
+    },
+};
 
 // Lazy load StrategySelectorModal (~30-50KB reduction)
 const StrategySelectorModal = dynamic(
@@ -45,6 +191,11 @@ export default function NewTemplateProjectPage() {
     // Results State
     const [generatedTemplates, setGeneratedTemplates] = useState<GeneratedTemplate[]>([]);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    // Conteúdo contextual baseado na estratégia
+    const content = useMemo(() => {
+        return strategy ? STRATEGY_CONTENT[strategy] : null;
+    }, [strategy]);
 
     // Generation Handler
     const handleGenerate = async () => {
@@ -165,12 +316,12 @@ export default function NewTemplateProjectPage() {
                             <textarea
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
-                                placeholder="Ex: Templates para confirmação de agendamento de consulta médica com opção de remarcar..."
+                                placeholder={content?.placeholder || 'Descreva o que você quer criar...'}
                                 className="w-full h-40 p-4 rounded-xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] focus:ring-2 focus:ring-emerald-500/30 outline-none resize-none text-base text-[var(--ds-text-primary)] placeholder:text-[var(--ds-text-muted)]"
                             />
 
                             <div className="flex items-center justify-between mt-4 text-xs text-[var(--ds-text-muted)]">
-                                <span>Dica: Seja específico sobre o objetivo e tom de voz.</span>
+                                <span>💡 {content?.tip || 'Seja específico sobre o objetivo e tom de voz.'}</span>
                                 <span>{prompt.length} caracteres</span>
                             </div>
                         </div>
@@ -225,25 +376,71 @@ export default function NewTemplateProjectPage() {
                         </button>
                     </div>
 
-                    {/* Right: Info */}
-                    <div className="space-y-6">
-                        <div className="rounded-2xl border border-emerald-400 dark:border-emerald-400/20 bg-emerald-100 dark:bg-emerald-500/10 p-6 shadow-[0_12px_30px_rgba(0,0,0,0.35)]">
-                            <h3 className="font-semibold text-emerald-700 dark:text-emerald-200 mb-2">Como funciona?</h3>
-                            <ul className="space-y-3 text-sm text-[var(--ds-text-secondary)]">
-                                <li className="flex items-start gap-2">
-                                    <span className="mt-1 block w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                                    Nossa IA Agent analisa seu pedido e busca as melhores práticas da Meta.
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="mt-1 block w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                                    Gera templates otimizados para aprovação na categoria UTILIDADE.
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="mt-1 block w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                                    O AI Judge verifica as regras e corrige proibições automaticamente.
-                                </li>
+                    {/* Right: Info - Rico em contexto */}
+                    <div className="space-y-4">
+                        {/* O que incluir no prompt */}
+                        <div className="rounded-2xl border border-emerald-400 dark:border-emerald-400/20 bg-emerald-100 dark:bg-emerald-500/10 p-5 shadow-[0_12px_30px_rgba(0,0,0,0.35)]">
+                            <h3 className="font-semibold text-emerald-700 dark:text-emerald-200 mb-3">O que incluir no prompt?</h3>
+                            <ul className="space-y-2 text-sm text-[var(--ds-text-secondary)]">
+                                {content?.whatToInclude.map((item, i) => (
+                                    <li key={i} className="flex items-start gap-2">
+                                        {item}
+                                    </li>
+                                ))}
                             </ul>
                         </div>
+
+                        {/* Exemplos de uso - clicáveis com preview */}
+                        <div className="rounded-2xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] p-5 shadow-[0_12px_30px_rgba(0,0,0,0.35)]">
+                            <h3 className="font-semibold text-[var(--ds-text-primary)] mb-3">Exemplos de uso</h3>
+                            <div className="space-y-3">
+                                {content?.examples.map((example, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => {
+                                            setPrompt(example.input);
+                                            if (example.url) setUniversalUrl(example.url);
+                                        }}
+                                        className="w-full text-left p-3 rounded-xl bg-[var(--ds-bg-elevated)] hover:bg-[var(--ds-bg-hover)] border border-transparent hover:border-emerald-500/30 transition-all group"
+                                    >
+                                        <div className="font-medium text-sm text-[var(--ds-text-primary)] mb-1.5 group-hover:text-emerald-400">
+                                            {example.title}
+                                        </div>
+                                        <div className="text-xs text-[var(--ds-text-muted)] mb-2 line-clamp-2">
+                                            "{example.input}"
+                                        </div>
+                                        {example.url && (
+                                            <div className="text-xs text-blue-400 mb-2 truncate">
+                                                🔗 {example.url}
+                                            </div>
+                                        )}
+                                        <div className="text-xs text-emerald-600 dark:text-emerald-400 font-mono">
+                                            → {example.preview}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-xs text-[var(--ds-text-muted)] mt-3 text-center">
+                                👆 Clique para usar como base
+                            </p>
+                        </div>
+
+                        {/* Preview de resultado */}
+                        {content?.resultPreview && (
+                            <div className="rounded-2xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] p-5 shadow-[0_12px_30px_rgba(0,0,0,0.35)]">
+                                <h3 className="font-semibold text-[var(--ds-text-primary)] mb-3">{content.resultPreview.label}</h3>
+                                <div className="bg-[var(--ds-bg-elevated)] rounded-xl p-4 border border-[var(--ds-border-default)]">
+                                    <div className="text-sm text-[var(--ds-text-secondary)] whitespace-pre-wrap mb-3">
+                                        {content.resultPreview.template}
+                                    </div>
+                                    {content.resultPreview.button && (
+                                        <div className="w-full py-2 px-3 bg-emerald-600/20 text-center text-emerald-400 text-sm rounded-lg font-medium border border-emerald-500/30">
+                                            🔗 {content.resultPreview.button}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

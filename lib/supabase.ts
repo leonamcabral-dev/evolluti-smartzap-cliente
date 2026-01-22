@@ -48,13 +48,19 @@ export function getSupabaseAdmin(): SupabaseClient | null {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = getSupabaseServiceRoleKey()
 
-    // Debugging environment variables availability
+    // Silencia warnings durante build (SSG) - env vars não disponíveis é esperado
+    const isBuildTime = typeof window === 'undefined' && !process.env.VERCEL_ENV
+
     if (!key) {
-        console.warn('[getSupabaseAdmin] Supabase service role key is missing (SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY)')
+        if (!isBuildTime) {
+            console.warn('[getSupabaseAdmin] Supabase service role key is missing (SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY)')
+        }
         return null;
     }
     if (!url) {
-        console.warn('[getSupabaseAdmin] NEXT_PUBLIC_SUPABASE_URL is missing');
+        if (!isBuildTime) {
+            console.warn('[getSupabaseAdmin] NEXT_PUBLIC_SUPABASE_URL is missing');
+        }
         return null;
     }
 

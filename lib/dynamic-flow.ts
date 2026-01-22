@@ -404,7 +404,10 @@ function normalizeAction(input: unknown): DynamicFlowActionV1 | undefined {
 
 function normalizeServices(input: unknown): BookingServiceOption[] {
   if (!Array.isArray(input)) {
-    console.warn('[normalizeServices] Input não é array, usando serviços padrão')
+    // Silencia warning durante build (SSG) - input undefined é esperado
+    if (typeof window !== 'undefined' || process.env.VERCEL_ENV) {
+      console.warn('[normalizeServices] Input não é array, usando serviços padrão')
+    }
     return DEFAULT_BOOKING_CONFIG.services
   }
   

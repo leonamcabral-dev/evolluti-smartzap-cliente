@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import type { InboxConversation, InboxLabel, InboxQuickReply } from '@/types'
 
 export interface InboxInitialData {
@@ -13,9 +13,23 @@ export interface InboxInitialData {
 /**
  * Busca dados iniciais do inbox no servidor (RSC).
  * Carrega conversas, labels e quick replies em paralelo.
+ *
+ * IMPORTANTE: Usa getSupabaseAdmin() pois as tabelas do inbox têm RLS
+ * habilitado para role 'authenticated', mas SmartZap usa autenticação
+ * própria via cookie (não Supabase Auth).
  */
 export async function getInboxInitialData(): Promise<InboxInitialData> {
-  const supabase = await createClient()
+  const supabase = getSupabaseAdmin()
+
+  if (!supabase) {
+    console.error('[getInboxInitialData] Supabase admin client not configured')
+    return {
+      conversations: [],
+      labels: [],
+      quickReplies: [],
+      totalUnread: 0
+    }
+  }
 
   // Buscar tudo em paralelo
   const [conversationsResult, labelsResult, quickRepliesResult] = await Promise.all([

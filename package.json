@@ -33,7 +33,9 @@
     "test:stress:local": "tsx tests/stress/run-stress-test.ts --target=http://localhost:3000/api/webhook",
     "test:stress:prod": "tsx tests/stress/run-stress-test.ts --target=https://smartzap-eta.vercel.app/api/webhook",
     "test:e2e:whatsapp": "vitest run tests/e2e-whatsapp/scenarios",
-    "test:e2e:whatsapp:watch": "vitest watch tests/e2e-whatsapp/scenarios"
+    "test:e2e:whatsapp:watch": "vitest watch tests/e2e-whatsapp/scenarios",
+    "test:ai:api": "vitest run tests/api-ai/scenarios",
+    "test:ai:api:watch": "vitest watch tests/api-ai/scenarios"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.9",

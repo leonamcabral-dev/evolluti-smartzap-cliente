@@ -192,6 +192,56 @@ export async function listSupabaseOrganizations(params: { accessToken: string })
 }
 
 /**
+ * Obtém detalhes de uma organização (incluindo plano).
+ */
+export async function getSupabaseOrganization(params: {
+  accessToken: string;
+  organizationSlug: string;
+}): Promise<
+  | { ok: true; organization: { slug: string; name: string; plan?: string }; response: unknown }
+  | { ok: false; error: string; status?: number; response?: unknown }
+> {
+  const res = await supabaseManagementFetch(
+    `/v1/organizations/${encodeURIComponent(params.organizationSlug)}`,
+    params.accessToken,
+    { method: 'GET' }
+  );
+  if (!res.ok) return { ok: false, error: res.error, status: res.status, response: res.data };
+
+  const data = res.data as Record<string, unknown>;
+  return {
+    ok: true,
+    organization: {
+      slug: typeof data?.slug === 'string' ? data.slug : params.organizationSlug,
+      name: typeof data?.name === 'string' ? data.name : '',
+      plan: typeof data?.plan === 'string' ? data.plan : undefined,
+    },
+    response: res.data,
+  };
+}
+
+/**
+ * Lista todos os projetos de uma organização específica.
+ */
+export async function listOrganizationProjects(params: {
+  accessToken: string;
+  organizationSlug: string;
+}): Promise<
+  | { ok: true; projects: Array<{ ref: string; name: string; status?: string; region?: string }>; response: unknown }
+  | { ok: false; error: string; status?: number; response?: unknown }
+> {
+  // A API de projetos retorna todos os projetos, filtramos por org
+  const allProjects = await listSupabaseProjects({ accessToken: params.accessToken });
+  if (!allProjects.ok) return allProjects;
+
+  const orgProjects = allProjects.projects.filter(
+    (p) => p.organizationSlug === params.organizationSlug
+  );
+
+  return { ok: true, projects: orgProjects, response: allProjects.response };
+}
+
+/**
  * Lista projetos de uma organização Supabase.
  */
 export async function listSupabaseProjects(params: { accessToken: string }): Promise<

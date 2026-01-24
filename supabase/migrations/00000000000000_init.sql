@@ -210,96 +210,6 @@ BEGIN
 END;
 $$;
 
--- =============================================================================
--- Funções RPC para contadores atômicos (inbox)
--- Adicionado: 2025-01-24
--- =============================================================================
-
--- Incrementa contadores de conversa de forma atômica (elimina race condition)
-CREATE FUNCTION public.increment_conversation_counters(
-  p_conversation_id UUID,
-  p_direction TEXT DEFAULT 'inbound',
-  p_message_preview TEXT DEFAULT NULL
-)
-RETURNS public.inbox_conversations
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-DECLARE
-  v_result public.inbox_conversations;
-BEGIN
-  UPDATE inbox_conversations
-  SET
-    total_messages = total_messages + 1,
-    unread_count = CASE
-      WHEN p_direction = 'inbound' THEN unread_count + 1
-      ELSE unread_count
-    END,
-    last_message_at = NOW(),
-    last_message_preview = COALESCE(
-      CASE
-        WHEN LENGTH(p_message_preview) > 100
-        THEN SUBSTRING(p_message_preview, 1, 100) || '...'
-        ELSE p_message_preview
-      END,
-      last_message_preview
-    ),
-    updated_at = NOW()
-  WHERE id = p_conversation_id
-  RETURNING * INTO v_result;
-
-  RETURN v_result;
-END;
-$$;
-
--- Decrementa contador de não lidas (nunca fica negativo)
-CREATE FUNCTION public.decrement_unread_count(
-  p_conversation_id UUID,
-  p_amount INT DEFAULT 1
-)
-RETURNS public.inbox_conversations
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-DECLARE
-  v_result public.inbox_conversations;
-BEGIN
-  UPDATE inbox_conversations
-  SET
-    unread_count = GREATEST(0, unread_count - p_amount),
-    updated_at = NOW()
-  WHERE id = p_conversation_id
-  RETURNING * INTO v_result;
-
-  RETURN v_result;
-END;
-$$;
-
--- Reseta contador de não lidas para zero (marca como lida)
-CREATE FUNCTION public.reset_unread_count(
-  p_conversation_id UUID
-)
-RETURNS public.inbox_conversations
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-DECLARE
-  v_result public.inbox_conversations;
-BEGIN
-  UPDATE inbox_conversations
-  SET
-    unread_count = 0,
-    updated_at = NOW()
-  WHERE id = p_conversation_id
-  RETURNING * INTO v_result;
-
-  RETURN v_result;
-END;
-$$;
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -685,6 +595,97 @@ CREATE TABLE public.inbox_conversations (
     CONSTRAINT chk_inbox_conversations_priority CHECK ((priority = ANY (ARRAY['low'::text, 'normal'::text, 'high'::text, 'urgent'::text]))),
     CONSTRAINT chk_inbox_conversations_status CHECK ((status = ANY (ARRAY['open'::text, 'closed'::text])))
 );
+
+-- =============================================================================
+-- Funções RPC para contadores atômicos (inbox)
+-- IMPORTANTE: Estas funções DEVEM estar após a criação da tabela inbox_conversations
+-- pois retornam o tipo composto public.inbox_conversations
+-- =============================================================================
+
+-- Incrementa contadores de conversa de forma atômica (elimina race condition)
+CREATE FUNCTION public.increment_conversation_counters(
+  p_conversation_id UUID,
+  p_direction TEXT DEFAULT 'inbound',
+  p_message_preview TEXT DEFAULT NULL
+)
+RETURNS public.inbox_conversations
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_result public.inbox_conversations;
+BEGIN
+  UPDATE inbox_conversations
+  SET
+    total_messages = total_messages + 1,
+    unread_count = CASE
+      WHEN p_direction = 'inbound' THEN unread_count + 1
+      ELSE unread_count
+    END,
+    last_message_at = NOW(),
+    last_message_preview = COALESCE(
+      CASE
+        WHEN LENGTH(p_message_preview) > 100
+        THEN SUBSTRING(p_message_preview, 1, 100) || '...'
+        ELSE p_message_preview
+      END,
+      last_message_preview
+    ),
+    updated_at = NOW()
+  WHERE id = p_conversation_id
+  RETURNING * INTO v_result;
+
+  RETURN v_result;
+END;
+$$;
+
+-- Decrementa contador de não lidas (nunca fica negativo)
+CREATE FUNCTION public.decrement_unread_count(
+  p_conversation_id UUID,
+  p_amount INT DEFAULT 1
+)
+RETURNS public.inbox_conversations
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_result public.inbox_conversations;
+BEGIN
+  UPDATE inbox_conversations
+  SET
+    unread_count = GREATEST(0, unread_count - p_amount),
+    updated_at = NOW()
+  WHERE id = p_conversation_id
+  RETURNING * INTO v_result;
+
+  RETURN v_result;
+END;
+$$;
+
+-- Reseta contador de não lidas para zero (marca como lida)
+CREATE FUNCTION public.reset_unread_count(
+  p_conversation_id UUID
+)
+RETURNS public.inbox_conversations
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_result public.inbox_conversations;
+BEGIN
+  UPDATE inbox_conversations
+  SET
+    unread_count = 0,
+    updated_at = NOW()
+  WHERE id = p_conversation_id
+  RETURNING * INTO v_result;
+
+  RETURN v_result;
+END;
+$$;
 
 CREATE TABLE public.inbox_labels (
     id uuid DEFAULT gen_random_uuid() NOT NULL,

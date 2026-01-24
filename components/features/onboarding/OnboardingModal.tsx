@@ -174,9 +174,6 @@ interface OnboardingModalProps {
 }
 
 export function OnboardingModal({ isConnected, onSaveCredentials, onMarkComplete, forceStep, onClose, tutorialMode = false }: OnboardingModalProps) {
-  // DEBUG
-  console.log('[OnboardingModal] Props recebidas:', { tutorialMode, forceStep, onClose: !!onClose });
-
   const {
     progress,
     isLoaded,
@@ -196,7 +193,6 @@ export function OnboardingModal({ isConnected, onSaveCredentials, onMarkComplete
   // ============================================================================
   if (tutorialMode && forceStep) {
     const handleTutorialClose = () => {
-      console.log('[Tutorial] handleTutorialClose chamado');
       onClose?.();
     };
 

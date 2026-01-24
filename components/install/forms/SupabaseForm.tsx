@@ -124,13 +124,11 @@ export function SupabaseForm({ data, onComplete, onBack, showBack }: FormProps) 
     async (preflightResult: PreflightResult) => {
       // Se há uma org sugerida (paga ou free com slot), podemos prosseguir
       if (preflightResult.suggestedOrganizationSlug) {
-        console.log('[SupabaseForm] ✅ Slot disponível, prosseguindo');
         setUiStep('done');
         return;
       }
 
       // Sem slots disponíveis - mostra UI para pausar
-      console.log('[SupabaseForm] 🚫 Sem slots, mostrando needspace');
       setUiStep('needspace');
     },
     []

@@ -141,7 +141,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, recentCampa
           >
             <div className="h-72 w-full">
               {isMounted ? (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <AreaChart data={chartData.slice(-rangeSize)} aria-hidden="true">
                   <defs>
                     <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">

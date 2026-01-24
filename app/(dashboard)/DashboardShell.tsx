@@ -15,17 +15,6 @@ import {
     MessageCircle,
     Sparkles,
     Workflow,
-    HelpCircle,
-    Webhook,
-    Key,
-    BookOpen,
-    CheckSquare,
-    AppWindow,
-    Phone,
-    KeyRound,
-    TestTube,
-    RefreshCw,
-    Send,
 } from 'lucide-react'
 import React from 'react'
 import { HealthStatus } from '@/lib/health-check'
@@ -40,14 +29,6 @@ import { PrefetchLink } from '@/components/ui/PrefetchLink'
 import { AccountAlertBanner } from '@/components/ui/AccountAlertBanner'
 import { DashboardSidebar, type NavItem } from '@/components/layout/DashboardSidebar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { DevModeToggle } from '@/components/ui/dev-mode-toggle'
 import { useDevMode } from '@/components/providers/DevModeProvider'
 import {
@@ -55,6 +36,7 @@ import {
     OnboardingChecklist,
     ChecklistMiniBadge,
     OnboardingOverlay,
+    TutorialsSheet,
     useOnboardingProgress,
     type OnboardingStep,
 } from '@/components/features/onboarding'
@@ -276,6 +258,7 @@ export function DashboardShell({
         phoneNumberId: string
         businessAccountId: string
         accessToken: string
+        metaAppId: string
     }) => {
         // Salva as credenciais no servidor
         await settingsService.save({
@@ -288,9 +271,31 @@ export function DashboardShell({
             testContact: undefined,
         })
 
+        // Salva Meta App ID separadamente (se fornecido)
+        if (credentials.metaAppId.trim()) {
+            try {
+                await settingsService.saveMetaAppConfig({
+                    appId: credentials.metaAppId.trim(),
+                    appSecret: '',
+                })
+            } catch (e) {
+                console.warn('Falha ao salvar Meta App ID:', e)
+            }
+        }
+
         // Revalida o health status
         refetchHealth()
         queryClient.invalidateQueries({ queryKey: ['settings'] })
+        queryClient.invalidateQueries({ queryKey: ['allSettings'] })
+
+        // Sincroniza templates automaticamente em background (não bloqueia o usuário)
+        templateService.sync().then((count) => {
+            console.log(`[Onboarding] Templates sincronizados automaticamente: ${count}`)
+            queryClient.invalidateQueries({ queryKey: ['templates'] })
+        }).catch((err) => {
+            // Falha silenciosa - usuário pode sincronizar manualmente depois
+            console.warn('[Onboarding] Falha ao sincronizar templates:', err)
+        })
     }, [refetchHealth, queryClient])
 
     // Handler para marcar onboarding como completo (chamado quando o usuário finaliza TODO o fluxo)
@@ -316,6 +321,7 @@ export function DashboardShell({
         setShowSuccessBanner(true)
         refetchHealth()
         queryClient.invalidateQueries({ queryKey: ['settings'] })
+        queryClient.invalidateQueries({ queryKey: ['allSettings'] })
         // Marca onboarding como completo automaticamente no novo fluxo
         handleMarkOnboardingComplete()
         // Inicia tour guiado se for a primeira vez
@@ -553,92 +559,10 @@ export function DashboardShell({
                     <div className="flex items-center gap-3">
                         <ChecklistMiniBadge isOnboardingCompletedInDb={isOnboardingCompletedInDb} />
 
-                        {/* Botão de Ajuda */}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button
-                                    className="p-1.5 text-[var(--ds-text-muted)] hover:text-[var(--ds-text-primary)] hover:bg-[var(--ds-bg-subtle)] rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500"
-                                    aria-label="Ajuda"
-                                >
-                                    <HelpCircle size={20} />
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-64">
-                                <DropdownMenuLabel>Tutoriais de Configuração</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    onClick={() => setForceModalStep('requirements')}
-                                    className="cursor-pointer"
-                                >
-                                    <CheckSquare className="mr-2 h-4 w-4" />
-                                    <span className="text-zinc-500 mr-2">1.</span> Requisitos
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => setForceModalStep('create-app')}
-                                    className="cursor-pointer"
-                                >
-                                    <AppWindow className="mr-2 h-4 w-4" />
-                                    <span className="text-zinc-500 mr-2">2.</span> Criar App Meta
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => setForceModalStep('add-whatsapp')}
-                                    className="cursor-pointer"
-                                >
-                                    <Phone className="mr-2 h-4 w-4" />
-                                    <span className="text-zinc-500 mr-2">3.</span> Adicionar WhatsApp
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => setForceModalStep('credentials')}
-                                    className="cursor-pointer"
-                                >
-                                    <KeyRound className="mr-2 h-4 w-4" />
-                                    <span className="text-zinc-500 mr-2">4.</span> Copiar Credenciais
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => setForceModalStep('test-connection')}
-                                    className="cursor-pointer"
-                                >
-                                    <TestTube className="mr-2 h-4 w-4" />
-                                    <span className="text-zinc-500 mr-2">5.</span> Testar Conexão
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => setForceModalStep('configure-webhook')}
-                                    className="cursor-pointer"
-                                >
-                                    <Webhook className="mr-2 h-4 w-4" />
-                                    <span className="text-zinc-500 mr-2">6.</span> Configurar Webhook
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => setForceModalStep('sync-templates')}
-                                    className="cursor-pointer"
-                                >
-                                    <RefreshCw className="mr-2 h-4 w-4" />
-                                    <span className="text-zinc-500 mr-2">7.</span> Sincronizar Templates
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => setForceModalStep('send-first-message')}
-                                    className="cursor-pointer"
-                                >
-                                    <Send className="mr-2 h-4 w-4" />
-                                    <span className="text-zinc-500 mr-2">8.</span> Enviar Mensagem Teste
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => setForceModalStep('create-permanent-token')}
-                                    className="cursor-pointer"
-                                >
-                                    <Key className="mr-2 h-4 w-4" />
-                                    <span className="text-zinc-500 mr-2">9.</span> Token Permanente
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    onClick={() => window.open('https://developers.facebook.com/docs/whatsapp/cloud-api', '_blank')}
-                                    className="cursor-pointer"
-                                >
-                                    <BookOpen className="mr-2 h-4 w-4" />
-                                    Documentação Meta
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        {/* Tutoriais de Configuração */}
+                        <TutorialsSheet
+                            onOpenStep={(step) => setForceModalStep(step)}
+                        />
 
                         <ThemeToggle compact />
                         <DevModeToggle />

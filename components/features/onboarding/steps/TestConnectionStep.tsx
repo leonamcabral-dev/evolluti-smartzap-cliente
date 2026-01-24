@@ -68,6 +68,7 @@ interface TestConnectionStepProps {
     phoneNumberId: string;
     businessAccountId: string;
     accessToken: string;
+    metaAppId?: string;
   };
   onComplete: () => Promise<void>;
   onBack: () => void;

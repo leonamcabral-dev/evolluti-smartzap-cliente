@@ -724,8 +724,8 @@ export async function deleteQuickReply(id: string): Promise<void> {
 // Human Mode Expiration (Auto-timeout)
 // =============================================================================
 
-/** Default timeout for human mode: 24 hours */
-export const DEFAULT_HUMAN_MODE_TIMEOUT_MS = 24 * 60 * 60 * 1000
+/** Default timeout for human mode: 0 = nunca expira (recomendado) */
+export const DEFAULT_HUMAN_MODE_TIMEOUT_MS = 0
 
 /**
  * Check if human mode has expired for a conversation
@@ -739,7 +739,7 @@ export function isHumanModeExpired(expiresAt: string | null | undefined): boolea
 /**
  * Switch conversation to human mode with auto-expiration
  * @param conversationId - The conversation ID
- * @param timeoutMs - Timeout in milliseconds (default: 24 hours)
+ * @param timeoutMs - Timeout in milliseconds (default: 0 = nunca expira)
  */
 export async function switchToHumanMode(
   conversationId: string,

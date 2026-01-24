@@ -77,11 +77,13 @@ interface DirectCredentialsStepProps {
     phoneNumberId: string;
     businessAccountId: string;
     accessToken: string;
+    metaAppId: string;
   };
   onCredentialsChange: (credentials: {
     phoneNumberId: string;
     businessAccountId: string;
     accessToken: string;
+    metaAppId: string;
   }) => void;
   onComplete: () => Promise<void>;
   onBack: () => void;
@@ -235,6 +237,25 @@ export function DirectCredentialsStep({
           />
           <p className="text-xs text-zinc-500">
             💡 Use um System User Token para não expirar
+          </p>
+        </div>
+
+        {/* Meta App ID */}
+        <div className="space-y-2">
+          <Label htmlFor="metaAppId" className="flex items-center gap-2">
+            ID do Aplicativo (Meta App ID)
+          </Label>
+          <Input
+            id="metaAppId"
+            placeholder="123456789012345"
+            value={credentials.metaAppId}
+            onChange={(e) => {
+              onCredentialsChange({ ...credentials, metaAppId: e.target.value });
+            }}
+            className="font-mono"
+          />
+          <p className="text-xs text-zinc-500">
+            Necessário para templates com imagem/vídeo. Encontre em developers.facebook.com › Meus apps › Seu App
           </p>
         </div>
       </div>

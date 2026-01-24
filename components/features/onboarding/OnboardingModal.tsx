@@ -53,6 +53,7 @@ function TutorialWizard({
     phoneNumberId: '',
     businessAccountId: '',
     accessToken: '',
+    metaAppId: '',
   });
 
   const currentStep = TUTORIAL_STEPS[currentIndex];
@@ -181,6 +182,7 @@ interface OnboardingModalProps {
     phoneNumberId: string;
     businessAccountId: string;
     accessToken: string;
+    metaAppId: string;
   }) => Promise<void>;
   /** Chamado quando o usuário finaliza TODO o fluxo de onboarding */
   onMarkComplete: () => Promise<void>;
@@ -253,6 +255,7 @@ export function OnboardingModal({ isConnected, onSaveCredentials, onMarkComplete
     phoneNumberId: '',
     businessAccountId: '',
     accessToken: '',
+    metaAppId: '',
   });
 
   // Usado pelo caminho direto (direct-credentials) - salva e marca como completo

@@ -12,11 +12,13 @@ interface CredentialsStepProps {
     phoneNumberId: string;
     businessAccountId: string;
     accessToken: string;
+    metaAppId: string;
   };
   onCredentialsChange: (credentials: {
     phoneNumberId: string;
     businessAccountId: string;
     accessToken: string;
+    metaAppId: string;
   }) => void;
   onNext: () => void;
   onBack: () => void;
@@ -49,17 +51,19 @@ export function CredentialsStep({
   const phoneId = credentials.phoneNumberId.trim();
   const wabaId = credentials.businessAccountId.trim();
   const token = credentials.accessToken.trim();
+  const appId = credentials.metaAppId.trim();
 
   // Validações de formato
   const phoneIdValid = isValidMetaId(phoneId);
   const wabaIdValid = isValidMetaId(wabaId);
   const tokenValid = isValidTokenFormat(token);
+  const appIdValid = !appId || isValidMetaId(appId); // Opcional, mas se preenchido deve ser válido
 
   // IDs não podem ser iguais - são campos diferentes
   const idsAreEqual = phoneId && wabaId && phoneId === wabaId;
 
-  // Todos os campos preenchidos e com formato válido
-  const isValid = phoneIdValid && wabaIdValid && tokenValid && !idsAreEqual;
+  // Todos os campos obrigatórios preenchidos e com formato válido
+  const isValid = phoneIdValid && wabaIdValid && tokenValid && appIdValid && !idsAreEqual;
 
   return (
     <div className="space-y-6">
@@ -158,6 +162,34 @@ export function CredentialsStep({
           ) : (
             <p className="text-xs text-zinc-500">
               Clique em "Generate" se não tiver um token
+            </p>
+          )}
+        </div>
+
+        {/* Meta App ID */}
+        <div className="space-y-2">
+          <Label htmlFor="metaAppId" className="flex items-center gap-2">
+            ID do Aplicativo (Meta App ID)
+            <HelpCircle className="w-3.5 h-3.5 text-zinc-500" />
+          </Label>
+          <Input
+            id="metaAppId"
+            placeholder="123456789012345"
+            value={credentials.metaAppId}
+            onChange={(e) =>
+              onCredentialsChange({ ...credentials, metaAppId: e.target.value })
+            }
+            className={`font-mono ${appId && !appIdValid ? 'border-red-500 focus:border-red-500' : ''}`}
+          />
+          {appId && !appIdValid ? (
+            <p className="text-xs text-red-400 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              Formato inválido. Deve conter apenas números (15-20 dígitos).
+            </p>
+          ) : (
+            <p className="text-xs text-zinc-500">
+              Necessário para templates com imagem/vídeo. Encontre em{' '}
+              <span className="text-zinc-400">developers.facebook.com › Meus apps › Seu App</span>
             </p>
           )}
         </div>

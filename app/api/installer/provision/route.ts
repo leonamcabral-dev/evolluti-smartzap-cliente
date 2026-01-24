@@ -486,6 +486,9 @@ export async function POST(req: Request) {
         { key: 'UPSTASH_REDIS_REST_TOKEN', value: redis.restToken, targets: [...envTargets] },
         { key: 'MASTER_PASSWORD', value: passwordHash, targets: [...envTargets] },
         { key: 'SETUP_COMPLETE', value: 'true', targets: [...envTargets] },
+        // Tokens para métricas de uso (painel de infraestrutura)
+        { key: 'VERCEL_API_TOKEN', value: vercel.token, targets: [...envTargets] },
+        { key: 'SUPABASE_ACCESS_TOKEN', value: supabase.pat, targets: [...envTargets] },
       ];
 
       await upsertProjectEnvs(vercel.token, vercelProject.projectId, envVars, vercelProject.teamId);

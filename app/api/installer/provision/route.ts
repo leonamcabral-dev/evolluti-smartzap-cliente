@@ -327,7 +327,7 @@ export async function POST(req: Request) {
 
     try {
       // Step 1: Validate Vercel token
-      console.log('[provision] 📍 Step 1: Validate Vercel');
+      console.log('[provision] 📍 Step 1/12: Validate Vercel - INICIANDO');
       const step1 = STEPS[stepIndex];
       await sendEvent({
         type: 'progress',
@@ -337,9 +337,11 @@ export async function POST(req: Request) {
       });
 
       vercelProject = await validateVercelToken(vercel.token);
+      console.log('[provision] ✅ Step 1/12: Validate Vercel - COMPLETO', { projectId: vercelProject.projectId, projectName: vercelProject.projectName });
       stepIndex++;
 
       // Step 2: Validate Supabase PAT
+      console.log('[provision] 📍 Step 2/12: Validate Supabase PAT - INICIANDO');
       const step2 = STEPS[stepIndex];
       await sendEvent({
         type: 'progress',
@@ -352,9 +354,11 @@ export async function POST(req: Request) {
       if (!supabase.pat.startsWith('sbp_')) {
         throw new Error('PAT Supabase inválido (deve começar com sbp_)');
       }
+      console.log('[provision] ✅ Step 2/12: Validate Supabase PAT - COMPLETO');
       stepIndex++;
 
       // Step 3: Create/find Supabase project
+      console.log('[provision] 📍 Step 3/12: Create Supabase Project - INICIANDO');
       const step3 = STEPS[stepIndex];
       await sendEvent({
         type: 'progress',
@@ -371,9 +375,11 @@ export async function POST(req: Request) {
           subtitle: fraction < 0.3 ? 'Escaneando setores ocupados...' : 'Alocando nova unidade de memória...',
         });
       });
+      console.log('[provision] ✅ Step 3/12: Create Supabase Project - COMPLETO', { projectRef: supabaseProject.projectRef, isNew: supabaseProject.isNew });
       stepIndex++;
 
       // Step 4: Wait for project to be ready (sempre aguarda - projeto é sempre novo)
+      console.log('[provision] 📍 Step 4/12: Wait for Supabase Ready - INICIANDO');
       const step4 = STEPS[stepIndex];
       await sendEvent({
         type: 'progress',
@@ -393,7 +399,10 @@ export async function POST(req: Request) {
           pollMs: 4_000,
         });
 
-        if (ready.ok) break;
+        if (ready.ok) {
+          console.log('[provision] ✅ Step 4/12: Supabase project is READY');
+          break;
+        }
 
         const fraction = Math.min((Date.now() - startTime) / timeoutMs, 0.95);
         await sendEvent({
@@ -403,9 +412,11 @@ export async function POST(req: Request) {
           subtitle: `Células se multiplicando... (${Math.round(fraction * 100)}%)`,
         });
       }
+      console.log('[provision] ✅ Step 4/12: Wait for Supabase Ready - COMPLETO', { elapsed: Date.now() - startTime });
       stepIndex++;
 
       // Step 5: Resolve Supabase keys
+      console.log('[provision] 📍 Step 5/12: Resolve Supabase Keys - INICIANDO');
       const step5 = STEPS[stepIndex];
       await sendEvent({
         type: 'progress',
@@ -425,9 +436,11 @@ export async function POST(req: Request) {
 
       anonKey = keysResult.publishableKey;
       serviceRoleKey = keysResult.secretKey;
+      console.log('[provision] ✅ Step 5/12: Got API keys (anon + service_role)');
 
       // Resolve DB URL
       if (supabaseProject.dbPass) {
+        console.log('[provision] 📍 Step 5/12: Resolving DB URL...');
         const poolerResult = await resolveSupabaseDbUrl({
           projectRef: supabaseProject.projectRef,
           accessToken: supabase.pat,
@@ -436,12 +449,19 @@ export async function POST(req: Request) {
         if (poolerResult.ok) {
           const poolerHost = poolerResult.host;
           dbUrl = `postgresql://postgres.${supabaseProject.projectRef}:${encodeURIComponent(supabaseProject.dbPass)}@${poolerHost}:6543/postgres?sslmode=require&pgbouncer=true`;
+          console.log('[provision] ✅ Step 5/12: DB URL resolved', { host: poolerHost });
+        } else {
+          console.warn('[provision] ⚠️ Step 5/12: Failed to resolve DB URL - migrations will be skipped!');
         }
+      } else {
+        console.warn('[provision] ⚠️ Step 5/12: No dbPass available - migrations will be skipped!');
       }
 
+      console.log('[provision] ✅ Step 5/12: Resolve Supabase Keys - COMPLETO', { hasDbUrl: !!dbUrl });
       stepIndex++;
 
       // Step 6: Validate QStash
+      console.log('[provision] 📍 Step 6/12: Validate QStash - INICIANDO');
       const step6 = STEPS[stepIndex];
       await sendEvent({
         type: 'progress',
@@ -451,9 +471,11 @@ export async function POST(req: Request) {
       });
 
       await validateQStashToken(qstash.token);
+      console.log('[provision] ✅ Step 6/12: Validate QStash - COMPLETO');
       stepIndex++;
 
       // Step 7: Validate Redis
+      console.log('[provision] 📍 Step 7/12: Validate Redis - INICIANDO');
       const step7 = STEPS[stepIndex];
       await sendEvent({
         type: 'progress',
@@ -463,9 +485,11 @@ export async function POST(req: Request) {
       });
 
       await validateRedisCredentials(redis.restUrl, redis.restToken);
+      console.log('[provision] ✅ Step 7/12: Validate Redis - COMPLETO');
       stepIndex++;
 
       // Step 8: Setup env vars
+      console.log('[provision] 📍 Step 8/12: Setup Env Vars - INICIANDO');
       const step8 = STEPS[stepIndex];
       await sendEvent({
         type: 'progress',
@@ -491,10 +515,13 @@ export async function POST(req: Request) {
         { key: 'SUPABASE_ACCESS_TOKEN', value: supabase.pat, targets: [...envTargets] },
       ];
 
+      console.log('[provision] 📍 Step 8/12: Upserting', envVars.length, 'env vars...');
       await upsertProjectEnvs(vercel.token, vercelProject.projectId, envVars, vercelProject.teamId);
+      console.log('[provision] ✅ Step 8/12: Env vars upserted');
 
       // Desabilita Deployment Protection para permitir acesso de serviços M2M (QStash)
       // Isso é necessário para que workflows e webhooks funcionem corretamente
+      console.log('[provision] 📍 Step 8/12: Disabling Deployment Protection...');
       const protectionResult = await disableDeploymentProtection(
         vercel.token,
         vercelProject.projectId,
@@ -508,9 +535,12 @@ export async function POST(req: Request) {
         console.log('[provision] ✅ Deployment Protection desabilitado com sucesso');
       }
 
+      console.log('[provision] ✅ Step 8/12: Setup Env Vars - COMPLETO');
       stepIndex++;
 
       // Step 9: Run migrations
+      console.log('[provision] 📍 Step 9/12: Run Migrations - INICIANDO');
+      console.log('[provision] 📍 Step 9/12: dbUrl available?', !!dbUrl);
       const step9 = STEPS[stepIndex];
       await sendEvent({
         type: 'progress',
@@ -520,16 +550,27 @@ export async function POST(req: Request) {
       });
 
       if (dbUrl) {
+        console.log('[provision] 📍 Step 9/12: Checking if schema exists...');
         const schemaExists = await checkSchemaApplied(dbUrl);
+        console.log('[provision] 📍 Step 9/12: schemaExists =', schemaExists);
         if (!schemaExists) {
+          console.log('[provision] 📍 Step 9/12: Running migrations...');
           await runSchemaMigration(dbUrl);
+          console.log('[provision] ✅ Step 9/12: Migrations completed, waiting 5s for schema cache...');
           // Wait for schema cache to update
           await new Promise((r) => setTimeout(r, 5000));
+          console.log('[provision] ✅ Step 9/12: Schema cache wait complete');
+        } else {
+          console.log('[provision] ℹ️ Step 9/12: Schema already exists, skipping migrations');
         }
+      } else {
+        console.error('[provision] ❌ Step 9/12: NO DB URL - MIGRATIONS SKIPPED!');
       }
+      console.log('[provision] ✅ Step 9/12: Run Migrations - COMPLETO');
       stepIndex++;
 
       // Step 10: Bootstrap admin
+      console.log('[provision] 📍 Step 10/12: Bootstrap Admin - INICIANDO');
       const step10 = STEPS[stepIndex];
       await sendEvent({
         type: 'progress',
@@ -544,9 +585,11 @@ export async function POST(req: Request) {
         adminEmail: identity.email,
         adminName: identity.name,
       });
+      console.log('[provision] ✅ Step 10/12: Bootstrap Admin - COMPLETO');
       stepIndex++;
 
       // Step 11: Redeploy
+      console.log('[provision] 📍 Step 11/12: Redeploy - INICIANDO');
       const step11 = STEPS[stepIndex];
       await sendEvent({
         type: 'progress',
@@ -556,6 +599,7 @@ export async function POST(req: Request) {
       });
 
       // Disable installer before redeploy
+      console.log('[provision] 📍 Step 11/12: Disabling installer...');
       await upsertProjectEnvs(
         vercel.token,
         vercelProject.projectId,
@@ -563,10 +607,13 @@ export async function POST(req: Request) {
         vercelProject.teamId
       );
 
+      console.log('[provision] 📍 Step 11/12: Triggering redeploy...');
       const redeploy = await triggerProjectRedeploy(vercel.token, vercelProject.projectId, vercelProject.teamId);
+      console.log('[provision] ✅ Step 11/12: Redeploy triggered', { deploymentId: redeploy.deploymentId });
       stepIndex++;
 
       // Step 12: Wait for deploy
+      console.log('[provision] 📍 Step 12/12: Wait for Deploy - INICIANDO');
       const step12 = STEPS[stepIndex];
       await sendEvent({
         type: 'progress',
@@ -576,6 +623,7 @@ export async function POST(req: Request) {
       });
 
       if (redeploy.deploymentId) {
+        console.log('[provision] 📍 Step 12/12: Waiting for deployment to be ready...');
         await waitForVercelDeploymentReady({
           token: vercel.token,
           deploymentId: redeploy.deploymentId,
@@ -592,17 +640,28 @@ export async function POST(req: Request) {
             });
           },
         });
+        console.log('[provision] ✅ Step 12/12: Deployment is READY');
+      } else {
+        console.warn('[provision] ⚠️ Step 12/12: No deploymentId, skipping wait');
       }
+      console.log('[provision] ✅ Step 12/12: Wait for Deploy - COMPLETO');
 
       // Complete!
+      console.log('[provision] 🎉 PROVISIONING COMPLETE - ALL 12 STEPS DONE!');
       await sendEvent({ type: 'complete' });
     } catch (err) {
       const currentStep = STEPS[stepIndex] || STEPS[0];
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
       const stack = err instanceof Error ? err.stack : undefined;
 
-      console.error(`[provision] Error at step ${currentStep.id}:`, message);
-      if (stack) console.error('[provision] Stack:', stack);
+      console.error(`[provision] ❌❌❌ ERROR at step ${stepIndex + 1}/12 (${currentStep.id}):`, message);
+      console.error('[provision] ❌ Error details:', {
+        stepIndex,
+        stepId: currentStep.id,
+        stepTitle: currentStep.title,
+        errorMessage: message,
+      });
+      if (stack) console.error('[provision] ❌ Stack:', stack);
 
       await sendEvent({
         type: 'error',
@@ -611,6 +670,7 @@ export async function POST(req: Request) {
         returnToStep: currentStep.returnToStep,
       });
     } finally {
+      console.log('[provision] 🔚 Provision stream closing');
       await writer.close();
     }
   })();

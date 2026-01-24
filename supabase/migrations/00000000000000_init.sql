@@ -210,6 +210,23 @@ BEGIN
 END;
 $$;
 
+-- Ensures the first AI agent is always marked as default
+CREATE FUNCTION public.ensure_default_ai_agent()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path TO ''
+AS $$
+BEGIN
+  -- If this is the first agent (no others exist), mark as default
+  IF NOT EXISTS (
+    SELECT 1 FROM public.ai_agents WHERE id != NEW.id
+  ) THEN
+    NEW.is_default := true;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -1320,6 +1337,8 @@ CREATE INDEX workflow_versions_workflow_id_idx ON public.workflow_versions USING
 CREATE UNIQUE INDEX workflow_versions_workflow_version_idx ON public.workflow_versions USING btree (workflow_id, version);
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.ai_agents FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER ensure_default_ai_agent_trigger BEFORE INSERT ON public.ai_agents FOR EACH ROW EXECUTE FUNCTION public.ensure_default_ai_agent();
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.campaigns FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 

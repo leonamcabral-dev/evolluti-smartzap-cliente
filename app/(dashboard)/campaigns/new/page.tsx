@@ -180,6 +180,7 @@ export default function CampaignsNewRealPage() {
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null)
   const [showAllTemplates, setShowAllTemplates] = useState(false)
   const [templateSearch, setTemplateSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('Todos')
   const [scheduleMode, setScheduleMode] = useState('imediato')
   const [isFieldsSheetOpen, setIsFieldsSheetOpen] = useState(false)
   const [scheduleDate, setScheduleDate] = useState(() => new Date().toLocaleDateString('en-CA'))
@@ -393,9 +394,22 @@ export default function CampaignsNewRealPage() {
     : 'Defina um telefone de teste'
 
   const allTemplates = templatesQuery.data || []
-  const templateOptions = allTemplates.filter(
+  const approvedTemplates = allTemplates.filter(
     (template) => String(template.status || '').toUpperCase() === 'APPROVED'
   )
+  const templateOptions = useMemo(() => {
+    if (categoryFilter === 'Todos') return approvedTemplates
+    // Categorias já vêm canonizadas em português: UTILIDADE, MARKETING, AUTENTICACAO
+    const categoryMap: Record<string, string> = {
+      'Utilidade': 'UTILIDADE',
+      'Marketing': 'MARKETING',
+      'Autenticacao': 'AUTENTICACAO',
+    }
+    const targetCategory = categoryMap[categoryFilter] || categoryFilter.toUpperCase()
+    return approvedTemplates.filter(
+      (template) => String(template.category || '').toUpperCase() === targetCategory
+    )
+  }, [approvedTemplates, categoryFilter])
   const customFields = customFieldsQuery.data || []
   const customFieldKeys = customFields.map((field) => field.key)
   const recentTemplates = useMemo(() => templateOptions.slice(0, 3), [templateOptions])
@@ -1561,11 +1575,14 @@ export default function CampaignsNewRealPage() {
                 <div className="relative w-full lg:w-36">
                   <select
                     className="w-full h-11 appearance-none rounded-xl border border-[var(--ds-border-default)] bg-[var(--ds-bg-elevated)] pl-4 pr-10 text-sm text-[var(--ds-text-primary)]"
-                    aria-label="Objetivo da campanha"
+                    aria-label="Filtrar por categoria"
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
                   >
-                    <option>Utilidade</option>
-                    <option>Marketing</option>
-                    <option>Autenticacao</option>
+                    <option value="Todos">Todos</option>
+                    <option value="Utilidade">Utilidade</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Autenticacao">Autenticação</option>
                   </select>
                   <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-lg text-emerald-700 dark:text-emerald-200">
                     ▾

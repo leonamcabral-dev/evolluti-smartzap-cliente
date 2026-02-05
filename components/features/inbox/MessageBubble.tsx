@@ -11,8 +11,8 @@
  * - Typography-first, minimal chrome
  */
 
-import React, { memo } from 'react'
-import { Check, CheckCheck, Clock, AlertCircle, Sparkles, ArrowRightLeft } from 'lucide-react'
+import React, { memo, useMemo } from 'react'
+import { Check, CheckCheck, Clock, AlertCircle, Sparkles, ArrowRightLeft, FileText, Link, Phone, MessageSquare, Copy, FileEdit } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatTime } from '@/lib/date-utils'
 import {
@@ -22,6 +22,138 @@ import {
 } from '@/components/ui/tooltip'
 import type { InboxMessage, DeliveryStatus, Sentiment } from '@/types'
 import { WhatsAppFormattedText } from '@/lib/whatsapp-text-formatter'
+
+// ========== Template Message Detection & Parsing ==========
+
+interface ParsedTemplateMessage {
+  templateName: string
+  header?: {
+    type: 'text' | 'image' | 'video' | 'document' | 'location'
+    content: string
+  }
+  body: string
+  footer?: string
+  buttons: Array<{
+    type: 'url' | 'phone' | 'quick_reply' | 'copy_code' | 'flow' | 'other'
+    text: string
+  }>
+}
+
+/**
+ * Detecta se uma mensagem é um template renderizado pelo renderTemplatePreviewText
+ */
+function isTemplateMessage(content: string): boolean {
+  return content.startsWith('📋 *Template:')
+}
+
+/**
+ * Parseia uma mensagem de template em componentes estruturados
+ */
+function parseTemplateMessage(content: string): ParsedTemplateMessage | null {
+  if (!isTemplateMessage(content)) return null
+
+  const lines = content.split('\n')
+
+  // Linha 1: "📋 *Template: nome_do_template*"
+  const headerLine = lines[0]
+  const nameMatch = headerLine.match(/📋 \*Template: (.+)\*/)
+  if (!nameMatch) return null
+
+  const templateName = nameMatch[1]
+  const result: ParsedTemplateMessage = {
+    templateName,
+    body: '',
+    buttons: [],
+  }
+
+  // Parse restante do conteúdo
+  let currentSection: 'header' | 'body' | 'footer' | 'buttons' = 'header'
+  const bodyLines: string[] = []
+  let i = 1
+
+  // Pular linha vazia após header
+  while (i < lines.length && lines[i].trim() === '') i++
+
+  // Processar linhas
+  while (i < lines.length) {
+    const line = lines[i]
+
+    // Detectar header de mídia
+    if (line === '[🖼️ Imagem]') {
+      result.header = { type: 'image', content: 'Imagem' }
+      i++
+      continue
+    }
+    if (line === '[🎬 Vídeo]') {
+      result.header = { type: 'video', content: 'Vídeo' }
+      i++
+      continue
+    }
+    if (line === '[📄 Documento]') {
+      result.header = { type: 'document', content: 'Documento' }
+      i++
+      continue
+    }
+    if (line.startsWith('[📍 ')) {
+      const locContent = line.match(/\[📍 (.+)\]/)?.[1] || 'Localização'
+      result.header = { type: 'location', content: locContent }
+      i++
+      continue
+    }
+
+    // Detectar header de texto (linha com * no início e fim, mas não é o nome do template)
+    if (currentSection === 'header' && line.startsWith('*') && line.endsWith('*') && !line.includes('Template:')) {
+      result.header = { type: 'text', content: line.slice(1, -1) }
+      i++
+      continue
+    }
+
+    // Detectar separador de botões
+    if (line === '---') {
+      currentSection = 'buttons'
+      i++
+      continue
+    }
+
+    // Detectar botões (após o ---)
+    if (currentSection === 'buttons' && line.startsWith('[')) {
+      const btnMatch = line.match(/\[([🔗📞💬📋📝]?)\s*(.+)\]/)
+      if (btnMatch) {
+        const emoji = btnMatch[1]
+        const text = btnMatch[2]
+        let type: ParsedTemplateMessage['buttons'][0]['type'] = 'other'
+
+        if (emoji === '🔗') type = 'url'
+        else if (emoji === '📞') type = 'phone'
+        else if (emoji === '💬') type = 'quick_reply'
+        else if (emoji === '📋') type = 'copy_code'
+        else if (emoji === '📝') type = 'flow'
+
+        result.buttons.push({ type, text })
+      }
+      i++
+      continue
+    }
+
+    // Detectar footer (linha que começa e termina com _)
+    if (line.startsWith('_') && line.endsWith('_') && line.length > 2) {
+      result.footer = line.slice(1, -1)
+      i++
+      continue
+    }
+
+    // Todo o resto é body
+    if (currentSection !== 'buttons' && line.trim() !== '') {
+      bodyLines.push(line)
+    }
+
+    i++
+  }
+
+  result.body = bodyLines.join('\n').trim()
+
+  return result
+}
 
 export interface MessageBubbleProps {
   message: InboxMessage
@@ -79,6 +211,91 @@ function SentimentIndicator({ sentiment }: { sentiment: Sentiment }) {
   )
 }
 
+// ========== Template Message Renderer ==========
+
+function TemplateMessageContent({ parsed, time, deliveryStatus }: {
+  parsed: ParsedTemplateMessage
+  time: string
+  deliveryStatus?: DeliveryStatus
+}) {
+  const buttonIcon = (type: ParsedTemplateMessage['buttons'][0]['type']) => {
+    switch (type) {
+      case 'url': return <Link className="h-3 w-3" />
+      case 'phone': return <Phone className="h-3 w-3" />
+      case 'quick_reply': return <MessageSquare className="h-3 w-3" />
+      case 'copy_code': return <Copy className="h-3 w-3" />
+      case 'flow': return <FileEdit className="h-3 w-3" />
+      default: return null
+    }
+  }
+
+  return (
+    <div className="flex flex-col w-full">
+      {/* Template Header Badge */}
+      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-emerald-500/30">
+        <FileText className="h-3.5 w-3.5 text-emerald-300/80" />
+        <span className="text-xs font-medium text-emerald-200/90">
+          Template: {parsed.templateName}
+        </span>
+      </div>
+
+      {/* Header (se existir) */}
+      {parsed.header && (
+        <div className="mb-2">
+          {parsed.header.type === 'text' ? (
+            <p className="text-base font-semibold text-white leading-snug">
+              <WhatsAppFormattedText text={parsed.header.content} />
+            </p>
+          ) : (
+            <div className="flex items-center gap-2 text-emerald-200/80 text-sm">
+              {parsed.header.type === 'image' && <span>🖼️</span>}
+              {parsed.header.type === 'video' && <span>🎬</span>}
+              {parsed.header.type === 'document' && <span>📄</span>}
+              {parsed.header.type === 'location' && <span>📍</span>}
+              <span>{parsed.header.content}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Body */}
+      {parsed.body && (
+        <p className="text-base leading-relaxed whitespace-pre-wrap break-words text-white/95">
+          <WhatsAppFormattedText text={parsed.body} />
+        </p>
+      )}
+
+      {/* Footer */}
+      {parsed.footer && (
+        <p className="mt-2 text-sm italic text-emerald-200/70">
+          {parsed.footer}
+        </p>
+      )}
+
+      {/* Buttons */}
+      {parsed.buttons.length > 0 && (
+        <div className="mt-3 pt-2 border-t border-emerald-500/30 space-y-1.5">
+          {parsed.buttons.map((btn, idx) => (
+            <div
+              key={idx}
+              className="flex items-center gap-2 text-sm text-emerald-100/90 bg-emerald-600/40 rounded-lg px-3 py-1.5"
+            >
+              {buttonIcon(btn.type)}
+              <span>{btn.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Time & Status */}
+      <div className="flex items-center justify-end gap-1.5 mt-2">
+        <span className="text-[10px] text-emerald-200/60">{time}</span>
+        {deliveryStatus && <DeliveryStatusIcon status={deliveryStatus} />}
+      </div>
+    </div>
+  )
+}
+
 // Check if message is a handoff/system message
 function isHandoffMessage(content: string): boolean {
   return content.includes('**Transferência') || content.includes('**Motivo:**')
@@ -116,6 +333,14 @@ export const MessageBubble = memo(function MessageBubble({
   const isInbound = direction === 'inbound'
   const isAIResponse = !isInbound && (message.ai_response_id || ai_sources)
   const handoffData = parseHandoffMessage(content)
+
+  // Check if this is a template message
+  const parsedTemplate = useMemo(() => {
+    if (isInbound) return null // Templates são sempre outbound
+    return parseTemplateMessage(content)
+  }, [content, isInbound])
+
+  const isTemplate = parsedTemplate !== null
 
   // Format time
   const time = formatTime(created_at)
@@ -195,39 +420,52 @@ export const MessageBubble = memo(function MessageBubble({
             getBorderRadius(),
             // Inbound (cliente): themed surface color
             isInbound && 'bg-[var(--ds-bg-surface)]/80 text-[var(--ds-text-primary)]',
-            // Outbound humano: verde desaturado, elegante
-            !isInbound && !isAIResponse && 'bg-emerald-600/80 text-white',
-            // AI Response: verde mais escuro para diferenciar
-            isAIResponse && 'bg-emerald-700/70 text-emerald-50'
+            // Template message: fundo verde escuro especial
+            isTemplate && 'bg-emerald-800/90 text-white',
+            // Outbound humano (não template): verde desaturado, elegante
+            !isInbound && !isAIResponse && !isTemplate && 'bg-emerald-600/80 text-white',
+            // AI Response (não template): verde mais escuro para diferenciar
+            isAIResponse && !isTemplate && 'bg-emerald-700/70 text-emerald-50'
           )}
         >
-          {/* Message content with WhatsApp formatting */}
-          <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
-            <WhatsAppFormattedText text={content} />
-          </p>
+          {/* Template message - special rendering */}
+          {isTemplate && parsedTemplate ? (
+            <TemplateMessageContent
+              parsed={parsedTemplate}
+              time={time}
+              deliveryStatus={delivery_status}
+            />
+          ) : (
+            <>
+              {/* Regular message content with WhatsApp formatting */}
+              <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
+                <WhatsAppFormattedText text={content} />
+              </p>
 
-          {/* AI Sources - inline, minimal */}
-          {isAIResponse && ai_sources && ai_sources.length > 0 && isLastInGroup && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button className="inline-flex items-center gap-1 mt-1.5 text-[10px] text-emerald-200/70 hover:text-emerald-100 transition-colors">
-                  <Sparkles className="h-2.5 w-2.5" />
-                  <span>{ai_sources.length} fontes</span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs">
-                <ul className="text-xs space-y-0.5 text-[var(--ds-text-secondary)]">
-                  {ai_sources.map((source, i) => (
-                    <li key={i} className="truncate">• {source.title}</li>
-                  ))}
-                </ul>
-              </TooltipContent>
-            </Tooltip>
+              {/* AI Sources - inline, minimal */}
+              {isAIResponse && ai_sources && ai_sources.length > 0 && isLastInGroup && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="inline-flex items-center gap-1 mt-1.5 text-[10px] text-emerald-200/70 hover:text-emerald-100 transition-colors">
+                      <Sparkles className="h-2.5 w-2.5" />
+                      <span>{ai_sources.length} fontes</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <ul className="text-xs space-y-0.5 text-[var(--ds-text-secondary)]">
+                      {ai_sources.map((source, i) => (
+                        <li key={i} className="truncate">• {source.title}</li>
+                      ))}
+                    </ul>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </>
           )}
         </div>
 
-        {/* Footer - only on last message of group */}
-        {isLastInGroup && (
+        {/* Footer - only on last message of group, and not for templates (they have their own footer) */}
+        {isLastInGroup && !isTemplate && (
           <div className={cn(
             'flex items-center gap-1.5 mt-1 px-1',
             isInbound ? 'flex-row' : 'flex-row-reverse'

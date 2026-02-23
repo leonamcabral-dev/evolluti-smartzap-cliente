@@ -91,6 +91,7 @@ export interface ContactListViewProps {
   onImport: (contacts: ImportContact[]) => Promise<{ inserted: number; updated: number }>;
   isImporting: boolean;
   isDeleting: boolean;
+  onUnsuppress?: (phone: string) => void;
 }
 
 export const ContactListView: React.FC<ContactListViewProps> = ({
@@ -135,7 +136,8 @@ export const ContactListView: React.FC<ContactListViewProps> = ({
   isImporting,
   isDeleting,
   customFields,
-  onRefreshCustomFields
+  onRefreshCustomFields,
+  onUnsuppress
 }) => {
   // Local state
   const [showFilters, setShowFilters] = useState(false);
@@ -358,6 +360,7 @@ export const ContactListView: React.FC<ContactListViewProps> = ({
           onToggleSelectAll={onToggleSelectAll}
           onEditContact={onEditContact}
           onDeleteClick={onDeleteClick}
+          onUnsuppress={onUnsuppress}
         />
 
         {/* Pagination */}

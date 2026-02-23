@@ -58,6 +58,7 @@ export function ContactsClientWrapper({ initialData }: ContactsClientWrapperProp
       onImport={controller.onImport}
       isImporting={controller.isImporting}
       isDeleting={controller.isDeleting}
+      onUnsuppress={controller.onUnsuppress}
     />
   )
 }

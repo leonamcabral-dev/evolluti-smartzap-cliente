@@ -318,6 +318,18 @@ export const useContactsController = (initialData?: ContactsInitialData) => {
     }
   });
 
+  // Unsuppress mutation - remove supressão global de um telefone
+  const unsuppressMutation = useMutation({
+    mutationFn: contactService.unsuppress,
+    onSuccess: () => {
+      invalidateContacts(queryClient);
+      toast.success('Supressão removida! O contato pode receber mensagens novamente.');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erro ao remover supressão');
+    }
+  });
+
   // --- Filtering & Pagination Logic (server-side) ---
   const contacts = contactsQuery.data?.data || [];
   const totalFiltered = contactsQuery.data?.total || 0;
@@ -433,6 +445,10 @@ export const useContactsController = (initialData?: ContactsInitialData) => {
     setDeleteTarget(null);
   }, []);
 
+  const handleUnsuppress = useCallback((phone: string) => {
+    unsuppressMutation.mutate(phone);
+  }, [unsuppressMutation]);
+
   return {
     // Data
     contacts,
@@ -490,6 +506,7 @@ export const useContactsController = (initialData?: ContactsInitialData) => {
     onImportFile: importFromFileMutation.mutateAsync,
     isImporting: importMutation.isPending || importFromFileMutation.isPending,
     isDeleting: deleteMutation.isPending || deleteManyMutation.isPending,
+    onUnsuppress: handleUnsuppress,
 
     // Import report
     importReport,

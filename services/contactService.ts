@@ -318,5 +318,22 @@ export const contactService = {
 
     const { deleted } = await response.json();
     return deleted;
+  },
+
+  /**
+   * Remove a supressão global de um telefone.
+   * Útil para números de teste ou clientes que pediram para voltar a receber.
+   */
+  unsuppress: async (phone: string): Promise<void> => {
+    const response = await fetch(`/api/phone-suppressions/${encodeURIComponent(phone)}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Falha ao remover supressão');
+    }
+
+    logger.info('Phone unsuppressed', { phone });
   }
 };

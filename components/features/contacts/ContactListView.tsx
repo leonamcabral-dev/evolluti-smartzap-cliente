@@ -301,6 +301,7 @@ export const ContactListView: React.FC<ContactListViewProps> = ({
             </Button>
           )}
 
+
           {isSomeSelected && (
             <Button
               variant="outline"
@@ -314,6 +315,7 @@ export const ContactListView: React.FC<ContactListViewProps> = ({
               <span className="text-xs opacity-60">({selectedIds.size})</span>
             </Button>
           )}
+
 
           {isSomeSelected && (
             <Button
@@ -448,6 +450,7 @@ export const ContactListView: React.FC<ContactListViewProps> = ({
         isLoading={isBulkUpdatingTags}
       />
 
+
       <ContactBulkStatusModal
         open={isBulkStatusModalOpen}
         onOpenChange={setIsBulkStatusModalOpen}
@@ -458,6 +461,7 @@ export const ContactListView: React.FC<ContactListViewProps> = ({
         }}
         isLoading={isBulkUpdatingStatus}
       />
+
 
       <ContactImportModal
         isOpen={isImportModalOpen}

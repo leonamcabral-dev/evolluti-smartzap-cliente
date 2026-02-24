@@ -31,6 +31,7 @@ import {
 } from '../types'
 import { isSuppressionActive } from '@/lib/phone-suppressions'
 import { canonicalTemplateCategory } from '@/lib/template-category'
+import { normalizePhoneNumber, validatePhoneNumber } from '@/lib/phone-formatter'
 
 // Gera um ID compatível com ambientes que usam UUID (preferencial) e também funciona como TEXT.
 // - Em Supabase, muitos schemas antigos usam `uuid` como PK.
@@ -543,16 +544,46 @@ export const contactDb = {
                 `phone.ilike.${like}`,
             ]
 
-            // Ajuda quando o usuário digita telefone com espaços, parênteses, hífens etc.
-            // Como geralmente salvamos `phone` em E.164 (com +), buscar só por dígitos funciona bem.
             if (digits && digits !== term) {
                 parts.push(`phone.ilike.%${digits}%`)
             }
 
-            // Dedup e remove vazios
             return Array.from(new Set(parts.map((p) => p.trim()).filter(Boolean))).join(',')
         }
 
+        // Helper para normalizar telefone (remove + se tiver)
+        const normalizePhone = (phone: string) => {
+            const p = String(phone || '').trim()
+            return p.startsWith('+') ? p.slice(1) : p
+        }
+
+        // SEMPRE busca supressões ativas para calcular status efetivo
+        const { data: suppressionRows, error: suppressionError } = await supabase
+            .from('phone_suppressions')
+            .select('phone,is_active,expires_at,reason,source')
+            .eq('is_active', true)
+            .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
+
+        if (suppressionError) throw suppressionError
+
+        // Mapa de supressões indexado por telefone normalizado (sem +)
+        const suppressionMap = new Map<string, { reason: string | null; source: string | null; expiresAt: string | null }>()
+        const suppressedPhonesNormalized = new Set<string>()
+
+        for (const row of suppressionRows || []) {
+            const phone = String(row.phone || '').trim()
+            if (phone) {
+                const normalized = normalizePhone(phone)
+                suppressedPhonesNormalized.add(normalized)
+                suppressionMap.set(normalized, {
+                    reason: row.reason ?? null,
+                    source: row.source ?? null,
+                    expiresAt: row.expires_at ?? null,
+                })
+            }
+        }
+
+        // Monta query base
         let query = supabase
             .from('contacts')
             .select('*', { count: 'exact' })
@@ -561,44 +592,25 @@ export const contactDb = {
             query = query.or(buildContactSearchOr(search))
         }
 
-        if (status && status !== 'ALL' && status !== 'SUPPRESSED') {
-            query = query.eq('status', status)
-        }
-
         if (tag && tag !== 'ALL') {
-            // PostgREST usa 'cs' (contains) que traduz para @> no PostgreSQL
-            query = query.filter('tags', 'cs', JSON.stringify([tag]))
+            if (tag === 'NONE') {
+                query = query.filter('tags', 'eq', '[]')
+            } else {
+                query = query.filter('tags', 'cs', JSON.stringify([tag]))
+            }
         }
 
-        let suppressionMap = new Map<string, { reason: string | null; source: string | null; expiresAt: string | null }>()
+        // Filtro de status com lógica especial para SUPPRESSED
         if (status === 'SUPPRESSED') {
-            // Optimized: Filter active suppressions at database level instead of fetching all
-            const { data: suppressionRows, error: suppressionError } = await supabase
-                .from('phone_suppressions')
-                .select('phone,is_active,expires_at,reason,source')
-                .eq('is_active', true)
-                .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
-
-            if (suppressionError) throw suppressionError
-
-            const suppressedPhones: string[] = []
-            for (const row of suppressionRows || []) {
-                const phone = String(row.phone || '').trim()
-                if (phone) {
-                    suppressedPhones.push(phone)
-                    suppressionMap.set(phone, {
-                        reason: row.reason ?? null,
-                        source: row.source ?? null,
-                        expiresAt: row.expires_at ?? null,
-                    })
-                }
-            }
-
-            if (!suppressedPhones.length) {
+            // Filtra apenas contatos que estão suprimidos
+            if (suppressedPhonesNormalized.size === 0) {
                 return { data: [], total: 0 }
             }
-
-            query = query.in('phone', suppressedPhones)
+            // Gera variações com e sem + para o filtro IN
+            const phoneVariations = Array.from(suppressedPhonesNormalized).flatMap(p => [p, '+' + p])
+            query = query.in('phone', phoneVariations)
+        } else if (status && status !== 'ALL') {
+            query = query.eq('status', status)
         }
 
         const { data, error, count } = await query
@@ -609,24 +621,33 @@ export const contactDb = {
 
         return {
             data: (data || []).map(row => {
-                const suppression = suppressionMap.get(String(row.phone || '').trim()) || null
+                const rowPhone = String(row.phone || '').trim()
+                const normalizedRowPhone = normalizePhone(rowPhone)
+                const suppression = suppressionMap.get(normalizedRowPhone) || null
+                const isSuppressed = suppression !== null
+
+                // Status efetivo: SUPRIMIDO tem prioridade sobre qualquer outro status
+                const dbStatus = (row.status as ContactStatus) || ContactStatus.OPT_IN
+                const effectiveStatus = isSuppressed ? ContactStatus.SUPPRESSED : dbStatus
+
                 return ({
-                id: row.id,
-                name: row.name,
-                phone: row.phone,
-                email: row.email,
-                status: (row.status as ContactStatus) || ContactStatus.OPT_IN,
-                tags: row.tags || [],
-                lastActive: row.updated_at
-                    ? new Date(row.updated_at).toLocaleDateString()
-                    : (row.created_at ? new Date(row.created_at).toLocaleDateString() : '-'),
-                createdAt: row.created_at,
-                updatedAt: row.updated_at,
-                custom_fields: row.custom_fields,
-                suppressionReason: suppression?.reason ?? null,
-                suppressionSource: suppression?.source ?? null,
-                suppressionExpiresAt: suppression?.expiresAt ?? null,
-            })
+                    id: row.id,
+                    name: row.name,
+                    phone: row.phone,
+                    email: row.email,
+                    status: effectiveStatus, // Status visual calculado
+                    originalStatus: dbStatus, // Status real do banco (para referência)
+                    tags: row.tags || [],
+                    lastActive: row.updated_at
+                        ? new Date(row.updated_at).toLocaleDateString()
+                        : (row.created_at ? new Date(row.created_at).toLocaleDateString() : '-'),
+                    createdAt: row.created_at,
+                    updatedAt: row.updated_at,
+                    custom_fields: row.custom_fields,
+                    suppressionReason: suppression?.reason ?? null,
+                    suppressionSource: suppression?.source ?? null,
+                    suppressionExpiresAt: suppression?.expiresAt ?? null,
+                })
             }),
             total: count || 0,
         }
@@ -672,8 +693,12 @@ export const contactDb = {
         }
 
         if (tag && tag !== 'ALL') {
-            // PostgREST usa 'cs' (contains) que traduz para @> no PostgreSQL
-            query = query.filter('tags', 'cs', JSON.stringify([tag]))
+            if (tag === 'NONE') {
+                query = query.filter('tags', 'eq', '[]')
+            } else {
+                // PostgREST usa 'cs' (contains) que traduz para @> no PostgreSQL
+                query = query.filter('tags', 'cs', JSON.stringify([tag]))
+            }
         }
 
         if (status === 'SUPPRESSED') {
@@ -1020,84 +1045,206 @@ export const contactDb = {
         return ids.length
     },
 
+    // Atualiza as tags de vários contatos em lote.
+    // Estratégia: (tags_atuais ∪ tagsToAdd) − tagsToRemove para cada contato.
+    // Usa upsert com linha completa para evitar violação de constraints NOT NULL
+    // em caso de race condition (contato deletado entre SELECT e UPSERT).
+    bulkUpdateTags: async (
+        ids: string[],
+        tagsToAdd: string[],
+        tagsToRemove: string[]
+    ): Promise<number> => {
+        if (ids.length === 0) return 0
+
+        const { data, error } = await supabase
+            .from('contacts')
+            .select('*')
+            .in('id', ids)
+
+        if (error) throw error
+
+        const now = new Date().toISOString()
+        // Calcula novas tags: (atual ∪ tagsToAdd) − tagsToRemove
+        const updates = (data || []).map((c) => ({
+            ...c,
+            tags: [
+                ...new Set(
+                    [...(c.tags ?? []), ...tagsToAdd]
+                        .filter((t) => !tagsToRemove.includes(t))
+                ),
+            ],
+            updated_at: now,
+        }))
+
+        // Todos os contatos podem ter sido deletados entre SELECT e UPSERT (race condition)
+        if (updates.length === 0) return 0
+
+        const { error: upsertError } = await supabase
+            .from('contacts')
+            .upsert(updates, { onConflict: 'id' })
+
+        if (upsertError) throw upsertError
+        return updates.length
+    },
+
+    // Atualiza o status de vários contatos em lote para o mesmo valor.
+    // Estratégia OPT_IN: desativa phone_suppressions para os números atualizados.
+    bulkUpdateStatus: async (
+        ids: string[],
+        status: ContactStatus
+    ): Promise<number> => {
+        if (ids.length === 0) return 0
+
+        const { data, error } = await supabase
+            .from('contacts')
+            .update({ status, updated_at: new Date().toISOString() })
+            .in('id', ids)
+            .select('id, phone')
+
+        if (error) throw error
+
+        const updated = data?.length ?? 0
+
+        // OPT_IN: desativar phone_suppressions para esses números (normaliza para E.164)
+        if (status === ContactStatus.OPT_IN && updated > 0) {
+            const phones = (data || [])
+                .map((c) => c.phone)
+                .filter(Boolean)
+                .map((p) => normalizePhoneNumber(p))
+                .filter((p) => validatePhoneNumber(p))
+            if (phones.length > 0) {
+                const { error: suppressionError } = await supabase
+                    .from('phone_suppressions')
+                    .update({ is_active: false })
+                    .in('phone', phones)
+                if (suppressionError) {
+                    // Falha intencional não-propagada: o UPDATE de contacts já foi commitado
+                    // e não pode ser revertido sem uma transação atômica (RPC). Lançar aqui
+                    // retornaria 500 ao caller mas o status já estaria alterado no DB, o que
+                    // seria mais confuso do que um soft-failure silencioso.
+                    // TODO: mover ambos os UPDATEs para uma RPC Supabase para garantir atomicidade.
+                    console.error('Erro ao desativar phone_suppressions:', suppressionError)
+                }
+            }
+        }
+
+        return updated
+    },
+
     import: async (contacts: Omit<Contact, 'id' | 'lastActive'>[]): Promise<{ inserted: number; updated: number }> => {
         if (contacts.length === 0) return { inserted: 0, updated: 0 }
 
+        // Tamanho máximo de cada lote para evitar estouro de URL/payload no Supabase
+        const BATCH_SIZE = 500
+
+        // Helper: divide array em lotes de N
+        const chunk = <T>(arr: T[], size: number): T[][] =>
+            Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
+                arr.slice(i * size, i * size + size)
+            )
+
         const now = new Date().toISOString()
-        const phones = contacts.map(c => c.phone).filter(Boolean)
 
-        // Buscar contatos existentes pelos telefones
-        const { data: existingContacts } = await supabase
-            .from('contacts')
-            .select('id, phone, name, email, tags, custom_fields')
-            .in('phone', phones)
+        // Normaliza telefone para E.164 usando a mesma lógica do normalizePhoneNumber
+        // Garante que números como "5524999402004" virem "+5524999402004"
+        // Sempre usa só os dígitos para evitar mismatch de deduplicação
+        // ex: "+55 (11) 9999-0001" e "+5511999990001" seriam tratados como contatos diferentes
+        const normalizePhone = (p: string): string => {
+            if (!p || typeof p !== 'string') return ''
+            const digits = p.replace(/\D/g, '')
+            if (!digits) return ''
+            return `+${digits}`
+        }
 
-        const existingByPhone = new Map(
-            (existingContacts || []).map(c => [c.phone, c])
-        )
+        // Normaliza e filtra contatos com telefone inválido (vazio ou só "+")
+        const normalizedContacts = contacts
+            .map(c => ({ ...c, phone: normalizePhone(c.phone) }))
+            .filter(c => c.phone.length > 2) // mínimo "+X" válido tem pelo menos 3 chars
 
-        const toInsert: any[] = []
-        const toUpdate: any[] = []
+        if (normalizedContacts.length === 0) return { inserted: 0, updated: 0 }
 
-        contacts.forEach(contact => {
+        const phones = [...new Set(normalizedContacts.map(c => c.phone))]
+
+        // Busca contatos existentes em lotes para evitar URL muito longa (limite ~8KB)
+        const allExisting: any[] = []
+        for (const batch of chunk(phones, BATCH_SIZE)) {
+            const { data, error } = await supabase
+                .from('contacts')
+                .select('id, phone, name, email, tags, custom_fields')
+                .in('phone', batch)
+            if (error) throw error
+            if (data) allExisting.push(...data)
+        }
+
+        const existingByPhone = new Map(allExisting.map(c => [c.phone, c]))
+
+        const toInsertMap = new Map<string, any>() // chave: phone — dedup automático
+        const toUpdateMap = new Map<string, any>() // chave: id   — dedup automático
+
+        for (const contact of normalizedContacts) {
             const existing = existingByPhone.get(contact.phone)
 
             if (existing) {
-                // Merge: atualiza dados e faz merge das tags
+                // Merge: combina tags e custom_fields, preserva dados existentes
                 const existingTags = Array.isArray(existing.tags) ? existing.tags : []
                 const newTags = Array.isArray(contact.tags) ? contact.tags : []
                 const mergedTags = [...new Set([...existingTags, ...newTags])]
 
-                // Merge custom_fields
-                const existingCustomFields = existing.custom_fields && typeof existing.custom_fields === 'object'
-                    ? existing.custom_fields
-                    : {}
-                const newCustomFields = (contact as any).custom_fields && typeof (contact as any).custom_fields === 'object'
-                    ? (contact as any).custom_fields
-                    : {}
-                const mergedCustomFields = { ...existingCustomFields, ...newCustomFields }
+                const existingCustomFields =
+                    existing.custom_fields && typeof existing.custom_fields === 'object' && !Array.isArray(existing.custom_fields)
+                        ? existing.custom_fields
+                        : {}
+                const newCustomFields =
+                    (contact as any).custom_fields && typeof (contact as any).custom_fields === 'object' && !Array.isArray((contact as any).custom_fields)
+                        ? (contact as any).custom_fields
+                        : {}
 
-                toUpdate.push({
+                toUpdateMap.set(existing.id, {
                     id: existing.id,
                     phone: contact.phone,
                     name: contact.name || existing.name || '',
                     email: (contact as any).email || existing.email || null,
                     tags: mergedTags,
-                    custom_fields: mergedCustomFields,
+                    custom_fields: { ...existingCustomFields, ...newCustomFields },
                     updated_at: now,
                 })
             } else {
-                // Novo contato
-                toInsert.push({
+                // Novo contato — se phone já está no Map, última linha do CSV prevalece
+                toInsertMap.set(contact.phone, {
                     id: generateId(),
                     name: contact.name || '',
                     phone: contact.phone,
                     email: (contact as any).email || null,
                     status: contact.status || ContactStatus.OPT_IN,
-                    tags: contact.tags || [],
+                    tags: [...new Set(contact.tags || [])], // deduplica tags
                     custom_fields: (contact as any).custom_fields || {},
                     created_at: now,
                 })
             }
-        })
-
-        // Inserir novos
-        if (toInsert.length > 0) {
-            const { error: insertError } = await supabase
-                .from('contacts')
-                .insert(toInsert)
-            if (insertError) throw insertError
         }
 
-        // Atualizar existentes
-        if (toUpdate.length > 0) {
-            const { error: updateError } = await supabase
-                .from('contacts')
-                .upsert(toUpdate, { onConflict: 'id' })
-            if (updateError) throw updateError
+        const deduplicatedInsert = Array.from(toInsertMap.values())
+        const deduplicatedUpdate = Array.from(toUpdateMap.values())
+
+        // Insere novos em lotes para não estourar payload do Supabase
+        let insertedCount = 0
+        for (const batch of chunk(deduplicatedInsert, BATCH_SIZE)) {
+            const { error } = await supabase.from('contacts').insert(batch)
+            if (error) throw error
+            insertedCount += batch.length
         }
 
-        return { inserted: toInsert.length, updated: toUpdate.length }
+        // Atualiza existentes em lotes
+        let updatedCount = 0
+        for (const batch of chunk(deduplicatedUpdate, BATCH_SIZE)) {
+            const { error } = await supabase
+                .from('contacts')
+                .upsert(batch, { onConflict: 'id' })
+            if (error) throw error
+            updatedCount += batch.length
+        }
+
+        return { inserted: insertedCount, updated: updatedCount }
     },
 
     getTags: async (): Promise<string[]> => {

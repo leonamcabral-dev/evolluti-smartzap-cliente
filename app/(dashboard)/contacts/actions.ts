@@ -1,8 +1,9 @@
 'use server'
 
 import { cache } from 'react'
-import { createClient } from '@/lib/supabase-server'
-import type { Contact, ContactStatus, CustomFieldDefinition } from '@/types'
+import { getSupabaseAdmin } from '@/lib/supabase'
+import { ContactStatus } from '@/types'
+import type { Contact, CustomFieldDefinition } from '@/types'
 
 const PAGE_SIZE = 50
 
@@ -19,26 +20,30 @@ export interface ContactsInitialData {
   customFields: CustomFieldDefinition[]
 }
 
+// Helper para normalizar telefone (remove + se tiver)
+const normalizePhone = (phone: string) => {
+  const p = String(phone || '').trim()
+  return p.startsWith('+') ? p.slice(1) : p
+}
+
 /**
  * Busca dados iniciais de contatos no servidor (RSC).
  * Usa cache() para deduplicação per-request.
  */
 export const getContactsInitialData = cache(async (): Promise<ContactsInitialData> => {
-  const supabase = await createClient()
+  const supabase = getSupabaseAdmin()
+  if (!supabase) {
+    throw new Error('Supabase não configurado')
+  }
 
   // Buscar tudo em paralelo
-  const [contactsResult, statsResult, tagsResult, customFieldsResult] = await Promise.all([
+  const [contactsResult, tagsResult, customFieldsResult, suppressionsResult] = await Promise.all([
     // Primeira página de contatos
     supabase
       .from('contacts')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(0, PAGE_SIZE - 1),
-
-    // Stats agregados via query direta (conta todos os contatos por status)
-    supabase
-      .from('contacts')
-      .select('status'),
 
     // Tags únicas
     supabase
@@ -51,25 +56,58 @@ export const getContactsInitialData = cache(async (): Promise<ContactsInitialDat
       .from('custom_field_definitions')
       .select('*')
       .eq('entity_type', 'contact')
-      .order('name')
+      .order('name'),
+
+    // Supressões ativas (para calcular effectiveStatus)
+    supabase
+      .from('phone_suppressions')
+      .select('phone,reason,source,expires_at')
+      .eq('is_active', true)
+      .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
   ])
 
-  // Mapear contatos
-  const contacts: Contact[] = (contactsResult.data || []).map(c => ({
-    id: c.id,
-    name: c.name,
-    phone: c.phone,
-    email: c.email,
-    status: c.status as ContactStatus,
-    tags: c.tags || [],
-    lastActive: c.last_active || c.updated_at || c.created_at,
-    createdAt: c.created_at,
-    updatedAt: c.updated_at,
-    custom_fields: c.custom_fields,
-    suppressionReason: c.suppression_reason,
-    suppressionSource: c.suppression_source,
-    suppressionExpiresAt: c.suppression_expires_at
-  }))
+  // Criar mapa de supressões indexado por telefone normalizado
+  const suppressionMap = new Map<string, { reason: string | null; source: string | null; expiresAt: string | null }>()
+  for (const row of suppressionsResult.data || []) {
+    const phone = String(row.phone || '').trim()
+    if (phone) {
+      const normalized = normalizePhone(phone)
+      suppressionMap.set(normalized, {
+        reason: row.reason ?? null,
+        source: row.source ?? null,
+        expiresAt: row.expires_at ?? null,
+      })
+    }
+  }
+
+  // Mapear contatos com effectiveStatus calculado
+  const contacts: Contact[] = (contactsResult.data || []).map(c => {
+    const rowPhone = String(c.phone || '').trim()
+    const normalizedPhone = normalizePhone(rowPhone)
+    const suppression = suppressionMap.get(normalizedPhone) || null
+    const isSuppressed = suppression !== null
+
+    // Status efetivo: SUPRIMIDO tem prioridade sobre qualquer outro status
+    const dbStatus = (c.status as ContactStatus) || ContactStatus.OPT_IN
+    const effectiveStatus = isSuppressed ? ContactStatus.SUPPRESSED : dbStatus
+
+    return {
+      id: c.id,
+      name: c.name,
+      phone: c.phone,
+      email: c.email,
+      status: effectiveStatus, // Status visual calculado
+      originalStatus: dbStatus, // Status real do banco (para referência)
+      tags: c.tags || [],
+      lastActive: c.last_active || c.updated_at || c.created_at,
+      createdAt: c.created_at,
+      updatedAt: c.updated_at,
+      custom_fields: c.custom_fields,
+      suppressionReason: suppression?.reason ?? null,
+      suppressionSource: suppression?.source ?? null,
+      suppressionExpiresAt: suppression?.expiresAt ?? null,
+    }
+  })
 
   // Extrair tags únicas
   const allTags = new Set<string>()
@@ -79,23 +117,32 @@ export const getContactsInitialData = cache(async (): Promise<ContactsInitialDat
     }
   })
 
-  // Calcular stats a partir dos dados retornados (array de { status })
-  const allContactStatuses = statsResult.data || []
+  // Calcular stats com effectiveStatus (supressão tem prioridade)
+  // Precisamos buscar os telefones de TODOS os contatos para calcular corretamente
+  const { data: allContactsPhones } = await supabase
+    .from('contacts')
+    .select('phone,status')
+
   const computedStats = {
-    total: allContactStatuses.length,
+    total: allContactsPhones?.length || 0,
     active: 0,
     optOut: 0,
     suppressed: 0
   }
-  allContactStatuses.forEach((row: { status: string | null }) => {
-    if (row.status === 'OPT_IN' || row.status === 'Opt-in') {
+
+  for (const row of allContactsPhones || []) {
+    const phone = String(row.phone || '').trim()
+    const normalizedPhone = normalizePhone(phone)
+    const isSuppressed = suppressionMap.has(normalizedPhone)
+
+    if (isSuppressed) {
+      computedStats.suppressed++
+    } else if (row.status === 'OPT_IN' || row.status === 'Opt-in') {
       computedStats.active++
     } else if (row.status === 'OPT_OUT' || row.status === 'Opt-out') {
       computedStats.optOut++
-    } else if (row.status === 'SUPPRESSED') {
-      computedStats.suppressed++
     }
-  })
+  }
 
   return {
     contacts,

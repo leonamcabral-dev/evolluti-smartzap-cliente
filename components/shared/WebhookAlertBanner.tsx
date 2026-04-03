@@ -10,7 +10,7 @@ const DISMISS_KEY = 'webhook_alert_dismissed';
 const DISMISS_DURATION = 24 * 60 * 60 * 1000; // 24 horas
 
 /**
- * Compara se duas URLs são equivalentes
+ * Compara se duas URLs são equivalentes (ignora trailing slash e protocolo http/https)
  */
 function urlsMatch(url1: string | null | undefined, url2: string | null | undefined): boolean {
   if (!url1 || !url2) return false;

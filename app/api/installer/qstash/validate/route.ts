@@ -28,19 +28,19 @@ export async function POST(req: NextRequest) {
         const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString())
         if (payload.iss && typeof payload.iss === 'string') {
           qstashBaseUrl = payload.iss.replace(/\/$/, '')
-          // Validar que o URL é do domínio Upstash (previne SSRF via JWT manipulado)
-          const isUpstashDomain = /^https:\/\/[a-z0-9][a-z0-9-]*\.upstash\.io$/i.test(qstashBaseUrl)
-          if (!isUpstashDomain) {
-            qstashBaseUrl = 'https://qstash.upstash.io' // fallback seguro
-          }
         }
       }
     } catch {
       // Se não conseguir decodificar o JWT, tenta com o fallback mesmo assim
     }
 
-    // Validar token fazendo uma requisição de listagem de schedules
-    // Este endpoint aceita GET e retorna 200 se o token for válido
+    // Validar que o URL é do domínio Upstash (previne SSRF via JWT manipulado)
+    const isUpstashDomain = /^https:\/\/[a-z0-9][a-z0-9-]*\.upstash\.io$/i.test(qstashBaseUrl)
+    if (!isUpstashDomain) {
+      qstashBaseUrl = 'https://qstash.upstash.io' // fallback seguro
+    }
+
+    // Valida o token no servidor correto para a região do usuário
     const qstashRes = await fetch(`${qstashBaseUrl}/v2/schedules`, {
       method: 'GET',
       headers: {
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     if (!qstashRes.ok) {
       if (qstashRes.status === 401 || qstashRes.status === 403) {
         return NextResponse.json(
-          { error: 'Token QStash inválido ou sem permissões' },
+          { error: 'Token QStash inválido. Verifique se copiou o QSTASH_TOKEN corretamente (sem aspas).' },
           { status: 401 }
         );
       }

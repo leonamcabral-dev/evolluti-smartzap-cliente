@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { CheckCircle2, XCircle, Loader2, RefreshCw, Info } from 'lucide-react';
-import type { WebhookHierarchy, WebhookSubscription } from './types';
+import type { WebhookHierarchy, WebhookSubscription } from '@/components/features/settings/webhook/types';
 
 interface WebhookStatusIndicatorProps {
   webhookSubscription?: WebhookSubscription | null;
@@ -16,7 +16,7 @@ interface WebhookStatusIndicatorProps {
 function urlsMatch(url1: string | null | undefined, url2: string | null | undefined): boolean {
   if (!url1 || !url2) return false;
 
-  // Normaliza: remove protocolo http/https, trailing slash e lowercase
+  // Normaliza: remove protocolo, trailing slash, lowercase
   const normalize = (u: string) => u.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
   return normalize(url1) === normalize(url2);
 }

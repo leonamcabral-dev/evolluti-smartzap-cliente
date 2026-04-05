@@ -2,11 +2,9 @@
  * Cliente para a API REST do Vercel.
  *
  * Responsabilidades:
- * - Gravar environment variables no projeto (para BYOK via AI Gateway)
- * - Disparar redeploy após mudança de env vars
  * - Consultar status de deployment em andamento
  *
- * Requer as variáveis: VERCEL_API_TOKEN, VERCEL_PROJECT_ID, VERCEL_TEAM_ID
+ * Requer as variáveis: VERCEL_API_TOKEN, VERCEL_TEAM_ID
  */
 
 const VERCEL_API = 'https://api.vercel.com'

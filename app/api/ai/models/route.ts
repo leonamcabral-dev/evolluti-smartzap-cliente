@@ -20,9 +20,12 @@ const EXCLUDED_PATTERNS = [
   'gemma',
   'nano-banana',
   'embedding',
-  // OpenAI: modelos não adequados para agentes de atendimento
-  'gpt-3.5',  // muito antigo
-  'instruct', // completion API, não chat
+  // OpenAI: modelos especializados (não são chat/texto)
+  'gpt-3.5',    // muito antigo
+  'instruct',   // completion API, não chat
+  'transcribe', // STT, não chat
+  'realtime',   // streaming de áudio, não chat
+  'audio',      // entrada/saída de áudio, não chat
 ]
 
 function isExcluded(id: string): boolean {

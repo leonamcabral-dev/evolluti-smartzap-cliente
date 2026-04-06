@@ -367,9 +367,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (!respondCall) {
       throw new Error('Nenhuma resposta gerada pelo agente')
     }
-    structuredResponse = respondCall.input as ChatResponse
-    // Adicionar fontes do RAG se disponíveis
-    if (ragSources.length > 0 && !structuredResponse.sources) {
+    // Validar resposta do modelo (staticToolCalls não passa por Zod como o execute)
+    const parsed = responseSchema.safeParse(respondCall.input)
+    if (!parsed.success) {
+      console.error('[ai-agents/chat] Resposta do agente inválida:', parsed.error)
+      throw new Error('Nenhuma resposta gerada pelo agente')
+    }
+    structuredResponse = parsed.data as ChatResponse
+    // Adicionar fontes do RAG se disponíveis (sempre sobrescreve model sources)
+    if (ragSources.length > 0) {
       structuredResponse = { ...structuredResponse, sources: ragSources }
     }
 

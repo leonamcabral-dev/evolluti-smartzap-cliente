@@ -11,8 +11,8 @@
  * - gemini-3-flash-preview: Última geração (preview)
  */
 
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { generateText } from 'ai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import type { OCRProvider, OCRProcessParams, OCRResult } from '../types'
 
 /** Modelo padrão para OCR - bom custo/benefício */
@@ -41,11 +41,12 @@ export class GeminiOCRProvider implements OCRProvider {
   name = 'gemini'
 
   constructor(
-    private apiKey: string,
-    private modelId: string = DEFAULT_OCR_MODEL
+    private modelId: string = DEFAULT_OCR_MODEL,
+    private apiKey?: string,
   ) {}
 
   async process({ content, mimeType, fileName }: OCRProcessParams): Promise<OCRResult> {
+    if (!this.apiKey) throw new Error('Chave Google não configurada. Acesse Configurações → IA.')
     const google = createGoogleGenerativeAI({ apiKey: this.apiKey })
     const model = google(this.modelId)
 

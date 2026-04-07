@@ -31,6 +31,10 @@ npx playwright test path/to/file.spec.ts # Single E2E file
 npm run test:e2e:whatsapp       # WhatsApp E2E scenarios (Vitest)
 npm run test:ai:api             # AI API tests (Vitest)
 npm run test:all                # Unit + E2E combined
+
+# Stress tests
+npm run test:stress:local       # Webhook stress test contra localhost:3000
+npm run test:stress:prod        # Webhook stress test contra produção
 ```
 
 **Test file conventions**: `*.test.ts` for Vitest, `*.spec.ts` for Playwright (in `tests/e2e/`).
@@ -80,7 +84,7 @@ lib/                    # Business logic & utilities
   builder/              # Workflow executor
   whatsapp/             # WhatsApp API integration
 types.ts                # All TypeScript interfaces & enums
-supabase/migrations/    # SQL migrations (31+ files)
+supabase/migrations/    # SQL migrations (4 ativas + _archive/ com histórico)
 ```
 
 ### Provider Stack (app/providers.tsx)
@@ -99,13 +103,15 @@ ThemeProvider (next-themes, dark default)
 
 Single-tenant: no user accounts. Two auth mechanisms:
 
-- **Dashboard login**: `MASTER_PASSWORD` env var (bcrypt-hashed comparison)
+- **Dashboard login**: `MASTER_PASSWORD` env var — aceita texto puro (novas instalações) ou hash SHA-256 com salt `_smartzap_salt_2026` (retrocompatível). O sistema auto-detecta pelo comprimento (64 chars hex = hash).
 - **API routes**: `Authorization: Bearer <key>` or `X-API-Key: <key>` header
   - `SMARTZAP_API_KEY` — general API access
   - `SMARTZAP_ADMIN_KEY` — admin endpoints (`/api/database/*`, `/api/vercel/*`)
   - Public (no auth): `/api/webhook`, `/api/health`, `/api/flows`
 
 No middleware.ts — auth enforced per-route via `verifyApiKey()` from `lib/auth.ts`.
+
+Sessions (dashboard): múltiplas sessões simultâneas suportadas. Tokens persistidos em `settings.key = 'session_tokens'` como JSON array (máx 50). Cookie httpOnly `smartzap_session`, TTL 7 dias.
 
 ### Supabase Client Types
 
@@ -246,10 +252,11 @@ Required:
 
 Optional:
 - `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`, `WHATSAPP_BUSINESS_ACCOUNT_ID` (fallback if not in DB)
-- `GEMINI_API_KEY` (AI features)
+- `GOOGLE_GENERATIVE_AI_API_KEY` (AI features — canonical name per `@ai-sdk/google`; `GEMINI_API_KEY` accepted as alias)
 - `MEM0_API_KEY` (conversation memory)
+- `SETUP_COMPLETE=true` (produção — pula consulta ao banco em `isSetupComplete()`, evitando queries desnecessárias)
 
-Env var aliases accepted: `SUPABASE_SECRET_KEY` / `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
+Env var aliases accepted: `SUPABASE_SECRET_KEY` / `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`, `GEMINI_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY`
 
 ## Language Conventions
 

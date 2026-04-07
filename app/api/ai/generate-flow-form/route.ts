@@ -4,8 +4,8 @@ import { z } from 'zod'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-import { validateBody, formatZodErrors } from '@/lib/api-validation'
-import { generateJSON, MissingAIKeyError } from '@/lib/ai'
+import { validateBodyOrError } from '@/lib/api-validation'
+import { generateJSON } from '@/lib/ai'
 import { getAiPromptsConfig, isAiRouteEnabled } from '@/lib/ai/ai-center-config'
 import { buildFlowFormPrompt } from '@/lib/ai/prompts/flow-form'
 import {
@@ -104,14 +104,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const validation = validateBody(GenerateFlowFormSchema, body)
-
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: 'Dados inválidos', details: formatZodErrors(validation.error) },
-        { status: 400 }
-      )
-    }
+    const validation = validateBodyOrError(GenerateFlowFormSchema, body)
+    if (!validation.success) return validation.response
 
     const { prompt: userPrompt, titleHint, maxQuestions } = validation.data
 
@@ -193,15 +187,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ form, flowJson, issues })
   } catch (error) {
     console.error('[AI] generate-flow-form error:', error)
-    if (error instanceof MissingAIKeyError) {
-      return NextResponse.json(
-        {
-          error: 'Provedor de IA sem chave configurada.',
-          details: `Configure a chave do provedor ${error.provider} na Central de IA.`,
-        },
-        { status: 400 }
-      )
-    }
     const message = error instanceof Error ? error.message : 'Falha ao gerar flow com IA'
     if (message === 'AI response was not valid JSON') {
       return NextResponse.json(

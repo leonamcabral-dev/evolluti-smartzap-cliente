@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod'
+import { NextResponse } from 'next/server'
 import { CampaignStatus, ContactStatus } from '@/types'
 import { normalizePhoneNumber } from '@/lib/phone-formatter'
 
@@ -44,6 +45,9 @@ const phoneSchemaImport = z.string()
   .refine((val) => val.length >= 8, {
     message: 'Telefone inválido: deve ter pelo menos 8 dígitos',
   })
+  .refine((val) => val.length <= 20, {
+    message: 'Telefone inválido: número muito longo',
+  })
 
 // ============================================================================
 // Contact Schemas
@@ -67,7 +71,7 @@ export const ImportContactsSchema = z.object({
       name: z.string().max(100).optional().default(''),
       phone: phoneSchemaImport,
       email: z.string().email().optional().nullable(),
-      tags: z.array(z.string()).optional(),
+      tags: z.array(z.string()).max(20, 'Máximo de 20 tags por contato').optional(),
       custom_fields: z.record(z.string(), z.any()).optional(),
     })
   )
@@ -306,4 +310,30 @@ export function formatZodErrors(error: z.ZodError): Record<string, string[]> {
   }
 
   return formatted
+}
+
+/**
+ * Valida `data` contra `schema` e, se inválido, retorna diretamente a NextResponse 400.
+ *
+ * Combina `validateBody` + `formatZodErrors` + construção da resposta em uma única chamada,
+ * eliminando o bloco repetitivo de 5 linhas em cada rota.
+ *
+ * Uso:
+ *   const v = validateBodyOrError(SomeSchema, body)
+ *   if (!v.success) return v.response
+ *   const { data } = v
+ */
+export function validateBodyOrError<T>(
+  schema: z.ZodSchema<T>,
+  data: unknown
+): { success: true; data: T } | { success: false; response: NextResponse } {
+  const result = schema.safeParse(data)
+  if (result.success) return { success: true, data: result.data }
+  return {
+    success: false,
+    response: NextResponse.json(
+      { error: 'Dados inválidos', details: formatZodErrors(result.error) },
+      { status: 400 }
+    ),
+  }
 }

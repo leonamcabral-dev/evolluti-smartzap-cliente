@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { validateBody, formatZodErrors } from '@/lib/api-validation'
-import { generateText, generateJSON, MissingAIKeyError } from '@/lib/ai'
+import { validateBodyOrError } from '@/lib/api-validation'
+import { generateText, generateJSON } from '@/lib/ai'
 import { judgeTemplates } from '@/lib/ai/services/ai-judge'
 import { buildUtilityGenerationPrompt } from '@/lib/ai/prompts/utility-generator'
 import { supabase } from '@/lib/supabase'
@@ -362,13 +362,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('[API ROUTE] Received Body:', JSON.stringify(body, null, 2));
 
-    const validation = validateBody(GenerateUtilityTemplatesSchema, body)
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: 'Dados inválidos', details: formatZodErrors(validation.error) },
-        { status: 400 }
-      )
-    }
+    const validation = validateBodyOrError(GenerateUtilityTemplatesSchema, body)
+    if (!validation.success) return validation.response
 
     const { prompt: userPrompt, quantity, language, strategy } = validation.data
 
@@ -378,7 +373,7 @@ export async function POST(request: NextRequest) {
       const settingsResult = await supabase.admin
         ?.from('settings')
         .select('value')
-        .eq('key', 'gemini_api_key')
+        .eq('key', 'google_api_key')
         .single()
       apiKey = settingsResult?.data?.value || process.env.GOOGLE_GENERATIVE_AI_API_KEY || null
     } catch {
@@ -579,15 +574,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('AI Error:', error)
-    if (error instanceof MissingAIKeyError) {
-      return NextResponse.json(
-        {
-          error: 'Provedor de IA sem chave configurada.',
-          details: `Configure a chave do provedor ${error.provider} na Central de IA.`,
-        },
-        { status: 400 }
-      )
-    }
     return NextResponse.json(
       { error: 'Falha ao gerar templates com IA' },
       { status: 500 }

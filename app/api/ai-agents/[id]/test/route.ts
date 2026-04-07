@@ -10,6 +10,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { z } from 'zod'
 import { DEFAULT_MODEL_ID } from '@/lib/ai/model'
+import { getAiDirectConfig } from '@/lib/ai/ai-center-config'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createOpenAI } from '@ai-sdk/openai'
 import {
   findRelevantContent,
   buildEmbeddingConfigFromAgent,
@@ -19,7 +22,7 @@ import type { AIAgent, EmbeddingProvider } from '@/types'
 
 // Mapeamento de provider para chave de API na tabela settings
 const EMBEDDING_API_KEY_MAP: Record<EmbeddingProvider, { settingKey: string; envVar: string }> = {
-  google: { settingKey: 'gemini_api_key', envVar: 'GEMINI_API_KEY' },
+  google: { settingKey: 'google_api_key', envVar: 'GOOGLE_GENERATIVE_AI_API_KEY' },
   openai: { settingKey: 'openai_api_key', envVar: 'OPENAI_API_KEY' },
   voyage: { settingKey: 'voyage_api_key', envVar: 'VOYAGE_API_KEY' },
   cohere: { settingKey: 'cohere_api_key', envVar: 'COHERE_API_KEY' },
@@ -143,35 +146,28 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Import AI dependencies dynamically
     const { generateText, tool, stepCountIs } = await import('ai')
     const { withDevTools } = await import('@/lib/ai/devtools')
-    const { createLanguageModel, getProviderFromModel } = await import('@/lib/ai/provider-factory')
 
-    // Get model configuration - supports Google, OpenAI, Anthropic
-    const modelId = agent.model || DEFAULT_MODEL_ID
-    const provider = getProviderFromModel(modelId)
-
+    // Criar modelo direto via provider
+    const config = await getAiDirectConfig()
+    const targetModelId = agent.model || config.model || DEFAULT_MODEL_ID
     let baseModel
-    let llmApiKey: string
-    try {
-      const result = await createLanguageModel(modelId)
-      baseModel = result.model
-      llmApiKey = result.apiKey
-    } catch (err) {
-      return NextResponse.json(
-        { error: err instanceof Error ? err.message : 'Erro ao criar modelo de IA' },
-        { status: 500 }
-      )
+    if (config.provider === 'google') {
+        if (!config.googleApiKey) throw new Error('Chave Google não configurada. Acesse Configurações → IA.')
+        baseModel = createGoogleGenerativeAI({ apiKey: config.googleApiKey })(targetModelId)
+    } else {
+        if (!config.openaiApiKey) throw new Error('Chave OpenAI não configurada. Acesse Configurações → IA.')
+        baseModel = createOpenAI({ apiKey: config.openaiApiKey })(targetModelId)
     }
 
     // Create model with DevTools support
     const model = await withDevTools(baseModel, { name: `agente:${agent.name}` })
 
-    console.log(`[ai-agents/test] Using provider: ${provider}, model: ${modelId}`)
+    console.log(`[ai-agents/test] Using model: ${targetModelId} (provider: ${config.provider})`)
 
     // Generate response
     const startTime = Date.now()
 
-    // Capture structured response and sources from tool execution
-    let structuredResponse: TestResponse | undefined
+    // Fontes RAG capturadas pelo execute do searchKnowledgeBase tool
     let ragSources: Array<{ title: string; content: string }> = []
     let searchPerformed = false
 
@@ -191,19 +187,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const respondTool = tool({
       description: 'Envia uma resposta estruturada ao usuário. SEMPRE use esta ferramenta para responder.',
       inputSchema: responseSchema,
-      execute: async (params) => {
-        const handoffParams = params as {
-          shouldHandoff?: boolean
-          handoffReason?: string
-        }
-        structuredResponse = {
-          ...params,
-          shouldHandoff: handoffParams.shouldHandoff,
-          handoffReason: handoffParams.handoffReason,
-          sources: ragSources.length > 0 ? ragSources : params.sources,
-        }
-        return { success: true, message: params.message }
-      },
+      // sem execute — para o loop quando chamado (Forced Tool Calling pattern)
     })
 
     // Knowledge base search tool - only created if agent has indexed content and API key
@@ -234,7 +218,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
             searchPerformed = true
             const ragStartTime = Date.now()
 
-            const embeddingConfig = buildEmbeddingConfigFromAgent(agent as AIAgent, embeddingApiKey)
+            const embeddingConfig = buildEmbeddingConfigFromAgent(agent as AIAgent)
 
             const relevantContent = await findRelevantContent({
               agentId: id,
@@ -282,22 +266,37 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     console.log(`[ai-agents/test] Generating response with tools: ${Object.keys(tools).join(', ')}`)
 
-    // Generate with multi-step support (LLM can search, then respond)
-    await generateText({
+    // Gerar resposta com Forced Tool Calling pattern:
+    // toolChoice: 'required' obriga o modelo a sempre chamar uma tool
+    // respond sem execute para o loop quando chamado
+    // stopWhen: 5 steps para acomodar buscas RAG antes do respond
+    const result = await generateText({
       model,
       system: systemPrompt,
       messages: [{ role: 'user' as const, content: message }],
       temperature: agent.temperature ?? 0.7,
       maxOutputTokens: agent.max_tokens ?? 1024,
       tools,
-      ...(searchKnowledgeBaseTool ? { stopWhen: stepCountIs(3) } : {}), // Allow: search → think → respond
+      toolChoice: 'required',
+      stopWhen: stepCountIs(5),
     })
 
     const latencyMs = Date.now() - startTime
 
-    // If no structured response was captured, something went wrong
-    if (!structuredResponse) {
+    const respondCall = result.staticToolCalls.find(c => c.toolName === 'respond')
+    if (!respondCall) {
       throw new Error('No structured response generated from AI')
+    }
+    // Validar resposta do modelo (staticToolCalls não passa por Zod como o execute)
+    const parsedResponse = responseSchema.safeParse(respondCall.input)
+    if (!parsedResponse.success) {
+      console.error('[ai-agents/test] Resposta do agente inválida:', parsedResponse.error)
+      throw new Error('No structured response generated from AI')
+    }
+    let structuredResponse: TestResponse = parsedResponse.data as TestResponse
+    // Adicionar fontes do RAG se disponíveis (sempre sobrescreve model sources)
+    if (ragSources.length > 0) {
+      structuredResponse = { ...structuredResponse, sources: ragSources }
     }
 
     console.log(`[ai-agents/test] Response generated in ${latencyMs}ms. Search performed: ${searchPerformed}`)
@@ -305,7 +304,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({
       response: structuredResponse.message,
       latency_ms: latencyMs,
-      model: modelId,
+      model: targetModelId,
       knowledge_files_used: indexedFilesCount ?? 0,
       rag_enabled: hasKnowledgeBase,
       rag_chunks_used: ragSources.length,

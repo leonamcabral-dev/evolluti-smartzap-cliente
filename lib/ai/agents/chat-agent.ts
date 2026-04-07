@@ -2,7 +2,7 @@
  * Chat Agent - Tool-based RAG (Vercel AI SDK pattern)
  *
  * Agente de chat que processa conversas do inbox usando IA.
- * Suporta múltiplos providers: Google (Gemini), OpenAI (GPT), Anthropic (Claude).
+ * Suporta Google Gemini e OpenAI diretamente com chave do usuário.
  *
  * Usa RAG próprio com Supabase pgvector seguindo o padrão recomendado pela Vercel:
  * - O LLM recebe uma tool `searchKnowledgeBase` e DECIDE quando usá-la
@@ -17,6 +17,8 @@
 
 import { z } from 'zod'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { DEFAULT_MODEL_ID } from '@/lib/ai/model'
+import { getAiDirectConfig } from '@/lib/ai/ai-center-config'
 import type { AIAgent, InboxConversation, InboxMessage } from '@/types'
 
 // NOTE: AI dependencies are imported DYNAMICALLY inside processChatAgent
@@ -193,7 +195,6 @@ export type SupportResponse = z.infer<typeof supportResponseSchema>
 // Constants
 // =============================================================================
 
-const DEFAULT_MODEL_ID = 'gemini-3-flash-preview'
 const DEFAULT_TEMPERATURE = 0.7
 const DEFAULT_MAX_TOKENS = 2048
 const AI_TIMEOUT_MS = 90_000 // 90 segundos - timeout para chamadas de IA (considera RAG + tools)
@@ -307,8 +308,9 @@ export async function processChatAgent(
 
   // Dynamic imports - required for background execution context
   const { generateText, tool, stepCountIs } = await import('ai')
+  const { createGoogleGenerativeAI } = await import('@ai-sdk/google')
+  const { createOpenAI } = await import('@ai-sdk/openai')
   const { withDevTools } = await import('@/lib/ai/devtools')
-  const { createLanguageModel, getProviderFromModel } = await import('@/lib/ai/provider-factory')
   const {
     findRelevantContent,
     hasIndexedContent,
@@ -328,48 +330,66 @@ export async function processChatAgent(
   const { fetchRelevantMemories, saveInteractionMemory, isMem0EnabledAsync } = await import('@/lib/ai/mem0-client')
 
   let memoryContext = { systemPromptAddition: '', memoryCount: 0 }
-  const mem0Enabled = await isMem0EnabledAsync()
-  if (mem0Enabled) {
-    console.log(`[chat-agent] Mem0 enabled, fetching memories for ${conversation.phone}...`)
-    memoryContext = await fetchRelevantMemories(inputText, {
-      user_id: conversation.phone,
-      agent_id: agent.id,
-    })
-    if (memoryContext.memoryCount > 0) {
-      console.log(`[chat-agent] Found ${memoryContext.memoryCount} memories`)
+  let mem0Enabled = false
+  try {
+    mem0Enabled = await isMem0EnabledAsync()
+    if (mem0Enabled) {
+      console.log(`[chat-agent] Mem0 enabled, fetching memories for ${conversation.phone}...`)
+      memoryContext = await fetchRelevantMemories(inputText, {
+        user_id: conversation.phone,
+        agent_id: agent.id,
+      })
+      if (memoryContext.memoryCount > 0) {
+        console.log(`[chat-agent] Found ${memoryContext.memoryCount} memories`)
+      }
+    } else {
+      console.log(`[chat-agent] Mem0 disabled (configure mem0_enabled e mem0_api_key nas settings)`)
     }
-  } else {
-    console.log(`[chat-agent] Mem0 disabled (configure mem0_enabled e mem0_api_key nas settings)`)
+  } catch (mem0Error) {
+    // Falha no Mem0 não deve derrubar o agente — continua sem memória
+    console.warn(`[chat-agent] Mem0 unavailable (degradação graceful):`, mem0Error instanceof Error ? mem0Error.message : mem0Error)
+    mem0Enabled = false
   }
 
-  // Get model configuration - supports Google, OpenAI, Anthropic
-  const modelId = agent.model || DEFAULT_MODEL_ID
-  const provider = getProviderFromModel(modelId)
-
-  let baseModel
-  let apiKey: string
-  let usingGateway = false
-  let allApiKeys: Partial<Record<'google' | 'openai' | 'anthropic', string>> | undefined
-  try {
-    const result = await createLanguageModel(modelId)
-    baseModel = result.model
-    apiKey = result.apiKey
-    usingGateway = result.usingGateway
-    allApiKeys = result.allApiKeys
-  } catch (err) {
+  // Obter configuração de provider direto (Google / OpenAI)
+  const directConfig = await getAiDirectConfig()
+  if (!directConfig.googleApiKey && !directConfig.openaiApiKey) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'Erro ao criar modelo de IA',
+      error: 'Nenhuma chave de API configurada. Acesse Configurações → IA.',
       latencyMs: Date.now() - startTime,
     }
   }
 
-  const model = await withDevTools(baseModel, { name: `agente:${agent.name}` })
+  const modelId = agent.model || directConfig.model || DEFAULT_MODEL_ID
 
-  console.log(`[chat-agent] Using provider: ${provider}, model: ${modelId}`)
+  // Criar instância do modelo com a chave do usuário
+  let rawModel
+  if (directConfig.provider === 'openai' && directConfig.openaiApiKey) {
+    const openai = createOpenAI({ apiKey: directConfig.openaiApiKey })
+    rawModel = openai(modelId)
+  } else if (directConfig.googleApiKey) {
+    const google = createGoogleGenerativeAI({ apiKey: directConfig.googleApiKey })
+    rawModel = google(modelId)
+  } else {
+    return {
+      success: false,
+      error: `Chave ${directConfig.provider === 'openai' ? 'OpenAI' : 'Google'} não configurada. Acesse Configurações → IA.`,
+      latencyMs: Date.now() - startTime,
+    }
+  }
+
+  const model = await withDevTools(rawModel, { name: `agente:${agent.name}` })
+  console.log(`[chat-agent] Using ${directConfig.provider}/${modelId}`)
 
   // Check if agent has indexed content in pgvector
-  const hasKnowledgeBase = await hasIndexedContent(agent.id)
+  let hasKnowledgeBase = false
+  try {
+    hasKnowledgeBase = await hasIndexedContent(agent.id)
+  } catch (ragError) {
+    // Falha no pgvector não deve derrubar o agente — continua sem RAG
+    console.warn(`[chat-agent] pgvector check unavailable (degradação graceful):`, ragError instanceof Error ? ragError.message : ragError)
+  }
 
   console.log(`[chat-agent] Processing: model=${modelId}, hasKnowledgeBase=${hasKnowledgeBase}`)
   console.log(`[chat-agent] Total messages received: ${messages.length}`)
@@ -455,7 +475,7 @@ export async function processChatAgent(
           const ragStartTime = Date.now()
 
           // Build configs
-          const embeddingConfig = buildEmbeddingConfigFromAgent(agent, apiKey)
+          const embeddingConfig = buildEmbeddingConfigFromAgent(agent)
           const rerankConfig = await buildRerankConfigFromAgent(agent)
 
           // Search
@@ -619,37 +639,6 @@ export async function processChatAgent(
     console.log(`[chat-agent] 🚀 Calling generateText...`)
     const startGenerate = Date.now()
 
-    // Build providerOptions for AI Gateway (BYOK-only, no system credential fallback)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let providerOptions: Record<string, any> | undefined
-    if (usingGateway && allApiKeys) {
-      // Build BYOK config - only include providers that have keys configured
-      const byokConfig: Record<string, Array<{ apiKey: string }>> = {}
-      const availableProviders: string[] = []
-
-      for (const [prov, key] of Object.entries(allApiKeys)) {
-        if (key) {
-          byokConfig[prov] = [{ apiKey: key }]
-          availableProviders.push(prov)
-        }
-      }
-
-      if (availableProviders.length > 0) {
-        providerOptions = {
-          gateway: {
-            // 'only' restricts to BYOK providers - NO system credential fallback
-            only: availableProviders,
-            // 'order' defines fallback sequence: Google → OpenAI → Anthropic
-            order: ['google', 'openai', 'anthropic'].filter(p => availableProviders.includes(p)),
-            // 'byok' passes all configured API keys
-            byok: byokConfig,
-          },
-        }
-        console.log(`[chat-agent] 🔑 AI Gateway BYOK enabled for: ${availableProviders.join(', ')}`)
-        console.log(`[chat-agent] 🔄 Fallback order: ${providerOptions.gateway.order.join(' → ')}`)
-      }
-    }
-
     // =======================================================================
     // RETRY LOOP: Tenta novamente se LLM não chamar respond tool
     // Issue #8992: toolChoice: 'required' não é garantia, LLM pode retornar texto puro
@@ -668,20 +657,25 @@ export async function processChatAgent(
 
       // Se é retry, adiciona instrução reforçada ao system prompt
       let currentSystemPrompt = systemPrompt
+      // Usa cópia do array base para não acumular contexto de retries entre iterações
+      let currentMessages = [...aiMessages]
       if (retryCount > 0) {
         console.log(`[chat-agent] 🔄 Retry ${retryCount}/${MAX_TOOL_RETRIES} - LLM não chamou respond tool`)
         currentSystemPrompt += `\n\n## INSTRUÇÃO CRÍTICA\nVocê DEVE chamar a tool "respond" para enviar sua resposta. NÃO responda com texto direto. Use a tool respond com message, sentiment e confidence.`
 
-        // Adiciona o texto anterior como contexto se houver
+        // Adiciona o texto anterior como contexto na CÓPIA, sem mutar o array original
         if (lastLLMText) {
-          aiMessages.push({
-            role: 'assistant',
-            content: lastLLMText,
-          })
-          aiMessages.push({
-            role: 'user',
-            content: '[SISTEMA] Você precisa usar a tool "respond" para enviar sua resposta. Reformule sua resposta anterior usando a tool.',
-          })
+          currentMessages = [
+            ...currentMessages,
+            {
+              role: 'assistant' as const,
+              content: lastLLMText,
+            },
+            {
+              role: 'user' as const,
+              content: '[SISTEMA] Você precisa usar a tool "respond" para enviar sua resposta. Reformule sua resposta anterior usando a tool.',
+            },
+          ]
         }
       }
 
@@ -689,7 +683,7 @@ export async function processChatAgent(
         const result = await generateText({
           model,
           system: currentSystemPrompt,
-          messages: aiMessages,
+          messages: currentMessages,
           tools,
           toolChoice: 'required', // FORÇA o LLM a chamar uma tool (respond)
           // Para quando respond for chamado OU após 3 steps (o que vier primeiro)
@@ -697,8 +691,6 @@ export async function processChatAgent(
           temperature: agent.temperature ?? DEFAULT_TEMPERATURE,
           maxOutputTokens: agent.max_tokens ?? DEFAULT_MAX_TOKENS,
           abortSignal: abortController.signal,
-          // Pass providerOptions only when using AI Gateway
-          ...(providerOptions && { providerOptions }),
         })
 
         clearTimeout(timeoutId) // Limpa timeout se completou
@@ -791,7 +783,6 @@ export async function processChatAgent(
     console.error('[chat-agent] ❌ Full error object:', err)
     console.error('[chat-agent] ❌ Context:', {
       modelId,
-      provider,
       agentId: agent.id,
       agentName: agent.name,
       hasKnowledgeBase,

@@ -6,8 +6,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
-import { settingsDb } from '@/lib/supabase-db'
 
 interface RouteParams {
   params: Promise<{ phone: string }>
@@ -39,15 +37,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }, { status: 400 })
     }
 
-    // Busca API key do Gemini
-    const geminiKey = await settingsDb.get('gemini_api_key') || process.env.GEMINI_API_KEY
-    if (!geminiKey) {
-      return NextResponse.json({
-        ok: false,
-        error: 'Gemini não configurado',
-      }, { status: 400 })
-    }
-
     // Monta contexto para o prompt
     const contextParts: string[] = []
 
@@ -74,11 +63,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const context = contextParts.join('\n\n')
 
-    // Gera resumo com Gemini
-    const google = createGoogleGenerativeAI({ apiKey: geminiKey })
-
+    // Gera resumo via AI Gateway (autenticação OIDC automática)
     const { text } = await generateText({
-      model: google('gemini-2.0-flash'),
+      model: 'google/gemini-3-flash-preview',
       prompt: `Você é um assistente que ajuda atendentes a entender rapidamente o contexto de um cliente.
 
 Com base nas informações abaixo, gere um RESUMO NARRATIVO curto (2-3 frases) em português brasileiro, em tom profissional e amigável.

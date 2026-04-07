@@ -5,10 +5,12 @@
  */
 
 import { streamText, tool } from 'ai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createOpenAI } from '@ai-sdk/openai'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase-server'
-import { createLanguageModel, getProviderFromModel } from '@/lib/ai/provider-factory'
 import { DEFAULT_MODEL_ID } from '@/lib/ai/model'
+import { getAiDirectConfig } from '@/lib/ai/ai-center-config'
 import { inboxDb } from '@/lib/inbox/inbox-db'
 import type { AIAgent, InboxConversation } from '@/types'
 
@@ -166,22 +168,19 @@ export async function POST(req: Request) {
         content: m.content,
       }))
 
-    // Create AI model using provider factory (supports Google, OpenAI, Anthropic)
-    const modelId = agent.model || DEFAULT_MODEL_ID
-    const provider = getProviderFromModel(modelId)
-
+    // Criar modelo direto via provider
+    const config = await getAiDirectConfig()
+    const targetModelId = agent.model || config.model || DEFAULT_MODEL_ID
     let model
-    try {
-      const result = await createLanguageModel(modelId)
-      model = result.model
-    } catch (err) {
-      return new Response(
-        JSON.stringify({ error: err instanceof Error ? err.message : 'Erro ao criar modelo de IA' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      )
+    if (config.provider === 'google') {
+        if (!config.googleApiKey) throw new Error('Chave Google não configurada. Acesse Configurações → IA.')
+        model = createGoogleGenerativeAI({ apiKey: config.googleApiKey })(targetModelId)
+    } else {
+        if (!config.openaiApiKey) throw new Error('Chave OpenAI não configurada. Acesse Configurações → IA.')
+        model = createOpenAI({ apiKey: config.openaiApiKey })(targetModelId)
     }
 
-    console.log(`[inbox/suggest] Using provider: ${provider}, model: ${modelId}`)
+    console.log(`[inbox/suggest] Using model: ${targetModelId} (provider: ${config.provider})`)
 
     // Capture structured response
     let suggestion: SuggestResponse | undefined

@@ -32,7 +32,7 @@ function getClient() {
 
 // Mapeamento de provider para chave de API na tabela settings
 const EMBEDDING_API_KEY_MAP: Record<EmbeddingProvider, { settingKey: string; envVar: string; label: string }> = {
-  google: { settingKey: 'gemini_api_key', envVar: 'GEMINI_API_KEY', label: 'Google Gemini' },
+  google: { settingKey: 'google_api_key', envVar: 'GOOGLE_GENERATIVE_AI_API_KEY', label: 'Google Gemini' },
   openai: { settingKey: 'openai_api_key', envVar: 'OPENAI_API_KEY', label: 'OpenAI' },
   voyage: { settingKey: 'voyage_api_key', envVar: 'VOYAGE_API_KEY', label: 'Voyage AI' },
   cohere: { settingKey: 'cohere_api_key', envVar: 'COHERE_API_KEY', label: 'Cohere' },
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
       console.log(`[knowledge] Indexing ${name} in pgvector for agent ${agent_id}`)
 
       // Build embedding config from agent settings
-      const embeddingConfig = buildEmbeddingConfigFromAgent(agent as AIAgent, apiKey)
+      const embeddingConfig = buildEmbeddingConfigFromAgent(agent as AIAgent)
 
       // Index document (chunk → embed → store)
       const result = await indexDocument({

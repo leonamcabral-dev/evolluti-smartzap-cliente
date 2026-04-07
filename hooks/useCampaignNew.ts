@@ -15,26 +15,21 @@ import { humanizePrecheckReason, humanizeVarSource, type ContactFixFocus, type C
 import { getPricingBreakdown } from '@/lib/whatsapp-pricing'
 import { useExchangeRate } from '@/hooks/useExchangeRate'
 import { useCampaignFolders } from '@/hooks/useCampaignFolders'
+import {
+  type Contact,
+  type CustomField,
+  type TemplateVar,
+  getDefaultScheduleTime,
+  buildScheduledAt,
+  extractFlowFromTemplate,
+  fetchJson,
+} from '@/lib/campaign-wizard'
 
-// ── Constants ──────────────────────────────────────────────────────────
-const MAX_TAG_CHIPS = 10
+// Re-exporta para consumidores externos (backward compatibility)
+export type { Contact, CustomField, TemplateVar } from '@/lib/campaign-wizard'
+export { steps, getDefaultScheduleTime, formatDateLabel, parsePickerDate } from '@/lib/campaign-wizard'
 
-// ── Types ──────────────────────────────────────────────────────────────
-
-export type Contact = {
-  id: string
-  name: string
-  phone: string
-  email?: string | null
-  tags?: string[]
-  custom_fields?: Record<string, unknown>
-}
-
-export type CustomField = {
-  key: string
-  label: string
-  type: string
-}
+// ── Internal-only types ────────────────────────────────────────────────
 
 type ContactStats = {
   total: number
@@ -52,100 +47,9 @@ type StateCount = {
   count: number
 }
 
-type TagCount = {
-  tag: string
-  count: number
-}
-
 type TestContact = {
   name?: string
   phone?: string
-}
-
-export type TemplateVar = {
-  key: string
-  placeholder: string
-  value: string
-  required: boolean
-}
-
-// ── Constants ──────────────────────────────────────────────────────────
-
-export const steps = [
-  { id: 1, label: 'Configuração' },
-  { id: 2, label: 'Público' },
-  { id: 3, label: 'Validação' },
-  { id: 4, label: 'Agendamento' },
-]
-
-// ── Pure utility functions ─────────────────────────────────────────────
-
-export const getDefaultScheduleTime = () => {
-  const d = new Date()
-  d.setMinutes(d.getMinutes() + 60)
-  const minutes = d.getMinutes()
-  if (minutes <= 30) {
-    d.setMinutes(30, 0, 0)
-  } else {
-    d.setHours(d.getHours() + 1)
-    d.setMinutes(0, 0, 0)
-  }
-  const h = String(d.getHours()).padStart(2, '0')
-  const m = String(d.getMinutes()).padStart(2, '0')
-  return `${h}:${m}`
-}
-
-export const formatDateLabel = (value: string) => {
-  if (!value) return 'dd/mm/aaaa'
-  const [y, m, d] = value.split('-')
-  if (!y || !m || !d) return 'dd/mm/aaaa'
-  return `${d}/${m}/${y}`
-}
-
-export const parsePickerDate = (value: string) => {
-  if (!value) return undefined
-  const [y, m, d] = value.split('-').map((v) => Number(v))
-  if (!y || !m || !d) return undefined
-  return new Date(y, m - 1, d, 12, 0, 0)
-}
-
-const buildScheduledAt = (date: string, time: string) => {
-  if (!date || !time) return undefined
-  const [year, month, day] = date.split('-').map((v) => Number(v))
-  const [hour, minute] = time.split(':').map((v) => Number(v))
-  if (!year || !month || !day || Number.isNaN(hour) || Number.isNaN(minute)) return undefined
-  return new Date(year, month - 1, day, hour, minute, 0, 0).toISOString()
-}
-
-/**
- * Extrai informações do Flow de um template, se houver um botão do tipo FLOW
- */
-const extractFlowFromTemplate = (template: Template | null): { flowId: string | null; flowName: string | null } => {
-  if (!template?.components) return { flowId: null, flowName: null }
-
-  for (const component of template.components) {
-    if (component.type === 'BUTTONS' && component.buttons) {
-      for (const button of component.buttons) {
-        if (button.type === 'FLOW' && button.flow_id) {
-          return {
-            flowId: button.flow_id,
-            flowName: button.text || null, // Nome do botão como fallback
-          }
-        }
-      }
-    }
-  }
-
-  return { flowId: null, flowName: null }
-}
-
-const fetchJson = async <T,>(url: string): Promise<T> => {
-  const res = await fetch(url, { cache: 'no-store' })
-  if (!res.ok) {
-    const message = await res.text()
-    throw new Error(message || 'Erro ao buscar dados')
-  }
-  return res.json()
 }
 
 // ── Controller Hook ────────────────────────────────────────────────────
@@ -216,6 +120,7 @@ export const useCampaignNewController = () => {
     const month = months[now.getMonth()] || 'mes'
     return `Campanha ${day} de ${month}.`
   })
+  const [tagCounts, setTagCounts] = useState<Record<string, number>>({})
   const [showStatesPanel, setShowStatesPanel] = useState(false)
   const [stateSearch, setStateSearch] = useState('')
   const { rate: exchangeRate, hasRate } = useExchangeRate()
@@ -255,9 +160,9 @@ export const useCampaignNewController = () => {
   }, [customFieldsQuery.data])
 
   // Queries de audiência - só carregam a partir do Step 2 (Público)
-  const tagCountsQuery = useQuery({
-    queryKey: ['contact-tag-counts'],
-    queryFn: () => fetchJson<{ data: TagCount[] }>('/api/contacts/tag-counts'),
+  const tagsQuery = useQuery({
+    queryKey: ['contact-tags'],
+    queryFn: () => fetchJson<string[]>('/api/contacts/tags'),
     staleTime: 60_000,
     enabled: step >= 2,
   })
@@ -452,6 +357,29 @@ export const useCampaignNewController = () => {
       .catch(() => {})
     return () => controller.abort()
   }, [testContactQuery.data?.phone])
+
+  // Busca contagens de contatos por tag - só roda quando tagsQuery tem dados (step >= 2)
+  useEffect(() => {
+    const tags = (tagsQuery.data || []).slice(0, 6)
+    if (!tags.length) return
+    let cancelled = false
+    Promise.all(
+      tags.map(async (tag) => {
+        const res = await fetchJson<{ total: number }>('/api/contacts?limit=1&tag=' + encodeURIComponent(tag))
+        return [tag, res.total ?? 0] as const
+      })
+    ).then((pairs) => {
+      if (cancelled) return
+      const next: Record<string, number> = {}
+      pairs.forEach(([tag, total]) => {
+        next[tag] = total
+      })
+      setTagCounts(next)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [tagsQuery.data])
 
   const contactFields = [
     { key: 'nome', label: 'Nome' },
@@ -1370,15 +1298,7 @@ export const useCampaignNewController = () => {
     : 'Nenhum filtro selecionado'
   const countryData = countriesQuery.data?.data || []
   const stateData = statesQuery.data?.data || []
-  const allTags = tagCountsQuery.data?.data || []
-  const tagChips = allTags.slice(0, MAX_TAG_CHIPS).map((item) => item.tag)
-  const tagCounts = useMemo(() => {
-    const next: Record<string, number> = {}
-    allTags.forEach((item) => {
-      next[item.tag] = item.count
-    })
-    return next
-  }, [allTags])
+  const tagChips = (tagsQuery.data || []).slice(0, 6)
   const countryChips = countryData.map((item) => item.code)
   const stateChips = stateData.map((item) => item.code)
   const countryCounts = useMemo(() => {
@@ -1548,10 +1468,9 @@ export const useCampaignNewController = () => {
     // Tags
     selectedTags,
     setSelectedTags,
-    tagCountsQuery,
+    tagsQuery,
     tagChips,
     tagCounts,
-    allTags,
 
     // Countries
     selectedCountries,

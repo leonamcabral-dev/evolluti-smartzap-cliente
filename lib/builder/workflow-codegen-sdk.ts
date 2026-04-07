@@ -295,21 +295,16 @@ export function generateWorkflowSDKCode(
     return [
       `model: "${modelString}"`,
       `prompt: \`${convertTemplateToJS((config.aiPrompt as string) || "")}\``,
-      "apiKey: process.env.OPENAI_API_KEY!",
     ];
   }
 
   function buildAIImageParams(config: Record<string, unknown>): string[] {
-    imports.add(
-      "import { experimental_generateImage as generateImage } from 'ai';"
-    );
-    const imageModel =
-      (config.imageModel as string) || "google/imagen-4.0-generate";
+    // Usa generateText com modelo multimodal — imagens retornam em result.files
+    imports.add("import { generateText } from 'ai';");
     return [
-      `model: "${imageModel}"`,
+      `model: "google/gemini-3.1-flash-image-preview"`,
       `prompt: \`${convertTemplateToJS((config.imagePrompt as string) || "")}\``,
-      'size: "1024x1024"',
-      "providerOptions: { openai: { apiKey: process.env.AI_GATEWAY_API_KEY! } }",
+      "providerOptions: { gateway: { tags: ['workflow-codegen'] } }",
     ];
   }
 

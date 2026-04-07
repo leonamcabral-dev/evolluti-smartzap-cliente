@@ -31,9 +31,10 @@ export type CallOptions = z.infer<typeof callOptionsSchema>
 // =============================================================================
 
 /**
- * Default model for AI agents
+ * Model ID padrão para agentes de IA (formato bare, sem prefixo de provider).
+ * O provider é determinado pela configuração em Configurações → IA.
  */
-export const DEFAULT_MODEL_ID = 'gemini-3-flash-preview'
+export const DEFAULT_MODEL_ID = 'gemini-2.5-flash'
 
 // Re-export from providers.ts - single source of truth for models
 export { AI_PROVIDERS, getProvider, getModel, getDefaultModel } from './providers'

@@ -105,6 +105,9 @@ tests/
 # Helpers de teste são necessários no CI
 !tests/helpers/
 !tests/helpers/**
+# Testes de integração da API de agentes IA
+!tests/api/
+!tests/api/**
 
 # Legacy (can be removed)
 # vite.config.ts
@@ -125,3 +128,9 @@ PRD-campaigns-new.md
 # Docs (dev-only, kept locally) - /docs/ ignora apenas na raiz
 /docs/
 .env*.local
+
+# Audit reports e arquivos de teste local
+AUDIT_*.md
+BUG_INVESTIGATION_REPORT_*.md
+test-*.csv
+.worktrees/
